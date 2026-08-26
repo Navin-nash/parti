@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.DS_Store
+
+# local install junction back to this repo root
+.claude/

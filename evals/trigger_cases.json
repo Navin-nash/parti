@@ -1,0 +1,210 @@
+[
+  {
+    "query": "make this landing page look better",
+    "should_trigger": true
+  },
+  {
+    "query": "this feels generic, like every other AI-generated site",
+    "should_trigger": true
+  },
+  {
+    "query": "how should the dashboard for our grant tool look?",
+    "should_trigger": true
+  },
+  {
+    "query": "redesign my portfolio site",
+    "should_trigger": true
+  },
+  {
+    "query": "score my design and tell me what's weakest",
+    "should_trigger": true
+  },
+  {
+    "query": "what visual style fits a compliance dashboard for auditors?",
+    "should_trigger": true
+  },
+  {
+    "query": "give me three directions for the onboarding screen",
+    "should_trigger": true
+  },
+  {
+    "query": "the spacing in this component feels off but I can't say why",
+    "should_trigger": true
+  },
+  {
+    "query": "pick a typeface pairing for a grant-writing product",
+    "should_trigger": true
+  },
+  {
+    "query": "is glassmorphism a good fit for a trading terminal?",
+    "should_trigger": true
+  },
+  {
+    "query": "audit our design system, I think it's drifted",
+    "should_trigger": true
+  },
+  {
+    "query": "our animations feel cheap and I don't know what to change",
+    "should_trigger": true
+  },
+  {
+    "query": "what easing curve should the modal use?",
+    "should_trigger": true
+  },
+  {
+    "query": "design the empty state for the inbox",
+    "should_trigger": true
+  },
+  {
+    "query": "our app looks like every other B2B SaaS product",
+    "should_trigger": true
+  },
+  {
+    "query": "critique this UI, here's a screenshot",
+    "should_trigger": true
+  },
+  {
+    "query": "brutalism or minimalism for a developer tool?",
+    "should_trigger": true
+  },
+  {
+    "query": "build me a pricing page for a Korean trade-compliance service",
+    "should_trigger": true
+  },
+  {
+    "query": "what should the hierarchy be on the results screen?",
+    "should_trigger": true
+  },
+  {
+    "query": "our color palette has 40 grays in it, help",
+    "should_trigger": true
+  },
+  {
+    "query": "should I use Zustand or Redux for this app?",
+    "should_trigger": false
+  },
+  {
+    "query": "design a database schema for multi-tenant organizations",
+    "should_trigger": false
+  },
+  {
+    "query": "design an API for the notification service",
+    "should_trigger": false
+  },
+  {
+    "query": "design a rate limiter for our public endpoints",
+    "should_trigger": false
+  },
+  {
+    "query": "my useEffect is running twice, why?",
+    "should_trigger": false
+  },
+  {
+    "query": "write a Postgres migration adding a nullable column",
+    "should_trigger": false
+  },
+  {
+    "query": "how do I deploy a FastAPI service to Fly.io?",
+    "should_trigger": false
+  },
+  {
+    "query": "set up GitHub Actions CI for this monorepo",
+    "should_trigger": false
+  },
+  {
+    "query": "refactor this component to use React Query",
+    "should_trigger": false
+  },
+  {
+    "query": "explain how Vercel AI SDK streaming works",
+    "should_trigger": false
+  },
+  {
+    "query": "write unit tests for the HWPX parser",
+    "should_trigger": false
+  },
+  {
+    "query": "fix this TypeScript error: Type 'string' is not assignable",
+    "should_trigger": false
+  },
+  {
+    "query": "what's the time complexity of this sort function?",
+    "should_trigger": false
+  },
+  {
+    "query": "summarize this PDF for me",
+    "should_trigger": false
+  },
+  {
+    "query": "draft an email to a supplier about a delayed shipment",
+    "should_trigger": false
+  },
+  {
+    "query": "what's the SBIR Phase I award ceiling?",
+    "should_trigger": false
+  },
+  {
+    "query": "convert this JSON into a CSV",
+    "should_trigger": false
+  },
+  {
+    "query": "why is my Docker build failing on the copy step?",
+    "should_trigger": false
+  },
+  {
+    "query": "design a retry strategy for our webhook delivery",
+    "should_trigger": false
+  },
+  {
+    "query": "explain the difference between LangGraph and LangChain",
+    "should_trigger": false
+  },
+  {
+    "query": "review the animations in this app",
+    "should_trigger": true
+  },
+  {
+    "query": "the dropdown feels sluggish when it opens",
+    "should_trigger": true
+  },
+  {
+    "query": "audit our motion and tell me what's worth fixing",
+    "should_trigger": true
+  },
+  {
+    "query": "add a nice open animation to this drawer",
+    "should_trigger": true
+  },
+  {
+    "query": "should the command palette animate when it opens?",
+    "should_trigger": true
+  },
+  {
+    "query": "write me a plan another agent can follow to fix the easing everywhere",
+    "should_trigger": true
+  },
+  {
+    "query": "our transitions are all 500ms ease-in-out, is that fine?",
+    "should_trigger": true
+  },
+  {
+    "query": "why does the app feel slow even though it loads fast?",
+    "should_trigger": true
+  },
+  {
+    "query": "the scroll animations re-fire every time I scroll up",
+    "should_trigger": true
+  },
+  {
+    "query": "profile which react components re-render too often",
+    "should_trigger": false
+  },
+  {
+    "query": "our animation job queue is dropping tasks under load",
+    "should_trigger": false
+  },
+  {
+    "query": "set up a CI pipeline that runs our test suite",
+    "should_trigger": false
+  }
+]
