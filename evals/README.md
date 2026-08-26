@@ -35,7 +35,7 @@ python -m scripts.run_eval \
   --runs-per-query 3 --verbose
 ```
 
-40 labeled cases: 20 positive, 20 negative. The negatives are the ones that make this metric mean anything — four of them use the word "design" for non-visual work ("design a database schema", "design an API", "design a rate limiter", "design a retry strategy"). A description that fires on those is over-broad, and over-broad descriptions are worse than narrow ones because they burn context on every unrelated request.
+52 labeled cases: 29 positive, 23 negative. The negatives are the ones that make this metric mean anything — four of them use the word "design" for non-visual work ("design a database schema", "design an API", "design a rate limiter", "design a retry strategy"). A description that fires on those is over-broad, and over-broad descriptions are worse than narrow ones because they burn context on every unrelated request.
 
 **Thresholds:**
 
