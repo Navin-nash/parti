@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-run_script_evals.py — deterministic correctness tests for the design-direction scripts
+run_script_evals.py — deterministic correctness tests for the parti scripts
 (audit.py, color.py, score.py, lint.py, motion.py).
 
 This is the layer of the skill that has real ground truth. Contrast ratios are

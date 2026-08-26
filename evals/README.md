@@ -30,8 +30,8 @@ Does the skill fire when it should and stay quiet when it shouldn't? Fully binar
 ```bash
 cd /path/to/project          # needs a .claude/ dir and the Claude Code CLI
 python -m scripts.run_eval \
-  --skill-path ./design-direction \
-  --eval-set ./design-direction/evals/trigger_cases.json \
+  --skill-path ./parti \
+  --eval-set ./parti/evals/trigger_cases.json \
   --runs-per-query 3 --verbose
 ```
 
@@ -118,8 +118,8 @@ There is no automated instrument. What follows is the least-bad protocol.
 python evals/run_script_evals.py
 
 # Layer 1 — minutes, run after any description edit
-python -m scripts.run_eval --skill-path ./design-direction \
-  --eval-set ./design-direction/evals/trigger_cases.json --runs-per-query 3
+python -m scripts.run_eval --skill-path ./parti \
+  --eval-set ./parti/evals/trigger_cases.json --runs-per-query 3
 
 # Layer 3 — an hour, run after any process change to SKILL.md
 # 5 briefs, score each against rubric.md

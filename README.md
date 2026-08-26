@@ -1,8 +1,13 @@
-# design-direction
+# parti
+
+*Parti*, from the French *prendre parti* — "to take a position." In architecture
+it names the single organizing idea a building commits to, the one every later
+decision has to answer to.
 
 A Claude Code skill for anti-slop design work: score an existing UI, derive
-divergent directions from the actual subject, and build the winner as verified
-production code. `SKILL.md` is the entry point; everything else supports it.
+divergent directions from the actual subject rather than a style menu, and build
+the winner as verified production code. `SKILL.md` is the entry point;
+everything else supports it.
 
 ```
 SKILL.md       skill definition + frontmatter
@@ -14,13 +19,13 @@ evals/         run_script_evals.py, rubric.md, trigger_cases.json
 ## Install
 
 ```bash
-git clone <this-repo> ~/.claude/skills/design-direction
+git clone <this-repo> ~/.claude/skills/parti
 ```
 
 Or clone anywhere and link it (Windows, no admin required):
 
 ```bash
-cmd //c "mklink /J %USERPROFILE%\.claude\skills\design-direction <repo-path>"
+cmd //c "mklink /J %USERPROFILE%\.claude\skills\parti <repo-path>"
 ```
 
 ## Test
