@@ -6,9 +6,9 @@ Any single number claiming to score "is this design good" is a rubric wearing a 
 
 | Layer | Ground truth | Instrument | Objective? |
 |---|---|---|---|
-| 1. Trigger accuracy | labeled prompts | `run_eval.py` (skill-creator) | Yes, binary |
-| 2. Script correctness | WCAG arithmetic + seeded fixtures | `run_script_evals.py` | Yes, deterministic |
-| 3. Process compliance | binary rubric | `rubric.md` | Yes, per-item binary |
+| 1. Trigger accuracy | 52 labeled prompts | `run_eval.py` (skill-creator) | Yes, binary |
+| 2. Script correctness | WCAG arithmetic + seeded fixtures | `run_script_evals.py` (50 checks) | Yes, deterministic |
+| 3. Process compliance | 18 binary items, 5 gates | `rubric.md` | Yes, per-item binary |
 | 4. Design quality | **none** | blind A/B against a baseline | **No** — preference only |
 
 ---
