@@ -1,0 +1,179 @@
+{
+  "baseline": {
+    "arm": "baseline",
+    "files_staged": 5,
+    "tells": 1,
+    "tell_names": [
+      null
+    ],
+    "score": 59.9,
+    "band": "Drifting",
+    "dimensions": {
+      "color_discipline": {
+        "score": 12.3,
+        "max": 20,
+        "findings": [
+          "26 unique colors \u2014 within a systematic range",
+          "21 chromatic of 26 (81%) \u2014 accents should be a minority",
+          "\u26a0 3/5 sampled pairs below 4.5:1 (worst: #35c6e0 on #ffffff = 2.04:1)",
+          "no OKLCH \u2014 perceptual lightness stepping unavailable"
+        ]
+      },
+      "type_system": {
+        "score": 10.4,
+        "max": 20,
+        "findings": [
+          "no font-family declarations found \u2014 inherited or framework-default",
+          "28 distinct sizes \u2014 sizes are chosen per-component, not from a scale",
+          "step ratios 1.02\u20131.06 \u2014 consistent"
+        ]
+      },
+      "spatial_rhythm": {
+        "score": 2.6,
+        "max": 15,
+        "findings": [
+          "no base unit detected \u2014 spacing is arbitrary",
+          "23 spacing values \u2014 spacing is improvised per-component",
+          "20 off-grid values: [0.8, 1.0, 1.6, 2.0, 2.4, 3.2, 4.8, 5.0]"
+        ]
+      },
+      "tokenization": {
+        "score": 12.1,
+        "max": 15,
+        "findings": [
+          "48 custom properties defined, 44 referenced",
+          "4 defined but never referenced: ['--danger', '--ghost', '--primary', '--quiet']",
+          "9 radius variants, 8 shadow variants (ad hoc \u2014 elevation carries no meaning)",
+          "20 !important, 0 arbitrary values \u2014 the system is being escaped"
+        ]
+      },
+      "motion_craft": {
+        "score": 10.5,
+        "max": 15,
+        "findings": [
+          "easing: 0 custom curves vs 106 CSS defaults \u2014 mostly browser defaults; the feel is unauthored",
+          "1 duration values \u2014 a motion scale exists",
+          "prefers-reduced-motion handled"
+        ]
+      },
+      "distinctiveness": {
+        "score": 12.0,
+        "max": 15,
+        "findings": [
+          "\u26a0 Glassmorphic card (backdrop-blur + translucent bg) \u2014 01-landing-page__index.html, 02-pricing-page__pricing.html, 03-dashboard__dashboard.html"
+        ]
+      }
+    },
+    "lint_rc": 0,
+    "lint_counts": {},
+    "lint_findings": [],
+    "motion_rc": 1,
+    "motion_counts": {
+      "P0": 5,
+      "P1": 1
+    },
+    "motion_rules": [
+      "a11y-ungated-hover",
+      "perf-layout-property"
+    ],
+    "motion_census": {
+      "durations_ms": {
+        "0": 10,
+        "1400": 5,
+        "2400": 5
+      },
+      "easings": {
+        "ease": 85,
+        "linear": 5
+      },
+      "distinct_curves": 0,
+      "distinct_durations": 3,
+      "reduced_motion_sites": 5,
+      "hover_gated": false
+    }
+  },
+  "parti": {
+    "arm": "parti",
+    "files_staged": 5,
+    "tells": 0,
+    "tell_names": [],
+    "score": 80.6,
+    "band": "Coherent",
+    "dimensions": {
+      "color_discipline": {
+        "score": 15.4,
+        "max": 20,
+        "findings": [
+          "only 0 unique colors \u2014 possibly untokenized or very thin",
+          "0 chromatic of 0 (0%) \u2014 accents should be a minority",
+          "no contrast pairs could be sampled \u2014 verify manually"
+        ]
+      },
+      "type_system": {
+        "score": 12.4,
+        "max": 20,
+        "findings": [
+          "no font-family declarations found \u2014 inherited or framework-default",
+          "7 distinct sizes \u2014 a real scale",
+          "step ratios 1.07\u20131.50 \u2014 irregular; no single ratio governs the scale"
+        ]
+      },
+      "spatial_rhythm": {
+        "score": 11.8,
+        "max": 15,
+        "findings": [
+          "base unit 8px detected",
+          "14 spacing values \u2014 loose but workable",
+          "5 off-grid values: [2.0, 4.0, 5.0, 12.0, 20.0]"
+        ]
+      },
+      "tokenization": {
+        "score": 15.0,
+        "max": 15,
+        "findings": [
+          "45 custom properties defined, 42 referenced",
+          "3 defined but never referenced: ['--d-slow', '--primary', '--quiet']",
+          "3 radius variants, 0 shadow variants (systematic)"
+        ]
+      },
+      "motion_craft": {
+        "score": 11.0,
+        "max": 15,
+        "findings": [
+          "easing: 10 custom curves vs 80 CSS defaults \u2014 mostly browser defaults; the feel is unauthored",
+          "1 duration values \u2014 a motion scale exists",
+          "prefers-reduced-motion handled"
+        ]
+      },
+      "distinctiveness": {
+        "score": 15.0,
+        "max": 15,
+        "findings": [
+          "no recognizable generated-design tells detected in source"
+        ]
+      }
+    },
+    "lint_rc": 0,
+    "lint_counts": {},
+    "lint_findings": [],
+    "motion_rc": 0,
+    "motion_counts": {},
+    "motion_rules": [],
+    "motion_census": {
+      "durations_ms": {
+        "1": 5
+      },
+      "easings": {
+        "ease": 55,
+        "cubic-bezier(0.16, 1, 0.3, 1)": 5,
+        "cubic-bezier(0.65, 0, 0.35, 1)": 5
+      },
+      "distinct_curves": 2,
+      "distinct_durations": 1,
+      "reduced_motion_sites": 5,
+      "hover_gated": true
+    },
+    "drift_rc": 0,
+    "drift_flagged": false
+  }
+}

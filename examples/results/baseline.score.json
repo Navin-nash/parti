@@ -1,0 +1,69 @@
+{
+  "measured_score": 59.9,
+  "band": "Drifting",
+  "recommendation": "A system existed once. Enforcement lapsed. Surgical pass warranted.",
+  "dimensions": {
+    "color_discipline": {
+      "score": 12.3,
+      "max": 20,
+      "findings": [
+        "26 unique colors \u2014 within a systematic range",
+        "21 chromatic of 26 (81%) \u2014 accents should be a minority",
+        "\u26a0 3/5 sampled pairs below 4.5:1 (worst: #35c6e0 on #ffffff = 2.04:1)",
+        "no OKLCH \u2014 perceptual lightness stepping unavailable"
+      ]
+    },
+    "type_system": {
+      "score": 10.4,
+      "max": 20,
+      "findings": [
+        "no font-family declarations found \u2014 inherited or framework-default",
+        "28 distinct sizes \u2014 sizes are chosen per-component, not from a scale",
+        "step ratios 1.02\u20131.06 \u2014 consistent"
+      ]
+    },
+    "spatial_rhythm": {
+      "score": 2.6,
+      "max": 15,
+      "findings": [
+        "no base unit detected \u2014 spacing is arbitrary",
+        "23 spacing values \u2014 spacing is improvised per-component",
+        "20 off-grid values: [0.8, 1.0, 1.6, 2.0, 2.4, 3.2, 4.8, 5.0]"
+      ]
+    },
+    "tokenization": {
+      "score": 12.1,
+      "max": 15,
+      "findings": [
+        "48 custom properties defined, 44 referenced",
+        "4 defined but never referenced: ['--danger', '--ghost', '--primary', '--quiet']",
+        "9 radius variants, 8 shadow variants (ad hoc \u2014 elevation carries no meaning)",
+        "20 !important, 0 arbitrary values \u2014 the system is being escaped"
+      ]
+    },
+    "motion_craft": {
+      "score": 10.5,
+      "max": 15,
+      "findings": [
+        "easing: 0 custom curves vs 106 CSS defaults \u2014 mostly browser defaults; the feel is unauthored",
+        "1 duration values \u2014 a motion scale exists",
+        "prefers-reduced-motion handled"
+      ]
+    },
+    "distinctiveness": {
+      "score": 12.0,
+      "max": 15,
+      "findings": [
+        "\u26a0 Glassmorphic card (backdrop-blur + translucent bg) \u2014 01-landing-page__index.html, 02-pricing-page__pricing.html, 03-dashboard__dashboard.html"
+      ]
+    }
+  },
+  "judged_dimensions_not_scored_here": [
+    "hierarchy \u2014 does attention land in the intended order",
+    "signature \u2014 is there one memorable element",
+    "content fit \u2014 does density match what the content demands",
+    "copy \u2014 does the writing carry its weight",
+    "state coverage \u2014 empty, loading, error, overflow",
+    "concept \u2014 is there a thesis, or only defaults"
+  ]
+}

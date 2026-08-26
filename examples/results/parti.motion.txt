@@ -1,0 +1,14 @@
+wrote D:\design-direction\examples\results\parti.motion.json
+Scanned 5 files under C:\Users\govin\AppData\Local\Temp\parti_parti_fip3g3kf
+
+CENSUS
+  distinct durations : 1  [1]
+  distinct curves    : 2
+  reduced-motion     : 5 site(s)
+  hover gated        : yes
+
+No findings on the machine-checkable rules.
+
+That means nothing on the scanned list is wrong. It does not mean the motion is
+good - purpose, frequency, cohesion and staging are judged, not scanned. Read
+references/motion-rules.md §3, §10, §11 and report those separately.

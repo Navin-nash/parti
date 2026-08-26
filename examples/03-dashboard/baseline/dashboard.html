@@ -1,0 +1,1517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ops Board — Desk 4 · Meridian</title>
+<meta name="description" content="Meridian dispatcher board: live flight status, open disruptions, aircraft availability and crew duty clocks for Cascade Regional.">
+<!-- inlined-stylesheet -->
+<style>
+/* ==========================================================================
+   Meridian — shared stylesheet
+   Flight-operations scheduling for regional airlines.
+
+   Design notes for maintainers:
+   - Dark-first. Dispatchers sit with the app for 10-hour shifts, often in a
+     dimmed ops room next to a wall of radar displays.
+   - Colour is a signalling system, not decoration. Amber / red / green are
+     RESERVED for operational status (delay, irregular, on time). The brand
+     accent is cyan so that brand chrome can never be confused with a status.
+   - Numbers (tails, times, flight numbers) are always tabular monospace so
+     that columns align and digits do not jitter on live updates.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Tokens
+   -------------------------------------------------------------------------- */
+:root {
+  /* Ground / surfaces */
+  --bg:            #0a0f14;
+  --bg-deep:       #070b0f;
+  --surface:       #111922;
+  --surface-2:     #16202b;
+  --surface-3:     #1d2937;
+  --line:          #24313f;
+  --line-strong:   #33445699;
+
+  /* Text */
+  --fg:            #e8eef5;
+  --fg-muted:      #9bb0c3;
+  --fg-dim:        #6e8598;
+
+  /* Brand — chrome only, never a status */
+  --accent:        #35c6e0;
+  --accent-hi:     #7de3f4;
+  --accent-dim:    #1b6d7e;
+  --accent-wash:   #35c6e01a;
+
+  /* Operational status — do not reuse for decoration */
+  --ok:            #45c98a;
+  --ok-wash:       #45c98a1f;
+  --warn:          #f0a83c;
+  --warn-wash:     #f0a83c1f;
+  --crit:          #f4685f;
+  --crit-wash:     #f4685f1f;
+  --info:          #6fa8ff;
+  --info-wash:     #6fa8ff1f;
+
+  /* Type */
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+               "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", "Segoe UI Mono",
+               "Roboto Mono", Menlo, Consolas, monospace;
+
+  /* Space — 4px base */
+  --s1: 0.25rem;  --s2: 0.5rem;   --s3: 0.75rem;  --s4: 1rem;
+  --s5: 1.5rem;   --s6: 2rem;     --s7: 3rem;     --s8: 4rem;
+  --s9: 6rem;
+
+  --radius:    10px;
+  --radius-sm: 6px;
+  --radius-lg: 16px;
+
+  --shadow:    0 1px 2px #0008, 0 8px 24px -12px #000c;
+  --shadow-lg: 0 2px 4px #0008, 0 24px 48px -20px #000e;
+
+  --measure: 68ch;
+  --page:    1180px;
+  --speed:   140ms;
+}
+
+/* --------------------------------------------------------------------------
+   2. Reset
+   -------------------------------------------------------------------------- */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3, h4, p, figure, ul, ol, dl, dd { margin: 0; }
+ul, ol { padding: 0; list-style: none; }
+img, svg { display: block; max-width: 100%; }
+button, input, select, textarea { font: inherit; color: inherit; }
+table { border-collapse: collapse; width: 100%; }
+
+a { color: var(--accent); text-decoration-color: #35c6e066; text-underline-offset: 3px; }
+a:hover { color: var(--accent-hi); text-decoration-color: currentColor; }
+
+:focus-visible {
+  outline: 2px solid var(--accent-hi);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+::selection { background: var(--accent-dim); color: #fff; }
+
+/* --------------------------------------------------------------------------
+   3. Typography
+   -------------------------------------------------------------------------- */
+h1, h2, h3, h4 { line-height: 1.15; letter-spacing: -0.02em; font-weight: 640; }
+h1 { font-size: clamp(2.25rem, 5.2vw, 3.75rem); }
+h2 { font-size: clamp(1.65rem, 3.2vw, 2.35rem); }
+h3 { font-size: 1.2rem; letter-spacing: -0.01em; }
+h4 { font-size: 1rem; letter-spacing: 0; }
+
+p { max-width: var(--measure); }
+
+.lede { font-size: clamp(1.05rem, 1.7vw, 1.3rem); color: var(--fg-muted); line-height: 1.55; }
+.muted { color: var(--fg-muted); }
+.dim   { color: var(--fg-dim); }
+.mono  { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.num   { font-family: var(--font-mono); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+
+.eyebrow {
+  font-size: 0.75rem;
+  font-weight: 660;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  font-family: var(--font-mono);
+}
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0;
+}
+
+.skip-link {
+  position: absolute; left: var(--s4); top: -100px; z-index: 100;
+  background: var(--accent); color: #04121a; font-weight: 640;
+  padding: var(--s3) var(--s4); border-radius: var(--radius-sm);
+  text-decoration: none;
+  transition: top var(--speed) ease;
+}
+.skip-link:focus { top: var(--s4); color: #04121a; }
+
+/* --------------------------------------------------------------------------
+   4. Layout primitives
+   -------------------------------------------------------------------------- */
+.container { width: min(100% - 2.5rem, var(--page)); margin-inline: auto; }
+.section   { padding-block: clamp(3.5rem, 8vw, var(--s9)); }
+.section--tight { padding-block: clamp(2.5rem, 5vw, 4rem); }
+.section + .section { border-top: 1px solid var(--line); }
+
+.stack > * + * { margin-top: var(--s4); }
+.stack-sm > * + * { margin-top: var(--s2); }
+.stack-lg > * + * { margin-top: var(--s5); }
+
+.cluster { display: flex; flex-wrap: wrap; gap: var(--s3); align-items: center; }
+.between { display: flex; flex-wrap: wrap; gap: var(--s4); align-items: center; justify-content: space-between; }
+
+.grid { display: grid; gap: var(--s4); }
+.grid-3 { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.grid-2 { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+
+.section-head { max-width: 46rem; margin-bottom: var(--s6); }
+.section-head h2 { margin-top: var(--s2); }
+.section-head p { margin-top: var(--s3); }
+
+/* --------------------------------------------------------------------------
+   5. Buttons
+   -------------------------------------------------------------------------- */
+.btn {
+  --btn-bg: transparent;
+  --btn-fg: var(--fg);
+  --btn-line: var(--line);
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--s2);
+  padding: 0.62rem 1.1rem;
+  background: var(--btn-bg); color: var(--btn-fg);
+  border: 1px solid var(--btn-line);
+  border-radius: var(--radius-sm);
+  font-size: 0.94rem; font-weight: 580;
+  text-decoration: none; cursor: pointer; white-space: nowrap;
+  transition: background var(--speed) ease, border-color var(--speed) ease,
+              color var(--speed) ease, transform var(--speed) ease;
+}
+.btn:hover { transform: translateY(-1px); }
+.btn:active { transform: translateY(0); }
+
+.btn--primary {
+  --btn-bg: var(--accent); --btn-fg: #04121a; --btn-line: var(--accent);
+  font-weight: 660;
+}
+.btn--primary:hover { --btn-bg: var(--accent-hi); --btn-line: var(--accent-hi); color: #04121a; }
+
+.btn--ghost { --btn-bg: var(--surface-2); --btn-line: var(--line); }
+.btn--ghost:hover { --btn-bg: var(--surface-3); --btn-line: var(--line-strong); color: var(--fg); }
+
+.btn--quiet { --btn-line: transparent; color: var(--fg-muted); padding-inline: var(--s3); }
+.btn--quiet:hover { --btn-bg: var(--surface-2); color: var(--fg); }
+
+.btn--sm { padding: 0.35rem 0.7rem; font-size: 0.82rem; border-radius: var(--radius-sm); }
+.btn--block { width: 100%; }
+
+.btn--danger { --btn-bg: var(--crit-wash); --btn-line: #f4685f55; --btn-fg: #ffb4ae; }
+.btn--danger:hover { --btn-bg: #f4685f2e; --btn-line: #f4685f88; color: #ffcfcb; }
+
+/* --------------------------------------------------------------------------
+   6. Cards, panels, badges
+   -------------------------------------------------------------------------- */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: var(--s5);
+}
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.panel__head {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--s3);
+  padding: var(--s3) var(--s4);
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+}
+.panel__title { font-size: 0.82rem; font-weight: 660; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--fg-muted); font-family: var(--font-mono); }
+.panel__body { padding: var(--s4); }
+.panel__body--flush { padding: 0; }
+
+.badge {
+  display: inline-flex; align-items: center; gap: 0.4em;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.72rem; font-weight: 660; letter-spacing: 0.04em;
+  font-family: var(--font-mono); text-transform: uppercase;
+  border: 1px solid transparent; white-space: nowrap;
+}
+.badge--ok   { background: var(--ok-wash);   color: var(--ok);   border-color: #45c98a44; }
+.badge--warn { background: var(--warn-wash); color: var(--warn); border-color: #f0a83c44; }
+.badge--crit { background: var(--crit-wash); color: var(--crit); border-color: #f4685f44; }
+.badge--info { background: var(--info-wash); color: var(--info); border-color: #6fa8ff44; }
+.badge--neutral { background: var(--surface-3); color: var(--fg-muted); border-color: var(--line); }
+
+/* Status dot — paired with a text label everywhere, never colour alone */
+.dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex: none; }
+.dot--live { box-shadow: 0 0 0 0 currentColor; animation: pulse 2.4s ease-out infinite; }
+
+@keyframes pulse {
+  0%   { box-shadow: 0 0 0 0 #45c98a66; }
+  70%  { box-shadow: 0 0 0 7px #45c98a00; }
+  100% { box-shadow: 0 0 0 0 #45c98a00; }
+}
+
+/* --------------------------------------------------------------------------
+   7. Marketing chrome — site header / footer
+   -------------------------------------------------------------------------- */
+.site-header {
+  position: sticky; top: 0; z-index: 40;
+  background: #0a0f14e6;
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+}
+.site-header__inner {
+  display: flex; align-items: center; gap: var(--s5);
+  min-height: 64px;
+}
+.brand {
+  display: inline-flex; align-items: center; gap: var(--s2);
+  font-weight: 680; font-size: 1.05rem; letter-spacing: -0.02em;
+  color: var(--fg); text-decoration: none;
+}
+.brand__mark { width: 22px; height: 22px; color: var(--accent); }
+.brand small {
+  font-family: var(--font-mono); font-size: 0.62rem; font-weight: 600;
+  letter-spacing: 0.1em; color: var(--fg-dim); text-transform: uppercase;
+  border-left: 1px solid var(--line); padding-left: var(--s2); margin-left: var(--s1);
+}
+
+.site-nav { display: flex; gap: var(--s1); margin-left: auto; align-items: center; }
+.site-nav a {
+  padding: var(--s2) var(--s3); border-radius: var(--radius-sm);
+  color: var(--fg-muted); text-decoration: none; font-size: 0.92rem; font-weight: 540;
+  transition: color var(--speed) ease, background var(--speed) ease;
+}
+.site-nav a:hover { color: var(--fg); background: var(--surface-2); }
+.site-nav a[aria-current="page"] { color: var(--fg); background: var(--surface-2); }
+
+.site-footer {
+  border-top: 1px solid var(--line);
+  background: var(--bg-deep);
+  padding-block: var(--s7) var(--s5);
+  font-size: 0.9rem;
+}
+.footer-grid {
+  display: grid; gap: var(--s6);
+  grid-template-columns: 1.4fr repeat(3, minmax(120px, 1fr));
+}
+.footer-grid h4 {
+  font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--fg-dim); font-family: var(--font-mono); margin-bottom: var(--s3);
+}
+.footer-grid a { color: var(--fg-muted); text-decoration: none; }
+.footer-grid a:hover { color: var(--fg); text-decoration: underline; }
+.footer-grid li + li { margin-top: var(--s2); }
+.footer-base {
+  margin-top: var(--s6); padding-top: var(--s4);
+  border-top: 1px solid var(--line);
+  display: flex; flex-wrap: wrap; gap: var(--s4); justify-content: space-between;
+  color: var(--fg-dim); font-size: 0.82rem;
+}
+
+/* --------------------------------------------------------------------------
+   8. Hero
+   -------------------------------------------------------------------------- */
+.hero {
+  position: relative; overflow: hidden;
+  padding-block: clamp(3.5rem, 9vw, 6.5rem) clamp(3rem, 7vw, 5rem);
+  border-bottom: 1px solid var(--line);
+}
+/* Faint great-circle route arcs — sets the aviation register without an image */
+.hero::before {
+  content: ""; position: absolute; inset: -20% -10% auto -10%; height: 140%;
+  background:
+    radial-gradient(60% 50% at 20% 0%, #35c6e014, transparent 70%),
+    radial-gradient(50% 40% at 85% 15%, #6fa8ff10, transparent 70%);
+  pointer-events: none;
+}
+.hero__grid {
+  position: relative;
+  display: grid; gap: clamp(2.5rem, 5vw, var(--s7));
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  align-items: center;
+}
+.hero h1 { margin-top: var(--s3); }
+.hero .lede { margin-top: var(--s4); }
+.hero__actions { margin-top: var(--s5); }
+.hero__note { margin-top: var(--s4); font-size: 0.85rem; color: var(--fg-dim); }
+
+/* Screenshot-substitute: a live-looking board rendered in HTML */
+.viewport {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+.viewport__bar {
+  display: flex; align-items: center; gap: var(--s2);
+  padding: var(--s3) var(--s4);
+  border-bottom: 1px solid var(--line);
+  background: var(--bg-deep);
+  font-family: var(--font-mono); font-size: 0.74rem; color: var(--fg-dim);
+}
+.viewport__lights { display: flex; gap: 5px; margin-right: var(--s2); }
+.viewport__lights i { width: 9px; height: 9px; border-radius: 50%; background: var(--line); display: block; }
+.viewport__body { padding: var(--s4); display: grid; gap: var(--s3); }
+
+.mini-row {
+  display: grid;
+  grid-template-columns: 4.5rem 1fr auto;
+  gap: var(--s3); align-items: center;
+  padding: var(--s3);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--line);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+}
+.mini-row[data-state="crit"] { border-left-color: var(--crit); }
+.mini-row[data-state="warn"] { border-left-color: var(--warn); }
+.mini-row[data-state="ok"]   { border-left-color: var(--ok); }
+.mini-row__route { color: var(--fg-muted); font-family: var(--font-mono); }
+.mini-row__route b { color: var(--fg); font-weight: 600; }
+
+/* --------------------------------------------------------------------------
+   9. Stats strip
+   -------------------------------------------------------------------------- */
+.stat-strip {
+  display: grid; gap: 1px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.stat {
+  background: var(--surface);
+  padding: var(--s4) var(--s5);
+}
+.stat__value {
+  font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+  font-size: clamp(1.6rem, 3vw, 2.1rem); font-weight: 660; letter-spacing: -0.03em;
+  color: var(--fg);
+}
+.stat__label { font-size: 0.82rem; color: var(--fg-muted); margin-top: var(--s1); }
+
+/* --------------------------------------------------------------------------
+   10. Capability cards
+   -------------------------------------------------------------------------- */
+.feature {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: var(--s5);
+  transition: border-color var(--speed) ease, transform var(--speed) ease;
+}
+.feature:hover { border-color: var(--line-strong); transform: translateY(-2px); }
+.feature__icon {
+  width: 34px; height: 34px; display: grid; place-items: center;
+  border-radius: 8px; background: var(--accent-wash); color: var(--accent);
+  border: 1px solid #35c6e033;
+  margin-bottom: var(--s4);
+}
+.feature__icon svg { width: 18px; height: 18px; }
+.feature h3 { margin-bottom: var(--s2); }
+.feature p { font-size: 0.94rem; color: var(--fg-muted); }
+.feature ul { margin-top: var(--s3); font-size: 0.88rem; color: var(--fg-muted); }
+.feature li { padding-left: 1.1rem; position: relative; }
+.feature li + li { margin-top: var(--s1); }
+.feature li::before {
+  content: ""; position: absolute; left: 0; top: 0.62em;
+  width: 5px; height: 5px; border-radius: 50%; background: var(--accent-dim);
+}
+
+/* Split feature — copy beside a rendered example */
+.split {
+  display: grid; gap: clamp(2rem, 5vw, var(--s7));
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  align-items: center;
+}
+.split--flip > :first-child { order: 2; }
+
+/* --------------------------------------------------------------------------
+   11. Social proof
+   -------------------------------------------------------------------------- */
+.logo-row {
+  display: flex; flex-wrap: wrap; gap: var(--s5) var(--s7);
+  align-items: center; justify-content: center;
+  padding: var(--s5) 0;
+}
+.logo-row span {
+  font-family: var(--font-mono); font-size: 0.95rem; font-weight: 620;
+  letter-spacing: 0.06em; color: var(--fg-dim);
+  display: inline-flex; align-items: center; gap: var(--s2);
+}
+.logo-row svg { width: 18px; height: 18px; opacity: 0.7; }
+
+.quote {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent-dim);
+  border-radius: var(--radius);
+  padding: var(--s5);
+}
+.quote blockquote { margin: 0; font-size: 1.02rem; line-height: 1.6; }
+.quote blockquote p { max-width: none; }
+.quote figcaption {
+  margin-top: var(--s4); padding-top: var(--s4); border-top: 1px solid var(--line);
+  display: flex; align-items: center; gap: var(--s3);
+  font-size: 0.86rem; color: var(--fg-muted);
+}
+.avatar {
+  width: 36px; height: 36px; border-radius: 50%; flex: none;
+  display: grid; place-items: center;
+  background: var(--surface-3); border: 1px solid var(--line);
+  font-family: var(--font-mono); font-size: 0.76rem; font-weight: 660; color: var(--accent);
+}
+.quote figcaption b { color: var(--fg); font-weight: 620; display: block; }
+
+/* --------------------------------------------------------------------------
+   12. Call to action
+   -------------------------------------------------------------------------- */
+.cta {
+  position: relative; overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(80% 120% at 15% 0%, #35c6e016, transparent 60%),
+    var(--surface);
+  padding: clamp(2rem, 5vw, var(--s7));
+  text-align: center;
+}
+.cta h2 { max-width: 22ch; margin-inline: auto; }
+.cta p { margin: var(--s4) auto 0; }
+.cta .cluster { justify-content: center; margin-top: var(--s5); }
+
+/* --------------------------------------------------------------------------
+   13. Pricing
+   -------------------------------------------------------------------------- */
+.tier-grid {
+  display: grid; gap: var(--s4);
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  align-items: start;
+}
+.tier {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: var(--s5);
+  display: flex; flex-direction: column; height: 100%;
+}
+.tier--featured {
+  border-color: #35c6e066;
+  background: linear-gradient(180deg, #35c6e00d, var(--surface) 220px);
+  box-shadow: var(--shadow);
+}
+.tier__flag {
+  position: absolute; top: -0.7rem; left: var(--s5);
+  background: var(--accent); color: #04121a;
+  font-family: var(--font-mono); font-size: 0.66rem; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 0.2rem 0.6rem; border-radius: 999px;
+}
+.tier__name { font-size: 1.1rem; font-weight: 660; }
+.tier__for { font-size: 0.85rem; color: var(--fg-muted); margin-top: var(--s1); min-height: 2.6em; }
+.tier__price { margin-top: var(--s4); display: flex; align-items: baseline; gap: var(--s2); flex-wrap: wrap; }
+.tier__price b {
+  font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+  font-size: 2.3rem; font-weight: 660; letter-spacing: -0.03em; line-height: 1;
+}
+.tier__price span { font-size: 0.85rem; color: var(--fg-muted); }
+.tier__meta { font-size: 0.82rem; color: var(--fg-dim); margin-top: var(--s2); }
+.tier .btn { margin-top: var(--s5); }
+.tier__list { margin-top: var(--s5); padding-top: var(--s5); border-top: 1px solid var(--line); font-size: 0.9rem; }
+.tier__list li { display: flex; gap: var(--s2); align-items: flex-start; color: var(--fg-muted); }
+.tier__list li + li { margin-top: var(--s3); }
+.tier__list svg { width: 15px; height: 15px; flex: none; margin-top: 0.32em; color: var(--accent); }
+.tier__list b { color: var(--fg); font-weight: 600; }
+
+/* Comparison table */
+.compare-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); }
+.compare { min-width: 640px; font-size: 0.9rem; }
+.compare caption { text-align: left; padding: var(--s4); color: var(--fg-muted); font-size: 0.85rem; }
+.compare th, .compare td { padding: var(--s3) var(--s4); text-align: left; border-bottom: 1px solid var(--line); }
+.compare thead th {
+  position: sticky; top: 0;
+  background: var(--surface-2); color: var(--fg);
+  font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase;
+  font-family: var(--font-mono); font-weight: 660;
+  border-bottom: 1px solid var(--line);
+}
+.compare tbody th { font-weight: 540; color: var(--fg); }
+.compare td { color: var(--fg-muted); text-align: center; }
+.compare td:first-of-type { text-align: center; }
+.compare tbody tr:hover { background: var(--surface-2); }
+.compare tbody tr:last-child th, .compare tbody tr:last-child td { border-bottom: 0; }
+.compare .row-group th {
+  background: var(--surface-2); color: var(--fg-dim);
+  font-family: var(--font-mono); font-size: 0.72rem;
+  letter-spacing: 0.1em; text-transform: uppercase; font-weight: 660;
+}
+.yes { color: var(--ok); }
+.no  { color: var(--fg-dim); }
+
+/* FAQ */
+.faq { max-width: 46rem; }
+.faq details {
+  border-bottom: 1px solid var(--line);
+  padding: var(--s4) 0;
+}
+.faq details[open] summary { color: var(--fg); }
+.faq summary {
+  cursor: pointer; list-style: none;
+  display: flex; align-items: flex-start; justify-content: space-between; gap: var(--s4);
+  font-weight: 600; color: var(--fg-muted);
+  transition: color var(--speed) ease;
+}
+.faq summary:hover { color: var(--fg); }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after {
+  content: "+"; font-family: var(--font-mono); font-size: 1.2rem; line-height: 1;
+  color: var(--accent); flex: none;
+}
+.faq details[open] summary::after { content: "\2212"; }
+.faq details > p { margin-top: var(--s3); color: var(--fg-muted); font-size: 0.95rem; }
+
+/* --------------------------------------------------------------------------
+   14. App shell (dashboard + components)
+   -------------------------------------------------------------------------- */
+.app {
+  display: grid;
+  grid-template-columns: 224px minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+.rail {
+  background: var(--bg-deep);
+  border-right: 1px solid var(--line);
+  display: flex; flex-direction: column;
+  position: sticky; top: 0; height: 100vh; overflow-y: auto;
+}
+.rail__brand { padding: var(--s4); border-bottom: 1px solid var(--line); }
+.rail__nav { padding: var(--s3); flex: 1; }
+.rail__group {
+  font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--fg-dim);
+  padding: var(--s4) var(--s3) var(--s2);
+}
+.rail__nav a {
+  display: flex; align-items: center; gap: var(--s3);
+  padding: 0.5rem var(--s3); border-radius: var(--radius-sm);
+  color: var(--fg-muted); text-decoration: none; font-size: 0.9rem; font-weight: 540;
+  transition: background var(--speed) ease, color var(--speed) ease;
+}
+.rail__nav a:hover { background: var(--surface-2); color: var(--fg); }
+.rail__nav a[aria-current="page"] {
+  background: var(--accent-wash); color: var(--accent-hi);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+.rail__nav svg { width: 16px; height: 16px; flex: none; opacity: 0.85; }
+.rail__count {
+  margin-left: auto; font-family: var(--font-mono); font-size: 0.7rem;
+  background: var(--surface-3); color: var(--fg-muted);
+  padding: 0.05rem 0.4rem; border-radius: 999px;
+}
+.rail__count--crit { background: var(--crit-wash); color: var(--crit); }
+.rail__foot { padding: var(--s3); border-top: 1px solid var(--line); }
+
+.who { display: flex; align-items: center; gap: var(--s3); padding: var(--s2); font-size: 0.82rem; }
+.who b { display: block; color: var(--fg); font-weight: 620; }
+.who span { color: var(--fg-dim); }
+
+.topbar {
+  position: sticky; top: 0; z-index: 30;
+  display: flex; align-items: center; gap: var(--s4);
+  padding: var(--s3) var(--s5);
+  background: #0a0f14f2;
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--line);
+  min-height: 60px;
+}
+.topbar h1 { font-size: 1.05rem; letter-spacing: -0.01em; }
+.topbar__sub { font-size: 0.78rem; color: var(--fg-dim); font-family: var(--font-mono); }
+
+.search {
+  display: flex; align-items: center; gap: var(--s2);
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius-sm); padding: 0 var(--s3);
+  min-width: 200px; max-width: 320px; flex: 1;
+}
+.search svg { width: 15px; height: 15px; color: var(--fg-dim); flex: none; }
+.search input {
+  border: 0; background: transparent; padding: 0.45rem 0; width: 100%;
+  font-size: 0.88rem;
+}
+.search input::placeholder { color: var(--fg-dim); }
+.search:focus-within { border-color: var(--accent-dim); }
+.search kbd {
+  font-family: var(--font-mono); font-size: 0.68rem; color: var(--fg-dim);
+  border: 1px solid var(--line); border-radius: 4px; padding: 0.05rem 0.3rem;
+}
+
+.clock {
+  font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+  font-size: 0.95rem; font-weight: 620; letter-spacing: -0.01em;
+  display: flex; align-items: baseline; gap: var(--s2);
+}
+.clock small { font-size: 0.68rem; color: var(--fg-dim); letter-spacing: 0.08em; }
+
+.main { padding: var(--s5); display: grid; gap: var(--s5); align-content: start; }
+
+/* KPI strip on the ops board */
+.kpis {
+  display: grid; gap: var(--s3);
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+.kpi {
+  background: var(--surface); border: 1px solid var(--line);
+  border-top: 2px solid var(--line);
+  border-radius: var(--radius); padding: var(--s4);
+}
+.kpi[data-tone="ok"]   { border-top-color: var(--ok); }
+.kpi[data-tone="warn"] { border-top-color: var(--warn); }
+.kpi[data-tone="crit"] { border-top-color: var(--crit); }
+.kpi[data-tone="info"] { border-top-color: var(--info); }
+.kpi__label {
+  font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--fg-dim); font-family: var(--font-mono);
+}
+.kpi__value {
+  font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+  font-size: 1.85rem; font-weight: 660; letter-spacing: -0.03em; line-height: 1.2;
+  margin-top: var(--s2);
+}
+.kpi__delta { font-size: 0.78rem; color: var(--fg-muted); margin-top: var(--s1); }
+.kpi__delta .up   { color: var(--crit); }
+.kpi__delta .down { color: var(--ok); }
+
+.board {
+  display: grid; gap: var(--s5);
+  grid-template-columns: minmax(0, 1fr) 340px;
+  align-items: start;
+}
+
+/* Disruption queue */
+.disruption {
+  display: grid; gap: var(--s3);
+  grid-template-columns: 3px minmax(0, 1fr);
+  padding: var(--s4);
+  border-bottom: 1px solid var(--line);
+}
+.disruption:last-child { border-bottom: 0; }
+.disruption::before { content: ""; border-radius: 2px; background: var(--line); }
+.disruption[data-sev="crit"]::before { background: var(--crit); }
+.disruption[data-sev="warn"]::before { background: var(--warn); }
+.disruption[data-sev="info"]::before { background: var(--info); }
+.disruption__head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2) var(--s3); }
+.disruption__flight {
+  font-family: var(--font-mono); font-weight: 660; font-size: 0.98rem; letter-spacing: -0.01em;
+}
+.disruption__route { font-family: var(--font-mono); color: var(--fg-muted); font-size: 0.88rem; }
+.disruption__age { margin-left: auto; font-size: 0.74rem; color: var(--fg-dim); font-family: var(--font-mono); }
+.disruption p { font-size: 0.9rem; color: var(--fg-muted); margin-top: var(--s2); max-width: none; }
+.disruption__facts {
+  display: flex; flex-wrap: wrap; gap: var(--s2) var(--s5);
+  margin-top: var(--s3); font-size: 0.82rem;
+}
+.disruption__facts div { display: flex; flex-direction: column; }
+.disruption__facts dt { color: var(--fg-dim); font-size: 0.7rem; letter-spacing: 0.06em;
+  text-transform: uppercase; font-family: var(--font-mono); }
+.disruption__facts dd { margin: 0; font-family: var(--font-mono); color: var(--fg); }
+.disruption__actions { display: flex; flex-wrap: wrap; gap: var(--s2); margin-top: var(--s4); }
+
+/* Side rail widgets */
+.side { display: grid; gap: var(--s5); align-content: start; }
+
+.tail-list li {
+  display: grid; grid-template-columns: auto 1fr auto; gap: var(--s3);
+  align-items: center; padding: var(--s3) var(--s4);
+  border-bottom: 1px solid var(--line); font-size: 0.86rem;
+}
+.tail-list li:last-child { border-bottom: 0; }
+.tail-list b { font-family: var(--font-mono); font-weight: 620; }
+.tail-list span { color: var(--fg-dim); font-size: 0.78rem; }
+
+.duty { padding: var(--s4); border-bottom: 1px solid var(--line); font-size: 0.86rem; }
+.duty:last-child { border-bottom: 0; }
+.duty__head { display: flex; justify-content: space-between; gap: var(--s3); align-items: baseline; }
+.duty__name { font-weight: 600; }
+.duty__role { color: var(--fg-dim); font-size: 0.76rem; font-family: var(--font-mono); }
+.duty__remaining { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.meter {
+  height: 5px; border-radius: 3px; background: var(--surface-3);
+  margin-top: var(--s2); overflow: hidden;
+}
+.meter > i { display: block; height: 100%; border-radius: 3px; background: var(--ok); }
+.meter--warn > i { background: var(--warn); }
+.meter--crit > i { background: var(--crit); }
+
+.ticker li { padding: var(--s3) var(--s4); border-bottom: 1px solid var(--line); font-size: 0.84rem; }
+.ticker li:last-child { border-bottom: 0; }
+.ticker time {
+  font-family: var(--font-mono); font-size: 0.72rem; color: var(--fg-dim);
+  display: block; margin-bottom: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   15. Flight data table
+   -------------------------------------------------------------------------- */
+.table-wrap { overflow-x: auto; }
+
+.data-table { min-width: 860px; font-size: 0.88rem; }
+.data-table caption { text-align: left; padding: var(--s3) var(--s4); color: var(--fg-dim); font-size: 0.8rem; }
+
+.data-table thead th {
+  position: sticky; top: 0; z-index: 2;
+  background: var(--surface-2);
+  padding: var(--s3) var(--s4);
+  text-align: left; white-space: nowrap;
+  font-family: var(--font-mono); font-size: 0.7rem; font-weight: 660;
+  letter-spacing: 0.09em; text-transform: uppercase; color: var(--fg-muted);
+  border-bottom: 1px solid var(--line);
+}
+.data-table th[aria-sort] { cursor: pointer; }
+.data-table th[aria-sort]:hover { color: var(--fg); }
+.data-table th[aria-sort="ascending"]::after  { content: " \2191"; color: var(--accent); }
+.data-table th[aria-sort="descending"]::after { content: " \2193"; color: var(--accent); }
+
+.data-table td { padding: var(--s3) var(--s4); border-bottom: 1px solid var(--line); vertical-align: middle; }
+.data-table tbody tr { transition: background var(--speed) ease; }
+.data-table tbody tr:hover { background: var(--surface-2); }
+.data-table tbody tr:last-child td { border-bottom: 0; }
+
+.data-table .col-num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.data-table .col-flight { font-weight: 620; }
+.data-table .num-cell { text-align: right; }
+
+.route { display: flex; align-items: center; gap: var(--s2); font-family: var(--font-mono); }
+.route i { color: var(--fg-dim); font-style: normal; }
+.delta { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.delta--late  { color: var(--warn); }
+.delta--early { color: var(--ok); }
+.delta--none  { color: var(--fg-dim); }
+
+.row-menu {
+  background: transparent; border: 1px solid transparent; color: var(--fg-dim);
+  border-radius: var(--radius-sm); padding: 0.15rem 0.45rem; cursor: pointer; line-height: 1;
+  transition: background var(--speed) ease, color var(--speed) ease, border-color var(--speed) ease;
+}
+.row-menu:hover { background: var(--surface-3); color: var(--fg); border-color: var(--line); }
+
+/* --- table states ------------------------------------------------------- */
+.state {
+  display: grid; place-items: center; text-align: center;
+  padding: var(--s8) var(--s5); gap: var(--s3);
+}
+.state__icon {
+  width: 44px; height: 44px; display: grid; place-items: center;
+  border-radius: 50%; border: 1px solid var(--line); background: var(--surface-2);
+  color: var(--fg-dim);
+}
+.state__icon svg { width: 20px; height: 20px; }
+.state--error .state__icon { color: var(--crit); border-color: #f4685f44; background: var(--crit-wash); }
+.state h3 { font-size: 1.02rem; }
+.state p { color: var(--fg-muted); font-size: 0.9rem; max-width: 42ch; }
+.state .cluster { justify-content: center; margin-top: var(--s2); }
+.state code {
+  font-family: var(--font-mono); font-size: 0.76rem; color: var(--fg-dim);
+  background: var(--bg-deep); border: 1px solid var(--line);
+  padding: 0.1rem 0.4rem; border-radius: 4px;
+}
+
+/* Loading skeleton — one shimmer, driven by a single keyframe */
+.skeleton {
+  display: block; height: 0.72rem; border-radius: 4px;
+  background: linear-gradient(90deg, var(--surface-2) 0%, var(--surface-3) 40%, var(--surface-2) 80%);
+  background-size: 300% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+.skeleton--wide { width: 100%; }
+.skeleton--80 { width: 80%; }
+.skeleton--60 { width: 60%; }
+.skeleton--40 { width: 40%; }
+.skeleton--pill { height: 1.1rem; width: 4.5rem; border-radius: 999px; }
+
+@keyframes shimmer {
+  from { background-position: 150% 0; }
+  to   { background-position: -150% 0; }
+}
+
+/* --------------------------------------------------------------------------
+   16. Components page scaffolding
+   -------------------------------------------------------------------------- */
+.spec { display: grid; gap: var(--s5); }
+.spec__head { border-left: 2px solid var(--accent-dim); padding-left: var(--s4); }
+.spec__head h2 { font-size: 1.3rem; }
+.spec__head p { margin-top: var(--s2); color: var(--fg-muted); font-size: 0.94rem; }
+.spec__note {
+  font-size: 0.84rem; color: var(--fg-dim);
+  background: var(--bg-deep); border: 1px solid var(--line);
+  border-radius: var(--radius-sm); padding: var(--s3) var(--s4);
+}
+.spec__note b { color: var(--fg-muted); font-weight: 620; }
+.spec__note p { max-width: none; }
+.spec__note p + p { margin-top: var(--s2); }
+
+.swatches { display: flex; flex-wrap: wrap; gap: var(--s4); }
+.swatch { font-size: 0.78rem; color: var(--fg-muted); }
+.swatch i {
+  display: block; width: 88px; height: 40px; border-radius: var(--radius-sm);
+  border: 1px solid var(--line); margin-bottom: var(--s2);
+}
+
+/* --------------------------------------------------------------------------
+   17. Responsive
+   -------------------------------------------------------------------------- */
+@media (max-width: 1080px) {
+  .board { grid-template-columns: minmax(0, 1fr); }
+  .hero__grid { grid-template-columns: minmax(0, 1fr); }
+  .split, .split--flip > :first-child { grid-template-columns: minmax(0, 1fr); order: 0; }
+}
+
+@media (max-width: 900px) {
+  .app { grid-template-columns: 1fr; }
+  .rail {
+    position: static; height: auto; flex-direction: row; align-items: center;
+    overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--line);
+    gap: var(--s3); padding-right: var(--s3);
+  }
+  .rail__brand { border-bottom: 0; border-right: 1px solid var(--line); white-space: nowrap; }
+  .rail__nav { display: flex; gap: var(--s1); padding: var(--s2); flex: 1; }
+  .rail__group, .rail__foot { display: none; }
+  .rail__nav a { white-space: nowrap; }
+  .rail__nav a[aria-current="page"] { box-shadow: inset 0 -2px 0 var(--accent); }
+  .footer-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 700px) {
+  .site-nav { gap: 0; }
+  .site-nav .btn { margin-left: var(--s1); }
+  .site-nav__link--hide { display: none; }
+  .topbar { flex-wrap: wrap; }
+  .topbar__hide { display: none; }
+  .main { padding: var(--s4); }
+  .footer-grid { grid-template-columns: minmax(0, 1fr); gap: var(--s5); }
+  .hero__actions .btn { flex: 1 1 auto; }
+}
+
+/* --------------------------------------------------------------------------
+   18. Motion & print
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .btn:hover, .feature:hover { transform: none; }
+}
+
+@media print {
+  .rail, .topbar, .site-header, .site-footer, .btn { display: none; }
+  body { background: #fff; color: #000; }
+  .panel, .card { border-color: #999; }
+}
+
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to the ops board</a>
+
+<div class="app">
+
+  <!-- ============================ RAIL ============================ -->
+  <nav class="rail" aria-label="Sections">
+    <div class="rail__brand">
+      <a class="brand" href="../../01-landing-page/baseline/index.html">
+        <svg class="brand__mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M2 12h20"></path>
+          <path d="M6.5 12 10 4.5l2.2 0L11 12l1.2 7.5H10z"></path>
+          <circle cx="18" cy="12" r="2.2"></circle>
+        </svg>
+        Meridian <small>Ops</small>
+      </a>
+    </div>
+
+    <div class="rail__nav">
+      <p class="rail__group" id="grp-today">Today</p>
+      <a href="dashboard.html" aria-current="page" aria-describedby="grp-today">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/></svg>
+        Ops board
+      </a>
+      <a href="#disruptions">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 2 20h20L12 3z"/><path d="M12 10v4"/><path d="M12 17h.01"/></svg>
+        Disruptions
+        <span class="rail__count rail__count--crit">7</span>
+      </a>
+      <a href="#flight-board">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17h18"/><path d="M5 17V9l4 3 4-6 3 5 3-2v8"/></svg>
+        Flights
+        <span class="rail__count">148</span>
+      </a>
+      <a href="#fleet">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12h20"/><path d="M6.5 12 10 4.5h2.2L11 12l1.2 7.5H10z"/></svg>
+        Aircraft
+        <span class="rail__count">31</span>
+      </a>
+      <a href="#crew">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 20a6 6 0 0 1 12 0"/><path d="M16 5.5a3 3 0 0 1 0 5.6"/><path d="M18 20a5.6 5.6 0 0 0-2.2-4.4"/></svg>
+        Crew
+        <span class="rail__count rail__count--crit">3</span>
+      </a>
+      <a href="#weather">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 15a4 4 0 0 1 4-4 5.5 5.5 0 0 1 10.6-1.6A3.9 3.9 0 0 1 21 13a4 4 0 0 1-4 4H7a4 4 0 0 1-4-2z"/></svg>
+        Weather &amp; NOTAM
+      </a>
+
+      <p class="rail__group" id="grp-plan">Planning</p>
+      <a href="#" aria-describedby="grp-plan">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>
+        Tomorrow's plan
+      </a>
+      <a href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
+        Reports
+      </a>
+      <a href="../../04-components/baseline/components.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 9v12"/></svg>
+        Component states
+      </a>
+    </div>
+
+    <div class="rail__foot">
+      <div class="who">
+        <span class="avatar" aria-hidden="true">TV</span>
+        <span>
+          <b>T. Vasquez</b>
+          <span>Desk 4 · Dispatcher #DX-4471</span>
+        </span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- =========================== CONTENT =========================== -->
+  <div>
+    <header class="topbar">
+      <div>
+        <h1>Ops board &mdash; Cascade Regional</h1>
+        <p class="topbar__sub">Desk 4 · shift 1400&ndash;0000 local · 148 departures remaining</p>
+      </div>
+
+      <div class="search topbar__hide">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <label class="sr-only" for="q">Search flights, tails, crew or stations</label>
+        <input id="q" type="search" placeholder="Flight, tail, crew or station">
+        <kbd>/</kbd>
+      </div>
+
+      <p class="clock" style="margin-left:auto">
+        <span aria-hidden="true" style="color:var(--ok)">&#9679;</span>
+        <span><span class="sr-only">Current Zulu time </span>1842<small>Z</small></span>
+        <small class="topbar__hide">11:42 PDT</small>
+      </p>
+
+      <a class="btn btn--ghost btn--sm topbar__hide" href="#disruptions">
+        Handover brief
+      </a>
+      <a class="btn btn--primary btn--sm" href="#disruptions">New disruption</a>
+    </header>
+
+    <main class="main" id="main">
+
+      <!-- ---------------------- KPI STRIP ---------------------- -->
+      <section aria-labelledby="kpi-h">
+        <h2 class="sr-only" id="kpi-h">Day summary</h2>
+        <div class="kpis">
+          <div class="kpi" data-tone="ok">
+            <p class="kpi__label">On time (D0)</p>
+            <p class="kpi__value">76.4%</p>
+            <p class="kpi__delta"><span class="up">&#9660; 5.1 pts</span> vs 30-day average</p>
+          </div>
+          <div class="kpi" data-tone="warn">
+            <p class="kpi__label">Delayed &gt; 15 min</p>
+            <p class="kpi__value">14</p>
+            <p class="kpi__delta">9 weather · 3 late inbound · 2 maintenance</p>
+          </div>
+          <div class="kpi" data-tone="crit">
+            <p class="kpi__label">Cancelled / diverted</p>
+            <p class="kpi__value">2 / 1</p>
+            <p class="kpi__delta">HZ1420, HZ1421 · diversion HZ2214</p>
+          </div>
+          <div class="kpi" data-tone="crit">
+            <p class="kpi__label">Crew timeout risk</p>
+            <p class="kpi__value">3</p>
+            <p class="kpi__delta">Earliest expiry 2004Z &mdash; HZ3007</p>
+          </div>
+          <div class="kpi" data-tone="info">
+            <p class="kpi__label">Aircraft out of service</p>
+            <p class="kpi__value">2</p>
+            <p class="kpi__delta">N612CR (AOG PSC) · N904QX (C-check)</p>
+          </div>
+          <div class="kpi" data-tone="info">
+            <p class="kpi__label">Pax at risk</p>
+            <p class="kpi__value">214</p>
+            <p class="kpi__delta">41 with no same-day rebooking option</p>
+          </div>
+        </div>
+      </section>
+
+      <div class="board">
+
+        <!-- =================== LEFT COLUMN =================== -->
+        <div class="stack-lg">
+
+          <!-- ---- Disruption queue ---- -->
+          <section class="panel" id="disruptions" aria-labelledby="disr-h">
+            <div class="panel__head">
+              <h2 class="panel__title" id="disr-h">Open disruptions &mdash; ranked by impact</h2>
+              <span class="cluster" style="gap:var(--s2)">
+                <span class="badge badge--crit">3 critical</span>
+                <span class="badge badge--warn">4 watch</span>
+              </span>
+            </div>
+            <div class="panel__body panel__body--flush">
+
+              <article class="disruption" data-sev="crit" aria-labelledby="d1">
+                <div>
+                  <div class="disruption__head">
+                    <span class="disruption__flight" id="d1">HZ2214</span>
+                    <span class="disruption__route">PDX &rarr; BOI</span>
+                    <span class="badge badge--crit">Diverted PSC</span>
+                    <span class="disruption__age">opened 1824Z · 18 min</span>
+                  </div>
+                  <p>
+                    Hydraulic system 2 low pressure on descent. Crew diverted to Tri-Cities.
+                    On ground 1831Z. Line maintenance dispatched from GEG, ETA 2 h 10.
+                    Airframe will not make the BOI turn or tonight's PDX return.
+                  </p>
+                  <dl class="disruption__facts">
+                    <div><dt>Aircraft</dt><dd>N612CR · E175</dd></div>
+                    <div><dt>Pax</dt><dd>68 &middot; 11 connecting</dd></div>
+                    <div><dt>Crew clock</dt><dd>2:41 to timeout</dd></div>
+                    <div><dt>Downline</dt><dd>3 legs at risk</dd></div>
+                    <div><dt>Owner</dt><dd>Desk 4 (you)</dd></div>
+                  </dl>
+                  <div class="disruption__actions">
+                    <button class="btn btn--primary btn--sm" type="button">Build recovery plan</button>
+                    <button class="btn btn--ghost btn--sm" type="button">Find substitute tail</button>
+                    <button class="btn btn--ghost btn--sm" type="button">Ferry crew to PSC</button>
+                    <button class="btn btn--danger btn--sm" type="button">Cancel remaining rotation</button>
+                  </div>
+                </div>
+              </article>
+
+              <article class="disruption" data-sev="crit" aria-labelledby="d2">
+                <div>
+                  <div class="disruption__head">
+                    <span class="disruption__flight" id="d2">HZ3007</span>
+                    <span class="disruption__route">SEA &rarr; YKM</span>
+                    <span class="badge badge--crit">Crew timeout 1:12</span>
+                    <span class="disruption__age">opened 1811Z · 31 min</span>
+                  </div>
+                  <p>
+                    Pairing 4412 duty period expires 2004Z. Current departure estimate
+                    1949Z leaves no margin for a further ground hold. Reserve FO
+                    M. Adeyemi is legal to 0410Z and is 25 minutes from the field.
+                  </p>
+                  <dl class="disruption__facts">
+                    <div><dt>Aircraft</dt><dd>N522CR · E175</dd></div>
+                    <div><dt>Captain</dt><dd>J. Whitfield</dd></div>
+                    <div><dt>First officer</dt><dd>L. Barre &mdash; expiring</dd></div>
+                    <div><dt>Pax</dt><dd>61 &middot; 4 connecting</dd></div>
+                    <div><dt>Owner</dt><dd>Crew desk</dd></div>
+                  </dl>
+                  <div class="disruption__actions">
+                    <button class="btn btn--primary btn--sm" type="button">Assign reserve FO</button>
+                    <button class="btn btn--ghost btn--sm" type="button">Check legality detail</button>
+                    <button class="btn btn--ghost btn--sm" type="button">Message crew desk</button>
+                  </div>
+                </div>
+              </article>
+
+              <article class="disruption" data-sev="crit" aria-labelledby="d3">
+                <div>
+                  <div class="disruption__head">
+                    <span class="disruption__flight" id="d3">HZ1420 / HZ1421</span>
+                    <span class="disruption__route">EUG &rarr; SFO &rarr; EUG</span>
+                    <span class="badge badge--crit">Cancelled</span>
+                    <span class="disruption__age">opened 1602Z · 2 h 40</span>
+                  </div>
+                  <p>
+                    SFO ground delay programme extended to 2200Z, average delay 96 min.
+                    Round trip cancelled 1615Z. 94 passengers to reaccommodate; 31 already
+                    protected on the 0640 tomorrow.
+                  </p>
+                  <dl class="disruption__facts">
+                    <div><dt>Aircraft</dt><dd>N445QX · Q400 &mdash; released</dd></div>
+                    <div><dt>Pax</dt><dd>94 &middot; 41 unprotected</dd></div>
+                    <div><dt>Hotel</dt><dd>18 rooms held EUG</dd></div>
+                    <div><dt>Owner</dt><dd>Desk 4 (you)</dd></div>
+                  </dl>
+                  <div class="disruption__actions">
+                    <button class="btn btn--primary btn--sm" type="button">Reaccommodate remaining 41</button>
+                    <button class="btn btn--ghost btn--sm" type="button">Release aircraft to pool</button>
+                    <button class="btn btn--ghost btn--sm" type="button">Close with reason code</button>
+                  </div>
+                </div>
+              </article>
+
+              <article class="disruption" data-sev="warn" aria-labelledby="d4">
+                <div>
+                  <div class="disruption__head">
+                    <span class="disruption__flight" id="d4">HZ1108</span>
+                    <span class="disruption__route">GEG &rarr; SEA</span>
+                    <span class="badge badge--warn">Late inbound +42</span>
+                    <span class="disruption__age">opened 1836Z · 6 min</span>
+                  </div>
+                  <p>
+                    Inbound HZ1107 blocked in 1826Z against a 1744Z schedule. Turn compressed
+                    to 21 minutes against a 35-minute standard. Two downline legs slip if the
+                    turn is not made.
+                  </p>
+                  <dl class="disruption__facts">
+                    <div><dt>Aircraft</dt><dd>N718HZ · CRJ-900</dd></div>
+                    <div><dt>Pax</dt><dd>76 &middot; 23 connecting</dd></div>
+                    <div><dt>Crew clock</dt><dd>4:05 to timeout</dd></div>
+                    <div><dt>Owner</dt><dd>Desk 2</dd></div>
+                  </dl>
+                  <div class="disruption__actions">
+                    <button class="btn btn--ghost btn--sm" type="button">Project downline impact</button>
+                    <button class="btn btn--ghost btn--sm" type="button">Request quick turn</button>
+                    <button class="btn btn--quiet btn--sm" type="button">Watch</button>
+                  </div>
+                </div>
+              </article>
+
+            </div>
+          </section>
+
+          <!-- ---- Flight board ---- -->
+          <section class="panel" id="flight-board" aria-labelledby="fb-h">
+            <div class="panel__head">
+              <h2 class="panel__title" id="fb-h">Flight board &mdash; next 4 hours</h2>
+              <span class="cluster" style="gap:var(--s2)">
+                <span class="badge badge--neutral">1842Z &ndash; 2242Z</span>
+                <span class="dim" style="font-size:0.74rem; font-family:var(--font-mono)">auto-refresh 10 s</span>
+              </span>
+            </div>
+            <div class="table-wrap">
+              <table class="data-table">
+                <caption class="sr-only">
+                  Cascade Regional departures between 1842Z and 2242Z, sorted by scheduled departure.
+                </caption>
+                <thead>
+                  <tr>
+                    <th scope="col" aria-sort="ascending">Flight</th>
+                    <th scope="col">Route</th>
+                    <th scope="col">Tail / type</th>
+                    <th scope="col">STD</th>
+                    <th scope="col">ETD</th>
+                    <th scope="col">Delta</th>
+                    <th scope="col">Gate</th>
+                    <th scope="col">Captain</th>
+                    <th scope="col">Status</th>
+                    <th scope="col"><span class="sr-only">Row actions</span></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <th scope="row" class="col-num col-flight">HZ2214</th>
+                    <td><span class="route">PDX <i>&rarr;</i> BOI</span></td>
+                    <td class="col-num">N612CR · E175</td>
+                    <td class="col-num">1705Z</td>
+                    <td class="col-num">&mdash;</td>
+                    <td class="col-num delta delta--late">+2:20</td>
+                    <td class="col-num">C4</td>
+                    <td>A. Ferreira</td>
+                    <td><span class="badge badge--crit"><span class="dot" aria-hidden="true"></span>Diverted</span></td>
+                    <td><button class="row-menu" type="button" aria-label="Actions for flight HZ2214">&#8943;</button></td>
+                  </tr>
+                  <tr>
+                    <th scope="row" class="col-num col-flight">HZ3007</th>
+                    <td><span class="route">SEA <i>&rarr;</i> YKM</span></td>
+                    <td class="col-num">N522CR · E175</td>
+                    <td class="col-num">1915Z</td>
+                    <td class="col-num">1949Z</td>
+                    <td class="col-num delta delta--late">+34</td>
+                    <td class="col-num">A11</td>
+                    <td>J. Whitfield</td>
+                    <td><span class="badge badge--crit"><span class="dot" aria-hidden="true"></span>Crew 1:12</span></td>
+                    <td><button class="row-menu" type="button" aria-label="Actions for flight HZ3007">&#8943;</button></td>
+                  </tr>
+                  <tr>
+                    <th scope="row" class="col-num col-flight">HZ1108</th>
+                    <td><span class="route">GEG <i>&rarr;</i> SEA</span></td>
+                    <td class="col-num">N718HZ · CRJ-900</td>
+                    <td class="col-num">1855Z</td>
+                    <td class="col-num">1937Z</td>
+                    <td class="col-num delta delta--late">+42</td>
+                    <td class="col-num">B2</td>
+                    <td>P. Nakamura</td>
+                    <td><span class="badge badge--warn"><span class="dot" aria-hidden="true"></span>Delayed</span></td>
+                    <td><button class="row-menu" type="button" aria-label="Actions for flight HZ1108">&#8943;</button></td>
+                  </tr>
+                  <tr>
+                    <th scope="row" class="col-num col-flight">HZ2450</th>
+                    <td><span class="route">RDM <i>&rarr;</i> PDX</span></td>
+                    <td class="col-num">N445QX · Q400</td>
+                    <td class="col-num">1920Z</td>
+                    <td class="col-num">1920Z</td>
+                    <td class="col-num delta delta--none">&mdash;</td>
+                    <td class="col-num">3</td>
+                    <td>S. Delgado</td>
+                    <td><span class="badge badge--ok"><span class="dot" aria-hidden="true"></span>On time</span></td>
+                    <td><button class="row-menu" type="button" aria-label="Actions for flight HZ2450">&#8943;</button></td>
+                  </tr>
+                  <tr>
+                    <th scope="row" class="col-num col-flight">HZ1876</th>
+                    <td><span class="route">SEA <i>&rarr;</i> MSO</span></td>
+                    <td class="col-num">N731HZ · CRJ-900</td>
+                    <td class="col-num">1940Z</td>
+                    <td class="col-num">1934Z</td>
+                    <td class="col-num delta delta--early">&minus;6</td>
+                    <td class="col-num">A7</td>
+                    <td>K. Osei</td>
+                    <td><span class="badge badge--ok"><span class="dot" aria-hidden="true"></span>Boarding</span></td>
+                    <td><button class="row-menu" type="button" aria-label="Actions for flight HZ1876">&#8943;</button></td>
+                  </tr>
+                  <tr>
+                    <th scope="row" class="col-num col-flight">HZ1420</th>
+                    <td><span class="route">EUG <i>&rarr;</i> SFO</span></td>
+                    <td class="col-num">N445QX · Q400</td>
+                    <td class="col-num">1950Z</td>
+                    <td class="col-num">&mdash;</td>
+                    <td class="col-num delta delta--none">&mdash;</td>
+                    <td class="col-num">&mdash;</td>
+                    <td>&mdash;</td>
+                    <td><span class="badge badge--crit"><span class="dot" aria-hidden="true"></span>Cancelled</span></td>
+                    <td><button class="row-menu" type="button" aria-label="Actions for flight HZ1420">&#8943;</button></td>
+                  </tr>
+                  <tr>
+                    <th scope="row" class="col-num col-flight">HZ2288</th>
+                    <td><span class="route">PDX <i>&rarr;</i> SLC</span></td>
+                    <td class="col-num">N609CR · E175</td>
+                    <td class="col-num">2005Z</td>
+                    <td class="col-num">2005Z</td>
+                    <td class="col-num delta delta--none">&mdash;</td>
+                    <td class="col-num">C9</td>
+                    <td>R. Halvorsen</td>
+                    <td><span class="badge badge--ok"><span class="dot" aria-hidden="true"></span>On time</span></td>
+                    <td><button class="row-menu" type="button" aria-label="Actions for flight HZ2288">&#8943;</button></td>
+                  </tr>
+                  <tr>
+                    <th scope="row" class="col-num col-flight">HZ3341</th>
+                    <td><span class="route">SEA <i>&rarr;</i> BOI</span></td>
+                    <td class="col-num">N527CR · E175</td>
+                    <td class="col-num">2030Z</td>
+                    <td class="col-num">2058Z</td>
+                    <td class="col-num delta delta--late">+28</td>
+                    <td class="col-num">A3</td>
+                    <td>M. Ibarra</td>
+                    <td><span class="badge badge--warn"><span class="dot" aria-hidden="true"></span>ATC flow</span></td>
+                    <td><button class="row-menu" type="button" aria-label="Actions for flight HZ3341">&#8943;</button></td>
+                  </tr>
+                  <tr>
+                    <th scope="row" class="col-num col-flight">HZ1502</th>
+                    <td><span class="route">PDX <i>&rarr;</i> GEG</span></td>
+                    <td class="col-num">N452QX · Q400</td>
+                    <td class="col-num">2045Z</td>
+                    <td class="col-num">2045Z</td>
+                    <td class="col-num delta delta--none">&mdash;</td>
+                    <td class="col-num">C2</td>
+                    <td>D. Ashworth</td>
+                    <td><span class="badge badge--ok"><span class="dot" aria-hidden="true"></span>On time</span></td>
+                    <td><button class="row-menu" type="button" aria-label="Actions for flight HZ1502">&#8943;</button></td>
+                  </tr>
+                  <tr>
+                    <th scope="row" class="col-num col-flight">HZ2907</th>
+                    <td><span class="route">SEA <i>&rarr;</i> PDX</span></td>
+                    <td class="col-num">N744HZ · CRJ-900</td>
+                    <td class="col-num">2110Z</td>
+                    <td class="col-num">2110Z</td>
+                    <td class="col-num delta delta--none">&mdash;</td>
+                    <td class="col-num">B14</td>
+                    <td>T. Lindqvist</td>
+                    <td><span class="badge badge--neutral"><span class="dot" aria-hidden="true"></span>Scheduled</span></td>
+                    <td><button class="row-menu" type="button" aria-label="Actions for flight HZ2907">&#8943;</button></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="panel__head" style="border-top:1px solid var(--line); border-bottom:0">
+              <span class="dim" style="font-size:0.8rem">Showing 10 of 148 departures</span>
+              <span class="cluster" style="gap:var(--s2)">
+                <button class="btn btn--ghost btn--sm" type="button">Export CSV</button>
+                <button class="btn btn--ghost btn--sm" type="button">View all flights</button>
+              </span>
+            </div>
+          </section>
+
+        </div>
+
+        <!-- =================== SIDE RAIL =================== -->
+        <aside class="side" aria-label="Fleet, crew and field conditions">
+
+          <!-- ---- Aircraft availability ---- -->
+          <section class="panel" id="fleet" aria-labelledby="fleet-h">
+            <div class="panel__head">
+              <h2 class="panel__title" id="fleet-h">Aircraft available now</h2>
+              <span class="badge badge--ok">4 spare</span>
+            </div>
+            <ul class="tail-list">
+              <li>
+                <b>N533CR</b>
+                <span>E175 · PDX gate C11 · free until 2240Z<br>No open MEL · next check 14 Sep</span>
+                <span class="badge badge--ok">Ready</span>
+              </li>
+              <li>
+                <b>N462QX</b>
+                <span>Q400 · SEA remote 7 · free until 2115Z<br>MEL 34-11 (WX radar) &mdash; VMC only</span>
+                <span class="badge badge--warn">Limited</span>
+              </li>
+              <li>
+                <b>N726HZ</b>
+                <span>CRJ-900 · GEG gate 4 · free until 2350Z<br>No open MEL · needs 45 min tow</span>
+                <span class="badge badge--ok">Ready</span>
+              </li>
+              <li>
+                <b>N612CR</b>
+                <span>E175 · PSC ramp · AOG hydraulics<br>Maintenance ETA 2041Z</span>
+                <span class="badge badge--crit">AOG</span>
+              </li>
+              <li>
+                <b>N904QX</b>
+                <span>Q400 · PDX hangar 2 · C-check<br>Returns to service 04 Sep</span>
+                <span class="badge badge--neutral">Out</span>
+              </li>
+            </ul>
+          </section>
+
+          <!-- ---- Crew duty clocks ---- -->
+          <section class="panel" id="crew" aria-labelledby="crew-h">
+            <div class="panel__head">
+              <h2 class="panel__title" id="crew-h">Duty clocks &mdash; expiring first</h2>
+              <span class="badge badge--crit">3 at risk</span>
+            </div>
+            <div>
+              <div class="duty">
+                <div class="duty__head">
+                  <span><span class="duty__name">L. Barre</span> <span class="duty__role">FO · prg 4412</span></span>
+                  <span class="duty__remaining" style="color:var(--crit)">1:12 left</span>
+                </div>
+                <div class="meter meter--crit"><i style="width:14%"></i></div>
+                <p class="dim" style="font-size:0.76rem; margin-top:var(--s2)">
+                  Expires 2004Z · on HZ3007 SEA&ndash;YKM · reserve identified
+                </p>
+              </div>
+              <div class="duty">
+                <div class="duty__head">
+                  <span><span class="duty__name">A. Ferreira</span> <span class="duty__role">CA · prg 2201</span></span>
+                  <span class="duty__remaining" style="color:var(--warn)">2:41 left</span>
+                </div>
+                <div class="meter meter--warn"><i style="width:31%"></i></div>
+                <p class="dim" style="font-size:0.76rem; margin-top:var(--s2)">
+                  Expires 2123Z · stranded PSC on HZ2214 · hotel not yet booked
+                </p>
+              </div>
+              <div class="duty">
+                <div class="duty__head">
+                  <span><span class="duty__name">P. Nakamura</span> <span class="duty__role">CA · prg 3318</span></span>
+                  <span class="duty__remaining" style="color:var(--warn)">4:05 left</span>
+                </div>
+                <div class="meter meter--warn"><i style="width:47%"></i></div>
+                <p class="dim" style="font-size:0.76rem; margin-top:var(--s2)">
+                  Expires 2247Z · two legs remaining after HZ1108
+                </p>
+              </div>
+              <div class="duty">
+                <div class="duty__head">
+                  <span><span class="duty__name">M. Adeyemi</span> <span class="duty__role">FO · reserve</span></span>
+                  <span class="duty__remaining" style="color:var(--ok)">9:28 left</span>
+                </div>
+                <div class="meter"><i style="width:88%"></i></div>
+                <p class="dim" style="font-size:0.76rem; margin-top:var(--s2)">
+                  Legal to 0410Z · 25 min from SEA · qualified E175
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <!-- ---- Weather / NOTAM ---- -->
+          <section class="panel" id="weather" aria-labelledby="wx-h">
+            <div class="panel__head">
+              <h2 class="panel__title" id="wx-h">Field conditions</h2>
+              <span class="dim" style="font-size:0.72rem; font-family:var(--font-mono)">1840Z</span>
+            </div>
+            <ul class="ticker">
+              <li>
+                <time datetime="2026-08-26T18:32Z">1832Z · SFO</time>
+                <span class="badge badge--crit">GDP</span>
+                Ground delay programme extended to 2200Z. Average delay 96 min, low ceiling.
+              </li>
+              <li>
+                <time datetime="2026-08-26T18:15Z">1815Z · GEG</time>
+                <span class="badge badge--warn">TAF</span>
+                TEMPO 1900&ndash;2200Z 3SM &minus;TSRA BKN020CB. Below Q400 alternate minima after 2000Z.
+              </li>
+              <li>
+                <time datetime="2026-08-26T17:58Z">1758Z · YKM</time>
+                <span class="badge badge--warn">NOTAM</span>
+                RWY 09/27 closed for sweeping 2100&ndash;2130Z. 04/22 available, 3835 ft &mdash; E175 restricted.
+              </li>
+              <li>
+                <time datetime="2026-08-26T17:20Z">1720Z · PDX</time>
+                <span class="badge badge--info">Info</span>
+                De-ice pad 2 out of service. Single-pad flow, expect 8 min added per departure.
+              </li>
+            </ul>
+          </section>
+
+          <!-- ---- Shift log ---- -->
+          <section class="panel" aria-labelledby="log-h">
+            <div class="panel__head">
+              <h2 class="panel__title" id="log-h">Desk log</h2>
+              <button class="btn btn--quiet btn--sm" type="button">Add note</button>
+            </div>
+            <ul class="ticker">
+              <li>
+                <time datetime="2026-08-26T18:34Z">1834Z · T. Vasquez</time>
+                Requested line maintenance from GEG to PSC for N612CR. MX ref MX-88214.
+              </li>
+              <li>
+                <time datetime="2026-08-26T18:19Z">1819Z · R. Okafor (Desk 2)</time>
+                HZ1108 quick turn agreed with SEA station. Ramp aware, 21 min turn.
+              </li>
+              <li>
+                <time datetime="2026-08-26T16:15Z">1615Z · T. Vasquez</time>
+                HZ1420/1421 cancelled, reason code WX-GDP. 18 hotel rooms held at EUG.
+              </li>
+            </ul>
+          </section>
+
+        </aside>
+      </div>
+    </main>
+  </div>
+</div>
+
+</body>
+</html>

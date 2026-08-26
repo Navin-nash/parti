@@ -1,0 +1,391 @@
+{
+  "root": "C:\\Users\\govin\\AppData\\Local\\Temp\\parti_baseline_px12797t",
+  "files_scanned": 5,
+  "color": {
+    "unique_count": 26,
+    "top": [
+      {
+        "hex": "#35c6e0",
+        "uses": 40
+      },
+      {
+        "hex": "#f4685f",
+        "uses": 35
+      },
+      {
+        "hex": "#45c98a",
+        "uses": 30
+      },
+      {
+        "hex": "#000000",
+        "uses": 25
+      },
+      {
+        "hex": "#04121a",
+        "uses": 25
+      },
+      {
+        "hex": "#6fa8ff",
+        "uses": 20
+      },
+      {
+        "hex": "#889944",
+        "uses": 16
+      },
+      {
+        "hex": "#0a0f14",
+        "uses": 15
+      },
+      {
+        "hex": "#f0a83c",
+        "uses": 15
+      },
+      {
+        "hex": "#ffffff",
+        "uses": 10
+      },
+      {
+        "hex": "#070b0f",
+        "uses": 5
+      },
+      {
+        "hex": "#111922",
+        "uses": 5
+      },
+      {
+        "hex": "#16202b",
+        "uses": 5
+      },
+      {
+        "hex": "#1d2937",
+        "uses": 5
+      },
+      {
+        "hex": "#24313f",
+        "uses": 5
+      },
+      {
+        "hex": "#334456",
+        "uses": 5
+      },
+      {
+        "hex": "#e8eef5",
+        "uses": 5
+      },
+      {
+        "hex": "#9bb0c3",
+        "uses": 5
+      },
+      {
+        "hex": "#6e8598",
+        "uses": 5
+      },
+      {
+        "hex": "#7de3f4",
+        "uses": 5
+      }
+    ],
+    "neutral_count": 5,
+    "chromatic_count": 21,
+    "oklch_uses": 0,
+    "hsl_uses": 0,
+    "contrast_samples": [
+      {
+        "fg": "#35c6e0",
+        "bg": "#ffffff",
+        "ratio": 2.04,
+        "passes_aa_body": false
+      },
+      {
+        "fg": "#45c98a",
+        "bg": "#ffffff",
+        "ratio": 2.11,
+        "passes_aa_body": false
+      },
+      {
+        "fg": "#f4685f",
+        "bg": "#ffffff",
+        "ratio": 3.0,
+        "passes_aa_body": false
+      },
+      {
+        "fg": "#04121a",
+        "bg": "#ffffff",
+        "ratio": 18.98,
+        "passes_aa_body": true
+      },
+      {
+        "fg": "#000000",
+        "bg": "#ffffff",
+        "ratio": 21.0,
+        "passes_aa_body": true
+      }
+    ]
+  },
+  "type": {
+    "families": [],
+    "family_count": 0,
+    "google_fonts": [],
+    "size_count": 28,
+    "sizes_px": [
+      9.92,
+      10.56,
+      10.88,
+      11.2,
+      11.52,
+      11.84,
+      12.0,
+      12.16,
+      12.48,
+      12.8,
+      13.12,
+      13.44,
+      13.6,
+      13.76,
+      14.08,
+      14.4,
+      14.72,
+      15.04,
+      15.2,
+      15.68,
+      16.0,
+      16.32,
+      16.8,
+      17.6,
+      19.2,
+      20.8,
+      29.6,
+      36.8
+    ],
+    "scale_ratios": [
+      1.065,
+      1.03,
+      1.029,
+      1.029,
+      1.028,
+      1.014,
+      1.013,
+      1.026,
+      1.026,
+      1.025,
+      1.024,
+      1.012,
+      1.012,
+      1.023,
+      1.023,
+      1.022,
+      1.022,
+      1.011,
+      1.032,
+      1.02
+    ]
+  },
+  "space": {
+    "unique_count": 23,
+    "values_px": [
+      0.8,
+      1.0,
+      1.6,
+      2.0,
+      2.4,
+      3.2,
+      4.8,
+      5.0,
+      5.6,
+      6.4,
+      7.2,
+      8.0,
+      9.6,
+      9.92,
+      11.2,
+      17.6,
+      32.0,
+      40.0,
+      48.0,
+      56.0,
+      64.0,
+      80.0,
+      104.0
+    ],
+    "base_unit": null,
+    "off_grid": [
+      0.8,
+      1.0,
+      1.6,
+      2.0,
+      2.4,
+      3.2,
+      4.8,
+      5.0,
+      5.6,
+      6.4,
+      7.2,
+      8.0,
+      9.6,
+      9.92,
+      11.2,
+      17.6,
+      32.0,
+      40.0,
+      48.0,
+      56.0
+    ]
+  },
+  "shape": {
+    "radius_variants": 9,
+    "radii": [
+      {
+        "value": "var(--radius-sm)",
+        "uses": 50
+      },
+      {
+        "value": "var(--radius)",
+        "uses": 40
+      },
+      {
+        "value": "50%",
+        "uses": 25
+      },
+      {
+        "value": "999px",
+        "uses": 20
+      },
+      {
+        "value": "3px",
+        "uses": 15
+      },
+      {
+        "value": "4px",
+        "uses": 15
+      },
+      {
+        "value": "var(--radius-lg)",
+        "uses": 10
+      },
+      {
+        "value": "8px",
+        "uses": 5
+      },
+      {
+        "value": "2px",
+        "uses": 5
+      }
+    ],
+    "shadow_variants": 8,
+    "shadows": [
+      {
+        "value": "0 0 0 0 currentColor",
+        "uses": 5
+      },
+      {
+        "value": "0 0 0 0 #45c98a66",
+        "uses": 5
+      },
+      {
+        "value": "0 0 0 7px #45c98a00",
+        "uses": 5
+      },
+      {
+        "value": "0 0 0 0 #45c98a00",
+        "uses": 5
+      },
+      {
+        "value": "var(--shadow-lg)",
+        "uses": 5
+      },
+      {
+        "value": "var(--shadow)",
+        "uses": 5
+      },
+      {
+        "value": "inset 2px 0 0 var(--accent)",
+        "uses": 5
+      },
+      {
+        "value": "inset 0 -2px 0 var(--accent)",
+        "uses": 5
+      }
+    ],
+    "zindex_variants": 4,
+    "zindex_max": 100
+  },
+  "motion": {
+    "libraries": [],
+    "duration_variants": 1,
+    "durations_ms": [
+      0
+    ],
+    "durations_over_400ms": [],
+    "custom_easing_uses": 0,
+    "default_easing_uses": 106,
+    "easings": {
+      "ease": 80,
+      "linear": 21,
+      "ease-out": 5
+    },
+    "reduced_motion_handled": true,
+    "reduced_motion_files": [
+      "01-landing-page__index.html",
+      "02-pricing-page__pricing.html",
+      "03-dashboard__dashboard.html",
+      "04-components__components.html",
+      "baseline.css"
+    ]
+  },
+  "system": {
+    "css_vars_defined": 48,
+    "css_vars_used": 44,
+    "css_vars_unused": [
+      "--danger",
+      "--ghost",
+      "--primary",
+      "--quiet"
+    ],
+    "tailwind_arbitrary_values": 0,
+    "important_uses": 20,
+    "tokenization_ratio": 0.571
+  },
+  "a11y": {
+    "outline_none_uses": 0,
+    "backdrop_filter_uses": 10,
+    "reduced_motion_handled": true,
+    "low_contrast_pairs": [
+      {
+        "fg": "#35c6e0",
+        "bg": "#ffffff",
+        "ratio": 2.04,
+        "passes_aa_body": false
+      },
+      {
+        "fg": "#45c98a",
+        "bg": "#ffffff",
+        "ratio": 2.11,
+        "passes_aa_body": false
+      },
+      {
+        "fg": "#f4685f",
+        "bg": "#ffffff",
+        "ratio": 3.0,
+        "passes_aa_body": false
+      }
+    ]
+  },
+  "tells": [
+    {
+      "id": "glass_card",
+      "label": "Glassmorphic card (backdrop-blur + translucent bg)",
+      "files": [
+        "01-landing-page__index.html",
+        "02-pricing-page__pricing.html",
+        "03-dashboard__dashboard.html",
+        "04-components__components.html",
+        "baseline.css"
+      ]
+    }
+  ],
+  "libraries": {
+    "animation": [],
+    "ui": [],
+    "declared": {}
+  }
+}

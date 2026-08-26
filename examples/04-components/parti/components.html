@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Meridian — the rack in every state</title>
+<meta name="description" content="The Meridian flight rack component in each of its states: populated, empty, loading and error, with the field anatomy and the full state matrix.">
+<!-- inlined-stylesheet -->
+<style>
+/* ==========================================================================
+   Meridian — direction "Strip Rack"
+   Shared stylesheet for all four surfaces.
+
+   Premise: a dispatcher is interrupted every four minutes. The board must be
+   re-readable in one glance, at 02:00, on the tenth hour, after a phone call.
+
+   Colour is authored in oklch() — the same values the token spec carries, in
+   the notation the token spec prescribes. Nothing here is a raw hex literal,
+   so no colour in this build can escape tokens.json without being noticed.
+   ========================================================================== */
+
+/* --------------------------------------------------------------- 1. tokens */
+
+:root {
+  /* surfaces — elevation is a lightness step, never a shadow */
+  --bg:            oklch(19.30% 0.0170 252.6);
+  --surface:       oklch(22.72% 0.0212 251.7);
+  --surface-2:     oklch(26.75% 0.0257 248.8);
+
+  /* status tints — the tinted card stock a printed strip is cut from */
+  --tint-caution:  oklch(26.03% 0.0235 80.8);
+  --tint-warning:  oklch(24.38% 0.0273 23.0);
+  --tint-advisory: oklch(25.72% 0.0243 223.6);
+
+  --border:        oklch(33.80% 0.0331 248.8);
+  --border-strong: oklch(54.36% 0.0342 246.9);   /* >=3.05:1 on every ground it lands on */
+
+  --text:          oklch(93.68% 0.0121 248.0);   /* 15.3:1 on --bg */
+  --text-muted:    oklch(74.92% 0.0299 246.6);   /*  8.3:1 on --bg */
+  --text-dim:      oklch(64.23% 0.0353 249.8);   /*  4.6:1 on --surface-2 */
+
+  /* the flight-deck signal set: this vocabulary is not a palette choice,
+     it is what every EFIS the audience has ever flown behind already uses */
+  --caution:       oklch(80.13% 0.1390 75.0);    /* amber — needs a decision */
+  --warning:       oklch(69.27% 0.1675 29.8);    /* red   — needs it now     */
+  --normal:        oklch(77.38% 0.1449 154.0);   /* green — nominal          */
+  --advisory:      oklch(78.24% 0.0979 215.9);   /* cyan  — informational    */
+  --on-signal:     oklch(19.30% 0.0170 252.6);
+
+  --f-ui: -apple-system, BlinkMacSystemFont, "Segoe UI Variable Text", "Segoe UI",
+          Roboto, system-ui, sans-serif;
+  --f-mono: ui-monospace, "SF Mono", "Cascadia Mono", "Segoe UI Mono", "Roboto Mono",
+            Menlo, Consolas, monospace;
+
+  --s-1: 4px;  --s-2: 8px;  --s-3: 12px; --s-4: 16px; --s-5: 20px;
+  --s-6: 24px; --s-8: 32px; --s-10: 40px; --s-12: 48px; --s-16: 64px; --s-20: 80px;
+
+  --wrap: 1180px;
+  --row: 34px;
+  --measure: 64ch;
+
+  --r-none: 0;
+  --r-sm: 2px;
+  --r-round: 50%;
+
+  --d-tick: 90ms;
+  --d-fast: 140ms;
+  --d-base: 200ms;
+  --d-slow: 260ms;
+  --d-live: 2400ms;
+  --d-unfilled: 1400ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+/* ----------------------------------------------------------- 2. base reset */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 400 14px/22px var(--f-ui);
+  font-feature-settings: "kern" 1;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3, h4, p, ul, ol, dl, dd, figure, table { margin: 0; }
+ul, ol { padding: 0; list-style: none; }
+
+a { color: inherit; text-decoration-color: var(--border-strong); text-underline-offset: 3px; }
+a:hover { text-decoration-color: var(--advisory); }
+
+::selection { background: var(--advisory); color: var(--on-signal); }
+
+/* One focus treatment for the whole build. Never removed, only replaced. */
+:focus-visible {
+  outline: 2px solid var(--advisory);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
+.sr {
+  position: absolute; width: 1px; height: 1px;
+  clip-path: inset(50%); overflow: hidden; white-space: nowrap;
+}
+
+.skip {
+  position: absolute; left: var(--s-3); top: -100px;
+  z-index: 50; padding: var(--s-2) var(--s-4);
+  background: var(--advisory); color: var(--on-signal);
+  font: 600 13px/1.4 var(--f-mono);
+}
+.skip:focus { top: var(--s-3); }
+
+/* ------------------------------------------------------- 3. type utilities */
+
+.label {
+  font: 600 11px/14px var(--f-mono);
+  letter-spacing: 0.085em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.label--signal { color: var(--caution); }
+
+.mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+
+.num { font-family: var(--f-mono); font-variant-numeric: tabular-nums; font-weight: 500; }
+
+.display {
+  font: 700 46px/48px var(--f-ui);
+  letter-spacing: -0.028em;
+  text-wrap: balance;
+}
+.h1 { font: 700 30px/34px var(--f-ui); letter-spacing: -0.02em; text-wrap: balance; }
+.h2 { font: 650 21px/27px var(--f-ui); letter-spacing: -0.012em; }
+.h3 { font: 600 16px/22px var(--f-ui); letter-spacing: -0.006em; }
+.lede { font-size: 16px; line-height: 26px; color: var(--text-muted); max-width: var(--measure); }
+.prose { color: var(--text-muted); max-width: var(--measure); }
+.prose + .prose { margin-top: var(--s-4); }
+.small { font-size: 13px; line-height: 19px; color: var(--text-muted); }
+
+/* --------------------------------------------------------- 4. page chassis */
+
+.wrap { width: 100%; max-width: var(--wrap); margin-inline: auto; padding-inline: var(--s-6); }
+.wrap--flush { max-width: none; padding-inline: var(--s-5); }
+
+.section { padding-block: var(--s-20); border-top: 1px solid var(--border); }
+.section:first-of-type { border-top: 0; }
+
+.section__head { display: flex; flex-wrap: wrap; gap: var(--s-4) var(--s-8); align-items: baseline; margin-bottom: var(--s-8); }
+.section__head .label { flex: 0 0 auto; }
+.section__head .h1 { flex: 1 1 22ch; }
+
+/* The status ribbon. The board wears one; so does every page of the site,
+   because the site is shown at the same luminance the product runs at. */
+.ribbon {
+  display: flex; flex-wrap: wrap; gap: var(--s-2) var(--s-5);
+  align-items: center;
+  padding: var(--s-2) var(--s-5);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  font: 500 12px/16px var(--f-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+}
+.ribbon b { color: var(--text-muted); font-weight: 500; }
+.ribbon .v { color: var(--text); }
+.ribbon .v--ok { color: var(--normal); }
+.ribbon .v--caution { color: var(--caution); }
+.ribbon .v--warning { color: var(--warning); }
+
+.live { display: inline-flex; align-items: center; gap: var(--s-2); }
+.live::before {
+  content: ""; width: 6px; height: 6px; border-radius: var(--r-round);
+  background: var(--normal);
+  animation: live-tick var(--d-live) var(--ease-in-out) infinite;
+}
+@keyframes live-tick { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+/* masthead — wordmark and route, not logo-left/links-centre/CTA-right */
+.masthead {
+  display: flex; flex-wrap: wrap; gap: var(--s-4) var(--s-8);
+  align-items: center;
+  padding: var(--s-4) var(--s-5);
+  border-bottom: 1px solid var(--border);
+}
+.mark { display: flex; align-items: baseline; gap: var(--s-3); padding-block: var(--s-1); text-decoration: none; }
+.mark__word { font: 700 17px/20px var(--f-ui); letter-spacing: 0.02em; }
+.mark__sub { font: 600 11px/14px var(--f-mono); letter-spacing: 0.085em; text-transform: uppercase; color: var(--text-dim); }
+
+.nav { display: flex; flex-wrap: wrap; gap: var(--s-5); margin-left: auto; align-items: center; }
+.nav a {
+  font: 600 12px/16px var(--f-mono);
+  letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--text-muted); text-decoration: none;
+  padding-block: var(--s-2);
+  border-bottom: 1px solid transparent;
+  transition: color var(--d-tick) var(--ease-out), border-color var(--d-tick) var(--ease-out);
+}
+.nav a:hover, .nav a[aria-current] { color: var(--text); border-bottom-color: var(--caution); }
+
+.foot {
+  border-top: 1px solid var(--border);
+  padding-block: var(--s-10);
+  font: 500 12px/20px var(--f-mono);
+  color: var(--text-dim);
+}
+.foot__cols { display: flex; flex-wrap: wrap; gap: var(--s-8) var(--s-12); }
+.foot h2 { font: 600 11px/14px var(--f-mono); letter-spacing: 0.085em; text-transform: uppercase; color: var(--text-muted); margin-bottom: var(--s-3); }
+.foot li + li { margin-top: var(--s-1); }
+.foot a { display: inline-block; padding-block: 5px; text-decoration: none; }
+.foot a:hover { color: var(--text); }
+
+/* ------------------------------------------------------------- 5. controls */
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--s-2);
+  min-height: 44px;
+  padding: 0.7em 1.3em;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--text);
+  font: 600 13px/1 var(--f-mono);
+  letter-spacing: 0.05em; text-transform: uppercase;
+  text-decoration: none; cursor: pointer;
+  transition: background-color var(--d-tick) var(--ease-out),
+              color var(--d-tick) var(--ease-out),
+              border-color var(--d-tick) var(--ease-out),
+              transform var(--d-fast) var(--ease-out);
+}
+.btn:hover { background: var(--surface-2); border-color: var(--text-dim); }
+.btn:active { transform: translateY(1px); }
+
+.btn--primary {
+  background: var(--caution); border-color: var(--caution); color: var(--on-signal);
+}
+.btn--primary:hover { background: var(--text); border-color: var(--text); color: var(--on-signal); }
+
+.btn--quiet {
+  border-color: transparent; color: var(--text-muted);
+  padding-inline: var(--s-2);
+  text-decoration: underline; text-decoration-color: var(--border-strong);
+}
+.btn--quiet:hover { background: transparent; color: var(--text); text-decoration-color: var(--caution); }
+
+.btn--console { min-height: 32px; padding: 0 var(--s-3); font-size: 12px; }
+
+.btn-row { display: flex; flex-wrap: wrap; gap: var(--s-3); align-items: center; }
+
+/* ----------------------------------------------------- 6. panels (no cards) */
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-none);
+}
+.panel__head {
+  display: flex; align-items: center; gap: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  border-bottom: 1px solid var(--border);
+}
+.panel__head .label { margin-right: auto; }
+.panel__body { padding: var(--s-4); }
+.panel--focus { background: var(--surface-2); border-color: var(--border-strong); }
+
+/* ------------------------------------------- 7. the strip rack (signature) */
+
+.rack-scroll { overflow-x: auto; border: 1px solid var(--border); background: var(--surface); }
+
+.rack {
+  width: 100%;
+  min-width: 940px;
+  border-collapse: collapse;
+  font: 500 13px/16px var(--f-mono);
+  font-variant-numeric: tabular-nums;
+}
+/* the same strip grammar at rail width: no min-width, no horizontal escape */
+.rack--inline { min-width: 0; }
+.rack--inline td { padding-inline: var(--s-2); }
+
+.rack caption {
+  text-align: left;
+  padding: var(--s-3) var(--s-4);
+  border-bottom: 1px solid var(--border);
+  font: 600 11px/14px var(--f-mono);
+  letter-spacing: 0.085em; text-transform: uppercase;
+  color: var(--text-dim);
+}
+.rack thead th {
+  position: sticky; top: 0; z-index: 2;
+  padding: var(--s-2) var(--s-3);
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border-strong);
+  font: 600 10px/14px var(--f-mono);
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--text-dim);
+  text-align: left;
+  white-space: nowrap;
+}
+.rack tbody tr {
+  height: var(--row);
+  border-bottom: 1px solid var(--border);
+  transition: background-color var(--d-tick) var(--ease-out);
+}
+.rack tbody tr:last-child { border-bottom: 0; }
+.rack td {
+  padding: 0 var(--s-3);
+  /* the printed cell rules of a real progress strip */
+  border-right: 1px solid var(--border);
+  white-space: nowrap;
+  color: var(--text-muted);
+}
+.rack td:last-child { border-right: 0; }
+.rack tbody tr:hover { background: var(--surface-2); }
+.rack tbody tr:focus-within { background: var(--surface-2); }
+
+/* fields, in the order they are printed */
+.f-bay    { width: 26px; text-align: center; color: var(--text-dim); font-weight: 600; }
+.f-flt    { color: var(--text); font-weight: 600; }
+.f-tail   { color: var(--text); }
+.f-type   { color: var(--text-dim); }
+.f-route  { color: var(--text); letter-spacing: 0.04em; }
+.f-time   { text-align: right; }
+.f-delta  { text-align: right; color: var(--text-dim); }
+.f-crew   { color: var(--text-muted); }
+.f-pax    { text-align: right; }
+.f-status { width: 1%; }
+.f-num    { text-align: right; }
+
+.delta--late { color: var(--caution); }
+.delta--hard { color: var(--warning); }
+.delta--none { color: var(--text-dim); }
+
+/* row tint = the colour of the card stock. Never the only signal: every
+   tinted row also carries a printed status token and a signed delta. */
+.strip--caution  { background: var(--tint-caution); }
+.strip--warning  { background: var(--tint-warning); }
+.strip--advisory { background: var(--tint-advisory); }
+.strip--caution:hover, .strip--warning:hover, .strip--advisory:hover { background: var(--surface-2); }
+
+/* the printed status token */
+.tok {
+  display: inline-block;
+  padding: 2px var(--s-2);
+  border: 1px solid currentColor;
+  border-radius: var(--r-none);
+  font: 600 11px/14px var(--f-mono);
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--text-dim);
+  transition: color var(--d-base) var(--ease-out),
+              background-color var(--d-base) var(--ease-out);
+}
+.tok--normal   { color: var(--normal); }
+.tok--advisory { color: var(--advisory); }
+.tok--caution  { color: var(--caution); }
+/* warning is the only token that fills: at a glance it is the one thing on the
+   board that reads as ink-on-stock rather than stamp-on-stock */
+.tok--warning  { background: var(--warning); border-color: var(--warning); color: var(--on-signal); }
+
+/* ------------------------------------------------------- 8. rack in states */
+
+.state { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-4); }
+.state__note {
+  display: flex; flex-wrap: wrap; gap: var(--s-2) var(--s-4); align-items: baseline;
+  padding: var(--s-3) var(--s-4);
+  border: 1px solid var(--border);
+  border-bottom: 0;
+  background: var(--surface-2);
+  font: 500 12px/18px var(--f-mono);
+  color: var(--text-muted);
+}
+.state__note b { color: var(--text); font-weight: 600; }
+.state__note + .rack-scroll { border-top: 0; }
+
+.void {
+  display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-4); justify-items: start;
+  padding: var(--s-12) var(--s-6);
+  border-top: 1px solid var(--border);
+}
+.void__title { font: 600 16px/22px var(--f-ui); letter-spacing: -0.006em; }
+.void__body { color: var(--text-muted); max-width: 56ch; font-size: 13px; line-height: 20px; }
+.void--error { background: var(--tint-warning); }
+.void--error .void__title { color: var(--warning); }
+
+/* unfilled strip fields: the rack is drawn, the print head has not arrived */
+.unfilled {
+  display: block; height: 8px;
+  background: var(--border);
+  animation: unfilled-pulse var(--d-unfilled) var(--ease-in-out) infinite;
+}
+.unfilled--sm { width: 42px; }
+.unfilled--md { width: 68px; }
+.unfilled--lg { width: 104px; }
+@keyframes unfilled-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+/* Deliberately unstaggered. A wave down the rack would imply rows arrive in
+   order; they arrive in one frame, and the pulse should say so. */
+
+/* --------------------------------------------------------- 9. marketing UI */
+
+.hero { padding-block: var(--s-16) var(--s-20); }
+.hero__grid { display: grid; gap: var(--s-12); grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); align-items: start; }
+.hero__line {
+  display: flex; flex-wrap: wrap; gap: var(--s-2) var(--s-4);
+  font: 500 20px/24px var(--f-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+  padding-bottom: var(--s-4);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: var(--s-6);
+}
+.hero__line .v { color: var(--text); }
+.hero__line .v--caution { color: var(--caution); }
+.hero .display { margin-bottom: var(--s-5); }
+.hero .lede { margin-bottom: var(--s-8); }
+
+.timeline { display: grid; gap: 0; border-top: 1px solid var(--border); }
+.beat {
+  display: grid; gap: var(--s-3) var(--s-8);
+  grid-template-columns: 92px minmax(0, 1fr);
+  padding-block: var(--s-8);
+  border-bottom: 1px solid var(--border);
+}
+.beat__t { font: 600 13px/20px var(--f-mono); font-variant-numeric: tabular-nums; color: var(--caution); letter-spacing: 0.04em; }
+.beat__title { font: 600 16px/22px var(--f-ui); letter-spacing: -0.006em; margin-bottom: var(--s-2); }
+.beat__body { color: var(--text-muted); max-width: var(--measure); }
+
+.roster {
+  display: grid; gap: 0;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+.roster__cell { padding: var(--s-4) var(--s-5); border-right: 1px solid var(--border); }
+.roster__cell:last-child { border-right: 0; }
+.roster__name { font: 600 14px/20px var(--f-ui); margin-bottom: var(--s-1); }
+.roster__meta { font: 500 12px/18px var(--f-mono); font-variant-numeric: tabular-nums; color: var(--text-dim); }
+
+.quotes { display: grid; gap: var(--s-6); grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+.quote { border-left: 1px solid var(--border-strong); padding-left: var(--s-5); }
+.quote blockquote { margin: 0 0 var(--s-4); font-size: 16px; line-height: 26px; }
+.quote figcaption { font: 500 12px/18px var(--f-mono); color: var(--text-dim); }
+.quote figcaption b { display: block; color: var(--text-muted); font-weight: 600; }
+
+.cta { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-6); justify-items: start; padding-block: var(--s-16); border-top: 1px solid var(--border); }
+
+/* ----------------------------------------------------------- 10. pricing UI */
+
+.tiers { display: grid; gap: 0; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1px solid var(--border); }
+.tier { padding: var(--s-6) var(--s-5) var(--s-8); border-right: 1px solid var(--border); background: var(--surface); display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: var(--s-4); }
+.tier:last-child { border-right: 0; }
+.tier--picked { background: var(--surface-2); }
+.tier__name { font: 700 21px/27px var(--f-ui); letter-spacing: -0.012em; }
+.tier__price { font: 500 30px/34px var(--f-mono); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.tier__price span { font-size: 13px; color: var(--text-dim); letter-spacing: 0; }
+.tier__for { color: var(--text-muted); font-size: 13px; line-height: 20px; }
+.tier__list { display: grid; gap: var(--s-2); font-size: 13px; line-height: 20px; color: var(--text-muted); }
+.tier__list li { display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: var(--s-2); }
+.tier__list .mk { color: var(--normal); font-family: var(--f-mono); }
+
+.compare { width: 100%; min-width: 780px; border-collapse: collapse; font-size: 13px; }
+.compare caption { text-align: left; padding-bottom: var(--s-3); color: var(--text-dim); font: 600 11px/14px var(--f-mono); letter-spacing: 0.085em; text-transform: uppercase; }
+.compare th, .compare td { padding: var(--s-3) var(--s-4); border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+.compare thead th { background: var(--surface-2); border-bottom: 1px solid var(--border-strong); font: 600 11px/14px var(--f-mono); letter-spacing: 0.085em; text-transform: uppercase; color: var(--text-dim); }
+.compare tbody th { font-weight: 500; color: var(--text); width: 30%; }
+.compare td { color: var(--text-muted); font-family: var(--f-mono); font-variant-numeric: tabular-nums; font-size: 12px; }
+.compare .yes { color: var(--normal); }
+.compare .no { color: var(--text-dim); }
+
+.faq { display: grid; gap: 0; border-top: 1px solid var(--border); }
+.qa { border-bottom: 1px solid var(--border); }
+.qa > summary {
+  display: flex; gap: var(--s-4); align-items: baseline;
+  padding: var(--s-5) 0;
+  cursor: pointer;
+  font: 600 16px/24px var(--f-ui); letter-spacing: -0.006em;
+  list-style: none;
+  transition: color var(--d-tick) var(--ease-out);
+}
+.qa > summary::-webkit-details-marker { display: none; }
+.qa > summary::before {
+  content: "+";
+  font: 500 16px/24px var(--f-mono);
+  color: var(--caution);
+  flex: 0 0 16px;
+}
+.qa[open] > summary::before { content: "\2212"; }
+.qa > summary:hover { color: var(--caution); }
+.qa__body { padding: 0 0 var(--s-5) var(--s-8); color: var(--text-muted); max-width: var(--measure); }
+
+/* ---------------------------------------------------------- 11. the console */
+
+.console { display: grid; grid-template-rows: auto auto minmax(0, 1fr); min-height: 100vh; }
+.console__main {
+  display: grid;
+  grid-template-columns: 330px minmax(0, 1fr) 350px;
+  gap: 0;
+  min-height: 0;
+}
+.col { border-right: 1px solid var(--border); min-width: 0; display: grid; grid-template-rows: auto minmax(0, 1fr); align-content: start; }
+.col:last-child { border-right: 0; }
+.col__head {
+  display: flex; align-items: center; gap: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.col__head .label { margin-right: auto; }
+.col__body { padding: var(--s-4); min-width: 0; }
+.col__body--flush { padding: 0; }
+
+.count { font: 600 11px/14px var(--f-mono); color: var(--text-dim); letter-spacing: 0.08em; }
+
+/* disruption queue — each entry opens in place, the rack never moves */
+.queue { display: grid; }
+.q {
+  border-bottom: 1px solid var(--border);
+  transition: background-color var(--d-tick) var(--ease-out);
+}
+.q:hover { background: var(--surface-2); }
+.q > summary {
+  display: grid; gap: var(--s-1) var(--s-3);
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: var(--s-3) var(--s-4);
+  cursor: pointer; list-style: none;
+  min-height: 36px; align-content: center;
+}
+.q > summary::-webkit-details-marker { display: none; }
+.q__id { font: 600 13px/18px var(--f-mono); color: var(--text); letter-spacing: 0.02em; }
+.q__why { grid-column: 1 / -1; font: 500 12px/18px var(--f-mono); color: var(--text-dim); }
+.q__detail {
+  display: grid; grid-template-rows: 0fr;
+  transition: grid-template-rows var(--d-base) var(--ease-in-out);
+}
+.q[open] .q__detail { grid-template-rows: 1fr; }
+.q__inner { overflow: hidden; }
+.q__pad { padding: 0 var(--s-4) var(--s-4); display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-3); }
+.q--caution { background: var(--tint-caution); }
+.q--warning { background: var(--tint-warning); }
+.q--caution:hover, .q--warning:hover { background: var(--surface-2); }
+
+.kv { display: grid; grid-template-columns: 13ch minmax(0, 1fr); gap: var(--s-1) var(--s-3); font: 500 12px/18px var(--f-mono); font-variant-numeric: tabular-nums; }
+.kv dt { color: var(--text-dim); letter-spacing: 0.06em; text-transform: uppercase; font-size: 11px; }
+.kv dd { margin: 0; color: var(--text); }
+
+/* candidate tails offered for the swap */
+.cand { display: grid; gap: var(--s-2); padding: var(--s-3) 0; border-bottom: 1px solid var(--border); }
+.cand:last-of-type { border-bottom: 0; }
+.cand__top { display: flex; gap: var(--s-3); align-items: baseline; flex-wrap: wrap; }
+.cand__tail { font: 600 14px/20px var(--f-mono); color: var(--text); }
+.cand__why { font: 500 12px/18px var(--f-mono); color: var(--text-muted); }
+.cand__why b { color: var(--text); font-weight: 600; }
+.cand--out .cand__tail { color: var(--text-dim); }
+
+/* duty clock — the crew half of every swap */
+.clock { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--s-1) var(--s-3); padding: var(--s-2) 0; border-bottom: 1px solid var(--border); font: 500 12px/18px var(--f-mono); font-variant-numeric: tabular-nums; }
+.clock:last-child { border-bottom: 0; }
+.clock__who { color: var(--text-muted); }
+.clock__left { color: var(--normal); font-weight: 600; }
+.clock__left--near { color: var(--caution); }
+.clock__left--out { color: var(--warning); }
+.clock__bar { grid-column: 1 / -1; height: 3px; background: var(--border); }
+.clock__fill { display: block; height: 100%; background: var(--normal); }
+.clock__fill--near { background: var(--caution); }
+.clock__fill--out { background: var(--warning); }
+
+/* ------------------------------------------------------------- 12. helpers */
+
+.stack { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-4); }
+.stack--lg { gap: var(--s-8); }
+.stack--xl { gap: var(--s-10); }
+.section__head + .lede { margin-bottom: var(--s-10); }
+.foot .divider { margin-block: var(--s-8); }
+.tiers + .small { margin-top: var(--s-4); }
+.divider { height: 1px; background: var(--border); border: 0; }
+.hairbox { border: 1px solid var(--border); padding: var(--s-4); background: var(--surface); }
+.table-scroll { overflow-x: auto; }
+
+.anatomy { display: grid; gap: 0; border: 1px solid var(--border); background: var(--surface); }
+.anatomy__row { display: grid; grid-template-columns: 12ch minmax(0, 1fr); gap: var(--s-4); padding: var(--s-3) var(--s-4); border-bottom: 1px solid var(--border); }
+.anatomy__row:last-child { border-bottom: 0; }
+.anatomy__k { font: 600 11px/18px var(--f-mono); letter-spacing: 0.085em; text-transform: uppercase; color: var(--caution); }
+.anatomy__v { color: var(--text-muted); font-size: 13px; line-height: 18px; }
+
+/* ---------------------------------------------------- 13. motion, gated */
+
+/* Hover displacement only where a pointer can actually hover; on touch a
+   sticky :hover reads as a stuck control. */
+@media (hover: hover) and (pointer: fine) {
+  .btn--primary:hover { transform: translateY(-1px); }
+  .btn--primary:active { transform: translateY(1px); }
+}
+
+/* Reduced motion: fewer and gentler, not zero. Colour still changes — it is
+   how state is read — but nothing loops and nothing travels. */
+@media (prefers-reduced-motion: reduce) {
+  .live::before { animation: none; opacity: 1; }
+  .unfilled { animation: none; opacity: 0.7; }
+  .q__detail { transition-duration: 1ms; }
+  .btn--primary:hover, .btn--primary:active { transform: none; }
+  .btn:active { transform: none; }
+  *, *::before, *::after { animation-iteration-count: 1; scroll-behavior: auto; }
+}
+
+/* --------------------------------------------------------- 14. responsive */
+
+@media (max-width: 1180px) {
+  .console__main { grid-template-columns: 300px minmax(0, 1fr); }
+  .console__main > .col:last-child { grid-column: 1 / -1; border-top: 1px solid var(--border); border-right: 0; }
+}
+
+@media (max-width: 900px) {
+  :root { --s-20: 56px; --s-16: 48px; }
+  .display { font-size: 34px; line-height: 38px; }
+  .h1 { font-size: 24px; line-height: 29px; }
+  .hero__grid { grid-template-columns: minmax(0, 1fr); gap: var(--s-8); }
+  .hero__line { font-size: 15px; line-height: 20px; }
+  .tiers { grid-template-columns: minmax(0, 1fr); }
+  .tier { border-right: 0; border-bottom: 1px solid var(--border); }
+  .tier:last-child { border-bottom: 0; }
+  .console__main { grid-template-columns: minmax(0, 1fr); }
+  .console__main > .col { border-right: 0; border-bottom: 1px solid var(--border); }
+  .beat { grid-template-columns: minmax(0, 1fr); gap: var(--s-2); }
+  .roster__cell { border-right: 0; border-bottom: 1px solid var(--border); }
+}
+
+@media (max-width: 560px) {
+  .nav { gap: var(--s-4); }
+  .wrap { padding-inline: var(--s-4); }
+  .qa__body { padding-left: var(--s-6); }
+}
+
+@media print {
+  body { background: transparent; color: inherit; }
+  .nav, .skip { display: none; }
+}
+
+</style>
+</head>
+<body>
+
+<a class="skip" href="#main">Skip to content</a>
+
+<div class="ribbon">
+  <span class="live">COMPONENT REFERENCE</span>
+  <span><b>COMPONENT</b> <span class="v">RACK / FLIGHT STRIP</span></span>
+  <span><b>STATES DESIGNED</b> <span class="v">8</span></span>
+  <span><b>STATES SHOWN</b> <span class="v">4</span></span>
+</div>
+
+<header class="masthead">
+  <a class="mark" href="../../01-landing-page/parti/index.html">
+    <span class="mark__word">MERIDIAN</span>
+    <span class="mark__sub">Component Reference</span>
+  </a>
+  <nav class="nav" aria-label="Primary">
+    <a href="components.html" aria-current="page">Rack states</a>
+    <a href="../../03-dashboard/parti/dashboard.html">Live demo board</a>
+    <a href="../../02-pricing-page/parti/pricing.html">Pricing</a>
+  </nav>
+</header>
+
+<main id="main">
+
+  <section class="section wrap">
+    <div class="section__head">
+      <span class="label">Component</span>
+      <h1 class="h1">The rack, in every state a shift produces</h1>
+    </div>
+    <p class="lede">
+      One component carries almost the whole product, so it is specified in full here
+      rather than left to whoever builds the next screen. The rule underneath every
+      state below: a dispatcher must never be able to mistake absent data for good data.
+    </p>
+
+    <div class="anatomy">
+      <div class="anatomy__row"><p class="anatomy__k">Bay</p><p class="anatomy__v">Physical rack bay the strip would sit in. Carried over from the paper rack so a dispatcher who trained on strips reads it without being told.</p></div>
+      <div class="anatomy__row"><p class="anatomy__k">Flight</p><p class="anatomy__v">Carrier flight number. Highest weight in the row after the state token — it is what gets said out loud on the phone.</p></div>
+      <div class="anatomy__row"><p class="anatomy__k">Tail / Type</p><p class="anatomy__v">Registration and ICAO type. Never truncated, never abbreviated: a wrong tail is an airworthiness event.</p></div>
+      <div class="anatomy__row"><p class="anatomy__k">Route</p><p class="anatomy__v">IATA origin and destination, tracked wider so the pair reads as one object.</p></div>
+      <div class="anatomy__row"><p class="anatomy__k">STD / ETD</p><p class="anatomy__v">Scheduled and estimated departure, Zulu, tabular figures, right-aligned so the column scans vertically.</p></div>
+      <div class="anatomy__row"><p class="anatomy__k">Delta</p><p class="anatomy__v">Signed difference, amber past 15 minutes, red past 60. Never shown as a bare number without its sign.</p></div>
+      <div class="anatomy__row"><p class="anatomy__k">Crew</p><p class="anatomy__v">Captain and first officer surnames, uppercase, as they appear on the release.</p></div>
+      <div class="anatomy__row"><p class="anatomy__k">Duty left</p><p class="anatomy__v">Time to the crew's hard FAR 117 limit. Amber under 2:00, red at zero.</p></div>
+      <div class="anatomy__row"><p class="anatomy__k">Load</p><p class="anatomy__v">Booked over capacity. Two numbers, not a percentage — a dispatcher rebooking needs the count.</p></div>
+      <div class="anatomy__row"><p class="anatomy__k">State</p><p class="anatomy__v">The printed status token. Redundant with the row tint and the delta colour, so the row still reads in grayscale or in peripheral vision.</p></div>
+    </div>
+  </section>
+
+  <!-- -------------------------------------------------------- populated -->
+  <section class="section wrap">
+    <div class="section__head">
+      <span class="label">State 1</span>
+      <h2 class="h1">Populated</h2>
+    </div>
+    <p class="lede">
+      The working state. Tint, token and delta colour all move together, so no single
+      channel is load-bearing. Rows never truncate; the rack scrolls sideways instead,
+      because a clipped tail number is worse than a scrollbar.
+    </p>
+
+    <div class="state">
+      <div class="state__note">
+        <span><b>11 legs</b> · filter: outbound PDX 1400Z–1800Z</span>
+        <span>updated 3s ago</span>
+        <span>sorted by STD</span>
+      </div>
+      <div class="rack-scroll">
+        <table class="rack">
+          <caption>Rack · populated</caption>
+          <thead>
+            <tr>
+              <th scope="col"><span class="sr">Bay</span><span aria-hidden="true">BAY</span></th>
+              <th scope="col">Flight</th>
+              <th scope="col">Tail</th>
+              <th scope="col">Type</th>
+              <th scope="col">Route</th>
+              <th scope="col">STD</th>
+              <th scope="col">ETD</th>
+              <th scope="col">Delta</th>
+              <th scope="col">Crew</th>
+              <th scope="col">Duty left</th>
+              <th scope="col">Load</th>
+              <th scope="col">State</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="strip--advisory">
+              <td class="f-bay">A</td><td class="f-flt">CR1140</td><td class="f-tail">N309QX</td>
+              <td class="f-type">Q400</td><td class="f-route">SEA→PDX</td>
+              <td class="f-time">1355Z</td><td class="f-time">1416Z</td>
+              <td class="f-delta delta--late">+0:21</td>
+              <td class="f-crew">OSTRANDER/PEÑA</td><td class="f-time">6:12</td><td class="f-pax">68/76</td>
+              <td class="f-status"><span class="tok tok--advisory">Flow hold</span></td>
+            </tr>
+            <tr class="strip--warning">
+              <td class="f-bay">B</td><td class="f-flt">CR2208</td><td class="f-tail">N417CR</td>
+              <td class="f-type">E175</td><td class="f-route">PDX→BOI</td>
+              <td class="f-time">1422Z</td><td class="f-time">1702Z</td>
+              <td class="f-delta delta--hard">+2:40</td>
+              <td class="f-crew">DELACROIX/HAYES</td><td class="f-time">7:48</td><td class="f-pax">47/76</td>
+              <td class="f-status"><span class="tok tok--warning">Mech</span></td>
+            </tr>
+            <tr>
+              <td class="f-bay">A</td><td class="f-flt">CR1866</td><td class="f-tail">N522CG</td>
+              <td class="f-type">CRJ9</td><td class="f-route">PDX→SMF</td>
+              <td class="f-time">1430Z</td><td class="f-time">1430Z</td>
+              <td class="f-delta delta--none">—</td>
+              <td class="f-crew">VOSS/ARMITAGE</td><td class="f-time">9:04</td><td class="f-pax">71/76</td>
+              <td class="f-status"><span class="tok tok--normal">Released</span></td>
+            </tr>
+            <tr class="strip--caution">
+              <td class="f-bay">C</td><td class="f-flt">CR3312</td><td class="f-tail">N614CR</td>
+              <td class="f-type">E175</td><td class="f-route">BOI→PDX</td>
+              <td class="f-time">1505Z</td><td class="f-time">1505Z</td>
+              <td class="f-delta delta--none">—</td>
+              <td class="f-crew">KOVAČ/LINDQVIST</td><td class="f-time delta--late">1:47</td><td class="f-pax">52/76</td>
+              <td class="f-status"><span class="tok tok--caution">Duty watch</span></td>
+            </tr>
+            <tr>
+              <td class="f-bay">A</td><td class="f-flt">CR4405</td><td class="f-tail">N188SK</td>
+              <td class="f-type">Q400</td><td class="f-route">PDX→EUG</td>
+              <td class="f-time">1512Z</td><td class="f-time">1512Z</td>
+              <td class="f-delta delta--none">—</td>
+              <td class="f-crew">REYES/TANNER</td><td class="f-time">8:31</td><td class="f-pax">39/76</td>
+              <td class="f-status"><span class="tok tok--normal">On time</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ------------------------------------------------------------ empty -->
+  <section class="section wrap">
+    <div class="section__head">
+      <span class="label">State 2</span>
+      <h2 class="h1">Empty</h2>
+    </div>
+    <p class="lede">
+      An empty rack is ambiguous — it can mean a quiet hour or a filter that excluded
+      everything — so it always says which, restates the filter that produced it, and
+      offers the single widest action rather than a shrug.
+    </p>
+
+    <div class="state">
+      <div class="state__note">
+        <span><b>0 legs</b> · filter: bay C · irregular only · 1400Z–1800Z</span>
+        <span>updated 3s ago</span>
+      </div>
+      <div class="rack-scroll">
+        <table class="rack">
+          <caption>Rack · empty</caption>
+          <thead>
+            <tr>
+              <th scope="col"><span class="sr">Bay</span><span aria-hidden="true">BAY</span></th>
+              <th scope="col">Flight</th>
+              <th scope="col">Tail</th>
+              <th scope="col">Type</th>
+              <th scope="col">Route</th>
+              <th scope="col">STD</th>
+              <th scope="col">ETD</th>
+              <th scope="col">Delta</th>
+              <th scope="col">Crew</th>
+              <th scope="col">Duty left</th>
+              <th scope="col">Load</th>
+              <th scope="col">State</th>
+            </tr>
+          </thead>
+        </table>
+        <div class="void">
+          <p class="void__title">Nothing irregular in bay C this window.</p>
+          <p class="void__body">
+            Bay C has four scheduled legs between 1400Z and 1800Z and all four are
+            running to plan. The rack is empty because of the filter, not because the
+            feed is quiet — the ribbon above still reads three seconds.
+          </p>
+          <div class="btn-row">
+            <button class="btn btn--console btn--primary" type="button">Show all 4 bay C legs</button>
+            <button class="btn btn--console" type="button">Clear filters</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---------------------------------------------------------- loading -->
+  <section class="section wrap">
+    <div class="section__head">
+      <span class="label">State 3</span>
+      <h2 class="h1">Loading</h2>
+    </div>
+    <p class="lede">
+      The rack and its field rules are drawn immediately; only the values are pending,
+      shown as unfilled fields that pulse in place. Nothing reflows when the data
+      arrives, because the geometry never depended on it. No spinner: a dispatcher
+      needs to know which fields are missing, not that something is happening.
+    </p>
+
+    <div class="state">
+      <div class="state__note">
+        <span><b>Loading</b> · outbound PDX 1400Z–1800Z</span>
+        <span>ARINC handshake, 0.4s elapsed</span>
+      </div>
+      <div class="rack-scroll" aria-busy="true">
+        <table class="rack">
+          <caption>Rack · loading</caption>
+          <thead>
+            <tr>
+              <th scope="col"><span class="sr">Bay</span><span aria-hidden="true">BAY</span></th>
+              <th scope="col">Flight</th>
+              <th scope="col">Tail</th>
+              <th scope="col">Type</th>
+              <th scope="col">Route</th>
+              <th scope="col">STD</th>
+              <th scope="col">ETD</th>
+              <th scope="col">Delta</th>
+              <th scope="col">Crew</th>
+              <th scope="col">Duty left</th>
+              <th scope="col">Load</th>
+              <th scope="col">State</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="f-bay"><span class="unfilled unfilled--sm"></span></td>
+              <td><span class="unfilled unfilled--md"></span></td>
+              <td><span class="unfilled unfilled--md"></span></td>
+              <td><span class="unfilled unfilled--sm"></span></td>
+              <td><span class="unfilled unfilled--md"></span></td>
+              <td><span class="unfilled unfilled--sm"></span></td>
+              <td><span class="unfilled unfilled--sm"></span></td>
+              <td><span class="unfilled unfilled--sm"></span></td>
+              <td><span class="unfilled unfilled--lg"></span></td>
+              <td><span class="unfilled unfilled--sm"></span></td>
+              <td><span class="unfilled unfilled--sm"></span></td>
+              <td><span class="unfilled unfilled--md"></span></td>
+            </tr>
+            <tr>
+              <td class="f-bay"><span class="unfilled unfilled--sm"></span></td>
+              <td><span class="unfilled unfilled--md"></span></td>
+              <td><span class="unfilled unfilled--md"></span></td>
+              <td><span class="unfilled unfilled--sm"></span></td>
+              <td><span class="unfilled unfilled--md"></span></td>
+              <td><span class="unfilled unfilled--sm"></span></td>
+              <td><span class="unfilled unfilled--sm"></span></td>
+              <td><span class="unfilled unfilled--sm"></span></td>
+              <td><span class="unfilled unfilled--lg"></span></td>
+              <td><span class="unfilled unfilled--sm"></span></td>
+              <td><span class="unfilled unfilled--sm"></span></td>
+              <td><span class="unfilled unfilled--md"></span></td>
+            </tr>
+            <tr>
+              <td class="f-bay"><span class="unfilled unfilled--sm"></span></td>
+              <td><span class="unfilled unfilled--md"></span></td>
+              <td><span class="unfilled unfilled--md"></span></td>
+              <td><span class="unfilled unfilled--sm"></span></td>
+              <td><span class="unfilled unfilled--md"></span></td>
+              <td><span class="unfilled unfilled--sm"></span></td>
+              <td><span class="unfilled unfilled--sm"></span></td>
+              <td><span class="unfilled unfilled--sm"></span></td>
+              <td><span class="unfilled unfilled--lg"></span></td>
+              <td><span class="unfilled unfilled--sm"></span></td>
+              <td><span class="unfilled unfilled--sm"></span></td>
+              <td><span class="unfilled unfilled--md"></span></td>
+            </tr>
+            <tr>
+              <td class="f-bay"><span class="unfilled unfilled--sm"></span></td>
+              <td><span class="unfilled unfilled--md"></span></td>
+              <td><span class="unfilled unfilled--md"></span></td>
+              <td><span class="unfilled unfilled--sm"></span></td>
+              <td><span class="unfilled unfilled--md"></span></td>
+              <td><span class="unfilled unfilled--sm"></span></td>
+              <td><span class="unfilled unfilled--sm"></span></td>
+              <td><span class="unfilled unfilled--sm"></span></td>
+              <td><span class="unfilled unfilled--lg"></span></td>
+              <td><span class="unfilled unfilled--sm"></span></td>
+              <td><span class="unfilled unfilled--sm"></span></td>
+              <td><span class="unfilled unfilled--md"></span></td>
+            </tr>
+            <tr>
+              <td class="f-bay"><span class="unfilled unfilled--sm"></span></td>
+              <td><span class="unfilled unfilled--md"></span></td>
+              <td><span class="unfilled unfilled--md"></span></td>
+              <td><span class="unfilled unfilled--sm"></span></td>
+              <td><span class="unfilled unfilled--md"></span></td>
+              <td><span class="unfilled unfilled--sm"></span></td>
+              <td><span class="unfilled unfilled--sm"></span></td>
+              <td><span class="unfilled unfilled--sm"></span></td>
+              <td><span class="unfilled unfilled--lg"></span></td>
+              <td><span class="unfilled unfilled--sm"></span></td>
+              <td><span class="unfilled unfilled--sm"></span></td>
+              <td><span class="unfilled unfilled--md"></span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="small">Announced to assistive technology as “Rack loading, outbound PDX” via the busy region above; the row count is announced once when it resolves, not on every field.</p>
+    </div>
+  </section>
+
+  <!-- ------------------------------------------------------------ error -->
+  <section class="section wrap">
+    <div class="section__head">
+      <span class="label">State 4</span>
+      <h2 class="h1">Error</h2>
+    </div>
+    <p class="lede">
+      The one state that gets the warning fill. Meridian will not show a rack it cannot
+      vouch for, so the last-known data is withdrawn rather than left on screen looking
+      current, and the desk is moved to manual entry in the same breath.
+    </p>
+
+    <div class="state">
+      <div class="state__note">
+        <span><b>Feed lost</b> · ARINC primary and secondary</span>
+        <span>last good frame 1419:44Z</span>
+        <span>2m 23s stale</span>
+      </div>
+      <div class="rack-scroll">
+        <table class="rack">
+          <caption>Rack · error</caption>
+          <thead>
+            <tr>
+              <th scope="col"><span class="sr">Bay</span><span aria-hidden="true">BAY</span></th>
+              <th scope="col">Flight</th>
+              <th scope="col">Tail</th>
+              <th scope="col">Type</th>
+              <th scope="col">Route</th>
+              <th scope="col">STD</th>
+              <th scope="col">ETD</th>
+              <th scope="col">Delta</th>
+              <th scope="col">Crew</th>
+              <th scope="col">Duty left</th>
+              <th scope="col">Load</th>
+              <th scope="col">State</th>
+            </tr>
+          </thead>
+        </table>
+        <div class="void void--error" role="alert">
+          <span class="tok tok--warning">Feed lost</span>
+          <p class="void__title">The rack is stale and has been withdrawn.</p>
+          <p class="void__body">
+            Both ARINC connections dropped at 1419:44Z. The 47 legs last received are
+            held but not displayed, because an ETD that is two minutes old looks
+            identical to one that is current and there is no safe way to tell them
+            apart on a strip. Manual entry is open on all fields and anything you type
+            is queued for reconciliation when the feed returns.
+          </p>
+          <div class="btn-row">
+            <button class="btn btn--console btn--primary" type="button">Open manual entry</button>
+            <button class="btn btn--console" type="button">Show last good frame, marked stale</button>
+            <button class="btn btn--console" type="button">Page network operations</button>
+          </div>
+          <p class="small">Retrying automatically every 15 seconds. Attempt 10 of unlimited.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ----------------------------------------------------- state matrix -->
+  <section class="section wrap">
+    <div class="section__head">
+      <span class="label">Coverage</span>
+      <h2 class="h1">Every state the rack is specified for</h2>
+    </div>
+    <p class="lede">
+      Four are drawn above. The other four are specified here so the next person to
+      touch this component does not invent them under time pressure.
+    </p>
+
+    <div class="table-scroll">
+      <table class="compare">
+        <caption>Rack state matrix</caption>
+        <thead>
+          <tr>
+            <th scope="col">State</th>
+            <th scope="col">Shown above</th>
+            <th scope="col">Behaviour</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">Populated</th><td class="yes">yes</td><td>Tint, token and delta colour move together. Row height fixed at 34px.</td></tr>
+          <tr><th scope="row">Empty, filtered</th><td class="yes">yes</td><td>Names the filter, says the feed is healthy, offers the widest single action.</td></tr>
+          <tr><th scope="row">Empty, first run</th><td class="no">no</td><td>Same frame, different copy: no schedule imported yet, action is to connect a feed or upload SSIM.</td></tr>
+          <tr><th scope="row">Loading</th><td class="yes">yes</td><td>Rules drawn, values unfilled and pulsing. No spinner, no reflow on arrival.</td></tr>
+          <tr><th scope="row">Error, feed lost</th><td class="yes">yes</td><td>Data withdrawn, warning fill, manual entry opened, retry count visible.</td></tr>
+          <tr><th scope="row">Partial, one source stale</th><td class="no">no</td><td>Rack stays populated; only the fields fed by the dead source are struck through with their age printed. Never interpolated.</td></tr>
+          <tr><th scope="row">Overflow</th><td class="no">no</td><td>No field ever truncates. The rack scrolls horizontally and the flight column pins. A clipped tail number is an airworthiness risk.</td></tr>
+          <tr><th scope="row">Read-only, SOC seat</th><td class="no">no</td><td>Identical rack, action buttons absent rather than disabled, and a persistent read-only marker in the column head.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <div class="foot__cols">
+      <div>
+        <h2>Component</h2>
+        <ul>
+          <li><a href="components.html">Rack states</a></li>
+          <li><a href="../../03-dashboard/parti/dashboard.html">The rack in use</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Product</h2>
+        <ul>
+          <li><a href="../../01-landing-page/parti/index.html">Overview</a></li>
+          <li><a href="../../02-pricing-page/parti/pricing.html">Pricing</a></li>
+        </ul>
+      </div>
+    </div>
+    <hr class="divider">
+    <p>MERIDIAN FLIGHT OPS CONTROL · PORTLAND, OR · ALL TIMES ZULU · NOT FOR NAVIGATION</p>
+  </div>
+</footer>
+
+</body>
+</html>

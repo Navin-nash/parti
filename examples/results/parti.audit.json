@@ -1,0 +1,132 @@
+{
+  "root": "C:\\Users\\govin\\AppData\\Local\\Temp\\parti_parti_fip3g3kf",
+  "files_scanned": 5,
+  "color": {
+    "unique_count": 0,
+    "top": [],
+    "neutral_count": 0,
+    "chromatic_count": 0,
+    "oklch_uses": 85,
+    "hsl_uses": 0,
+    "contrast_samples": []
+  },
+  "type": {
+    "families": [],
+    "family_count": 0,
+    "google_fonts": [],
+    "size_count": 7,
+    "sizes_px": [
+      11.0,
+      12.0,
+      13.0,
+      15.0,
+      16.0,
+      24.0,
+      34.0
+    ],
+    "scale_ratios": [
+      1.091,
+      1.083,
+      1.154,
+      1.067,
+      1.5,
+      1.417
+    ]
+  },
+  "space": {
+    "unique_count": 14,
+    "values_px": [
+      2.0,
+      4.0,
+      5.0,
+      8.0,
+      12.0,
+      16.0,
+      20.0,
+      24.0,
+      32.0,
+      40.0,
+      48.0,
+      56.0,
+      64.0,
+      80.0
+    ],
+    "base_unit": 8,
+    "off_grid": [
+      2.0,
+      4.0,
+      5.0,
+      12.0,
+      20.0
+    ]
+  },
+  "shape": {
+    "radius_variants": 3,
+    "radii": [
+      {
+        "value": "var(--r-sm)",
+        "uses": 10
+      },
+      {
+        "value": "var(--r-none)",
+        "uses": 10
+      },
+      {
+        "value": "var(--r-round)",
+        "uses": 5
+      }
+    ],
+    "shadow_variants": 0,
+    "shadows": [],
+    "zindex_variants": 2,
+    "zindex_max": 50
+  },
+  "motion": {
+    "libraries": [],
+    "duration_variants": 1,
+    "durations_ms": [
+      1
+    ],
+    "durations_over_400ms": [],
+    "custom_easing_uses": 10,
+    "default_easing_uses": 80,
+    "easings": {
+      "ease-out": 60,
+      "ease-in-out": 20,
+      "cubic-bezier(0.16,1,0.3,1)": 5,
+      "cubic-bezier(0.65,0,0.35,1)": 5
+    },
+    "reduced_motion_handled": true,
+    "reduced_motion_files": [
+      "01-landing-page__index.html",
+      "02-pricing-page__pricing.html",
+      "03-dashboard__dashboard.html",
+      "04-components__components.html",
+      "parti.css"
+    ]
+  },
+  "system": {
+    "css_vars_defined": 45,
+    "css_vars_used": 42,
+    "css_vars_unused": [
+      "--d-slow",
+      "--primary",
+      "--quiet"
+    ],
+    "tailwind_arbitrary_values": 0,
+    "important_uses": 0,
+    "tokenization_ratio": 2.0
+  },
+  "a11y": {
+    "outline_none_uses": 0,
+    "backdrop_filter_uses": 0,
+    "reduced_motion_handled": true,
+    "low_contrast_pairs": []
+  },
+  "tells": [],
+  "libraries": {
+    "animation": [],
+    "ui": [],
+    "declared": {}
+  }
+}

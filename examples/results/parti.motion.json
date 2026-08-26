@@ -1,0 +1,21 @@
+{
+  "root": "C:\\Users\\govin\\AppData\\Local\\Temp\\parti_parti_fip3g3kf",
+  "files_scanned": 5,
+  "findings": [],
+  "census": {
+    "durations_ms": {
+      "1": 5
+    },
+    "easings": {
+      "ease": 55,
+      "cubic-bezier(0.16, 1, 0.3, 1)": 5,
+      "cubic-bezier(0.65, 0, 0.35, 1)": 5
+    },
+    "distinct_curves": 2,
+    "distinct_durations": 1,
+    "reduced_motion_sites": 5,
+    "hover_gated": true
+  },
+  "counts": {},
+  "pass": true
+}

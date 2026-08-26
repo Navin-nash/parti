@@ -1,0 +1,67 @@
+{
+  "measured_score": 80.6,
+  "band": "Coherent",
+  "recommendation": "Sound underneath; the gaps are specific and cheap to close.",
+  "dimensions": {
+    "color_discipline": {
+      "score": 15.4,
+      "max": 20,
+      "findings": [
+        "only 0 unique colors \u2014 possibly untokenized or very thin",
+        "0 chromatic of 0 (0%) \u2014 accents should be a minority",
+        "no contrast pairs could be sampled \u2014 verify manually"
+      ]
+    },
+    "type_system": {
+      "score": 12.4,
+      "max": 20,
+      "findings": [
+        "no font-family declarations found \u2014 inherited or framework-default",
+        "7 distinct sizes \u2014 a real scale",
+        "step ratios 1.07\u20131.50 \u2014 irregular; no single ratio governs the scale"
+      ]
+    },
+    "spatial_rhythm": {
+      "score": 11.8,
+      "max": 15,
+      "findings": [
+        "base unit 8px detected",
+        "14 spacing values \u2014 loose but workable",
+        "5 off-grid values: [2.0, 4.0, 5.0, 12.0, 20.0]"
+      ]
+    },
+    "tokenization": {
+      "score": 15.0,
+      "max": 15,
+      "findings": [
+        "45 custom properties defined, 42 referenced",
+        "3 defined but never referenced: ['--d-slow', '--primary', '--quiet']",
+        "3 radius variants, 0 shadow variants (systematic)"
+      ]
+    },
+    "motion_craft": {
+      "score": 11.0,
+      "max": 15,
+      "findings": [
+        "easing: 10 custom curves vs 80 CSS defaults \u2014 mostly browser defaults; the feel is unauthored",
+        "1 duration values \u2014 a motion scale exists",
+        "prefers-reduced-motion handled"
+      ]
+    },
+    "distinctiveness": {
+      "score": 15.0,
+      "max": 15,
+      "findings": [
+        "no recognizable generated-design tells detected in source"
+      ]
+    }
+  },
+  "judged_dimensions_not_scored_here": [
+    "hierarchy \u2014 does attention land in the intended order",
+    "signature \u2014 is there one memorable element",
+    "content fit \u2014 does density match what the content demands",
+    "copy \u2014 does the writing carry its weight",
+    "state coverage \u2014 empty, loading, error, overflow",
+    "concept \u2014 is there a thesis, or only defaults"
+  ]
+}

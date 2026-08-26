@@ -1,0 +1,80 @@
+{
+  "root": "C:\\Users\\govin\\AppData\\Local\\Temp\\parti_baseline_px12797t",
+  "files_scanned": 5,
+  "findings": [
+    {
+      "rule": "perf-layout-property",
+      "severity": "P0",
+      "file": "01-landing-page__index.html",
+      "line": 153,
+      "message": "animating a layout property triggers layout+paint+composite every frame; use transform/opacity",
+      "code": "transition: top var(--speed) ease;",
+      "scope": "line"
+    },
+    {
+      "rule": "perf-layout-property",
+      "severity": "P0",
+      "file": "02-pricing-page__pricing.html",
+      "line": 153,
+      "message": "animating a layout property triggers layout+paint+composite every frame; use transform/opacity",
+      "code": "transition: top var(--speed) ease;",
+      "scope": "line"
+    },
+    {
+      "rule": "perf-layout-property",
+      "severity": "P0",
+      "file": "03-dashboard__dashboard.html",
+      "line": 153,
+      "message": "animating a layout property triggers layout+paint+composite every frame; use transform/opacity",
+      "code": "transition: top var(--speed) ease;",
+      "scope": "line"
+    },
+    {
+      "rule": "perf-layout-property",
+      "severity": "P0",
+      "file": "04-components__components.html",
+      "line": 153,
+      "message": "animating a layout property triggers layout+paint+composite every frame; use transform/opacity",
+      "code": "transition: top var(--speed) ease;",
+      "scope": "line"
+    },
+    {
+      "rule": "perf-layout-property",
+      "severity": "P0",
+      "file": "baseline.css",
+      "line": 144,
+      "message": "animating a layout property triggers layout+paint+composite every frame; use transform/opacity",
+      "code": "transition: top var(--speed) ease;",
+      "scope": "line"
+    },
+    {
+      "rule": "a11y-ungated-hover",
+      "severity": "P1",
+      "scope": "repo",
+      "file": "01-landing-page__index.html, 02-pricing-page__pricing.html, 03-dashboard__dashboard.html, 04-components__components.html",
+      "line": 0,
+      "message": "hover motion in 5 file(s) with no @media (hover: hover) and (pointer: fine) anywhere - touch taps stick in hover state",
+      "code": ""
+    }
+  ],
+  "census": {
+    "durations_ms": {
+      "0": 10,
+      "1400": 5,
+      "2400": 5
+    },
+    "easings": {
+      "ease": 85,
+      "linear": 5
+    },
+    "distinct_curves": 0,
+    "distinct_durations": 3,
+    "reduced_motion_sites": 5,
+    "hover_gated": false
+  },
+  "counts": {
+    "P0": 5,
+    "P1": 1
+  },
+  "pass": false
+}

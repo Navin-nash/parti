@@ -1,0 +1,40 @@
+MEASURED SCORE  59.9 / 100   (Drifting)
+                A system existed once. Enforcement lapsed. Surgical pass warranted.
+
+Color Discipline    12.3/20  ████████████········
+    26 unique colors — within a systematic range
+    21 chromatic of 26 (81%) — accents should be a minority
+    ⚠ 3/5 sampled pairs below 4.5:1 (worst: #35c6e0 on #ffffff = 2.04:1)
+    no OKLCH — perceptual lightness stepping unavailable
+
+Type System         10.4/20  ██████████··········
+    no font-family declarations found — inherited or framework-default
+    28 distinct sizes — sizes are chosen per-component, not from a scale
+    step ratios 1.02–1.06 — consistent
+
+Spatial Rhythm       2.6/15  ███·················
+    no base unit detected — spacing is arbitrary
+    23 spacing values — spacing is improvised per-component
+    20 off-grid values: [0.8, 1.0, 1.6, 2.0, 2.4, 3.2, 4.8, 5.0]
+
+Tokenization        12.1/15  ████████████████····
+    48 custom properties defined, 44 referenced
+    4 defined but never referenced: ['--danger', '--ghost', '--primary', '--quiet']
+    9 radius variants, 8 shadow variants (ad hoc — elevation carries no meaning)
+    20 !important, 0 arbitrary values — the system is being escaped
+
+Motion Craft        10.5/15  ██████████████······
+    easing: 0 custom curves vs 106 CSS defaults — mostly browser defaults; the feel is unauthored
+    1 duration values — a motion scale exists
+    prefers-reduced-motion handled
+
+Distinctiveness     12.0/15  ████████████████····
+    ⚠ Glassmorphic card (backdrop-blur + translucent bg) — 01-landing-page__index.html, 02-pricing-page__pricing.html, 03-dashboard__dashboard.html
+
+NOT MEASURED — judge these yourself, with evidence, and report separately:
+    · hierarchy — does attention land in the intended order
+    · signature — is there one memorable element
+    · content fit — does density match what the content demands
+    · copy — does the writing carry its weight
+    · state coverage — empty, loading, error, overflow
+    · concept — is there a thesis, or only defaults

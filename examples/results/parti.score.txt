@@ -1,0 +1,38 @@
+MEASURED SCORE  80.6 / 100   (Coherent)
+                Sound underneath; the gaps are specific and cheap to close.
+
+Color Discipline    15.4/20  ███████████████·····
+    only 0 unique colors — possibly untokenized or very thin
+    0 chromatic of 0 (0%) — accents should be a minority
+    no contrast pairs could be sampled — verify manually
+
+Type System         12.4/20  ████████████········
+    no font-family declarations found — inherited or framework-default
+    7 distinct sizes — a real scale
+    step ratios 1.07–1.50 — irregular; no single ratio governs the scale
+
+Spatial Rhythm      11.8/15  ████████████████····
+    base unit 8px detected
+    14 spacing values — loose but workable
+    5 off-grid values: [2.0, 4.0, 5.0, 12.0, 20.0]
+
+Tokenization        15.0/15  ████████████████████
+    45 custom properties defined, 42 referenced
+    3 defined but never referenced: ['--d-slow', '--primary', '--quiet']
+    3 radius variants, 0 shadow variants (systematic)
+
+Motion Craft        11.0/15  ███████████████·····
+    easing: 10 custom curves vs 80 CSS defaults — mostly browser defaults; the feel is unauthored
+    1 duration values — a motion scale exists
+    prefers-reduced-motion handled
+
+Distinctiveness     15.0/15  ████████████████████
+    no recognizable generated-design tells detected in source
+
+NOT MEASURED — judge these yourself, with evidence, and report separately:
+    · hierarchy — does attention land in the intended order
+    · signature — is there one memorable element
+    · content fit — does density match what the content demands
+    · copy — does the writing carry its weight
+    · state coverage — empty, loading, error, overflow
+    · concept — is there a thesis, or only defaults

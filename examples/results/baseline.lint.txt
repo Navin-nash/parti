@@ -1,0 +1,4 @@
+wrote D:\design-direction\examples\results\baseline.lint.json
+Scanned 5 files under C:\Users\govin\AppData\Local\Temp\parti_baseline_px12797t
+
+No findings. Clean.

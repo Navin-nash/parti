@@ -1,0 +1,32 @@
+wrote D:\design-direction\examples\results\baseline.motion.json
+Scanned 5 files under C:\Users\govin\AppData\Local\Temp\parti_baseline_px12797t
+
+CENSUS
+  distinct durations : 3  [0, 1400, 2400]
+  distinct curves    : 0
+  reduced-motion     : 5 site(s)
+  hover gated        : NO
+
+FINDINGS
+  01-landing-page__index.html:153 - [perf-layout-property] animating a layout property triggers layout+paint+composite every frame; use transform/opacity
+      transition: top var(--speed) ease;
+  02-pricing-page__pricing.html:153 - [perf-layout-property] animating a layout property triggers layout+paint+composite every frame; use transform/opacity
+      transition: top var(--speed) ease;
+  03-dashboard__dashboard.html:153 - [perf-layout-property] animating a layout property triggers layout+paint+composite every frame; use transform/opacity
+      transition: top var(--speed) ease;
+  04-components__components.html:153 - [perf-layout-property] animating a layout property triggers layout+paint+composite every frame; use transform/opacity
+      transition: top var(--speed) ease;
+  baseline.css:144 - [perf-layout-property] animating a layout property triggers layout+paint+composite every frame; use transform/opacity
+      transition: top var(--speed) ease;
+  01-landing-page__index.html, 02-pricing-page__pricing.html, 03-dashboard__dashboard.html, 04-components__components.html - [a11y-ungated-hover] hover motion in 5 file(s) with no @media (hover: hover) and (pointer: fine) anywhere - touch taps stick in hover state
+
+SUMMARY
+  | Rule | Count | Severity |
+  |---|---|---|
+  | `perf-layout-property` | 5 | P0 |
+  | `a11y-ungated-hover` | 1 | P1 |
+
+  {'P0': 5, 'P1': 1}  ->  FAIL (P0 present)
+
+  Still to judge by hand: purpose & frequency (motion-rules.md §3), cohesion (§10),
+  staging (§11), and the missed-opportunity list (§14).

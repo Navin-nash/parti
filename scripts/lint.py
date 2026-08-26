@@ -112,7 +112,20 @@ def read(p):
 def load_tokens(path):
     with open(path, "r", encoding="utf-8") as f:
         raw = json.load(f)
-    return {norm_hex(v) for v in raw.values() if isinstance(v, str) and RE_HEX.fullmatch(v.lstrip("#"))}
+    # Two things have to line up here, and getting either wrong silently empties
+    # the allowed set — which reports every color in the codebase as drift while
+    # still passing a naive "does it flag the unspec'd one" test:
+    #   - RE_HEX needs the leading '#' to match, so validate the restored form;
+    #   - norm_hex expects BARE digits (it is fed RE_HEX group(1) at the call
+    #     site below), so normalize the stripped form, not the '#'-prefixed one.
+    allowed = set()
+    for v in raw.values():
+        if not isinstance(v, str):
+            continue
+        bare = v.lstrip("#")
+        if RE_HEX.fullmatch("#" + bare):
+            allowed.add(norm_hex(bare))
+    return allowed
 
 
 def lint(root, tokens_path=None):

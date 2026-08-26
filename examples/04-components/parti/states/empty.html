@@ -1,0 +1,697 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flight rack — empty state (parti)</title>
+<style>
+/* ==========================================================================
+   Meridian — direction "Strip Rack"
+   Shared stylesheet for all four surfaces.
+
+   Premise: a dispatcher is interrupted every four minutes. The board must be
+   re-readable in one glance, at 02:00, on the tenth hour, after a phone call.
+
+   Colour is authored in oklch() — the same values the token spec carries, in
+   the notation the token spec prescribes. Nothing here is a raw hex literal,
+   so no colour in this build can escape tokens.json without being noticed.
+   ========================================================================== */
+
+/* --------------------------------------------------------------- 1. tokens */
+
+:root {
+  /* surfaces — elevation is a lightness step, never a shadow */
+  --bg:            oklch(19.30% 0.0170 252.6);
+  --surface:       oklch(22.72% 0.0212 251.7);
+  --surface-2:     oklch(26.75% 0.0257 248.8);
+
+  /* status tints — the tinted card stock a printed strip is cut from */
+  --tint-caution:  oklch(26.03% 0.0235 80.8);
+  --tint-warning:  oklch(24.38% 0.0273 23.0);
+  --tint-advisory: oklch(25.72% 0.0243 223.6);
+
+  --border:        oklch(33.80% 0.0331 248.8);
+  --border-strong: oklch(54.36% 0.0342 246.9);   /* >=3.05:1 on every ground it lands on */
+
+  --text:          oklch(93.68% 0.0121 248.0);   /* 15.3:1 on --bg */
+  --text-muted:    oklch(74.92% 0.0299 246.6);   /*  8.3:1 on --bg */
+  --text-dim:      oklch(64.23% 0.0353 249.8);   /*  4.6:1 on --surface-2 */
+
+  /* the flight-deck signal set: this vocabulary is not a palette choice,
+     it is what every EFIS the audience has ever flown behind already uses */
+  --caution:       oklch(80.13% 0.1390 75.0);    /* amber — needs a decision */
+  --warning:       oklch(69.27% 0.1675 29.8);    /* red   — needs it now     */
+  --normal:        oklch(77.38% 0.1449 154.0);   /* green — nominal          */
+  --advisory:      oklch(78.24% 0.0979 215.9);   /* cyan  — informational    */
+  --on-signal:     oklch(19.30% 0.0170 252.6);
+
+  --f-ui: -apple-system, BlinkMacSystemFont, "Segoe UI Variable Text", "Segoe UI",
+          Roboto, system-ui, sans-serif;
+  --f-mono: ui-monospace, "SF Mono", "Cascadia Mono", "Segoe UI Mono", "Roboto Mono",
+            Menlo, Consolas, monospace;
+
+  --s-1: 4px;  --s-2: 8px;  --s-3: 12px; --s-4: 16px; --s-5: 20px;
+  --s-6: 24px; --s-8: 32px; --s-10: 40px; --s-12: 48px; --s-16: 64px; --s-20: 80px;
+
+  --wrap: 1180px;
+  --row: 34px;
+  --measure: 64ch;
+
+  --r-none: 0;
+  --r-sm: 2px;
+  --r-round: 50%;
+
+  --d-tick: 90ms;
+  --d-fast: 140ms;
+  --d-base: 200ms;
+  --d-slow: 260ms;
+  --d-live: 2400ms;
+  --d-unfilled: 1400ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+/* ----------------------------------------------------------- 2. base reset */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 400 14px/22px var(--f-ui);
+  font-feature-settings: "kern" 1;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3, h4, p, ul, ol, dl, dd, figure, table { margin: 0; }
+ul, ol { padding: 0; list-style: none; }
+
+a { color: inherit; text-decoration-color: var(--border-strong); text-underline-offset: 3px; }
+a:hover { text-decoration-color: var(--advisory); }
+
+::selection { background: var(--advisory); color: var(--on-signal); }
+
+/* One focus treatment for the whole build. Never removed, only replaced. */
+:focus-visible {
+  outline: 2px solid var(--advisory);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
+.sr {
+  position: absolute; width: 1px; height: 1px;
+  clip-path: inset(50%); overflow: hidden; white-space: nowrap;
+}
+
+.skip {
+  position: absolute; left: var(--s-3); top: -100px;
+  z-index: 50; padding: var(--s-2) var(--s-4);
+  background: var(--advisory); color: var(--on-signal);
+  font: 600 13px/1.4 var(--f-mono);
+}
+.skip:focus { top: var(--s-3); }
+
+/* ------------------------------------------------------- 3. type utilities */
+
+.label {
+  font: 600 11px/14px var(--f-mono);
+  letter-spacing: 0.085em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.label--signal { color: var(--caution); }
+
+.mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+
+.num { font-family: var(--f-mono); font-variant-numeric: tabular-nums; font-weight: 500; }
+
+.display {
+  font: 700 46px/48px var(--f-ui);
+  letter-spacing: -0.028em;
+  text-wrap: balance;
+}
+.h1 { font: 700 30px/34px var(--f-ui); letter-spacing: -0.02em; text-wrap: balance; }
+.h2 { font: 650 21px/27px var(--f-ui); letter-spacing: -0.012em; }
+.h3 { font: 600 16px/22px var(--f-ui); letter-spacing: -0.006em; }
+.lede { font-size: 16px; line-height: 26px; color: var(--text-muted); max-width: var(--measure); }
+.prose { color: var(--text-muted); max-width: var(--measure); }
+.prose + .prose { margin-top: var(--s-4); }
+.small { font-size: 13px; line-height: 19px; color: var(--text-muted); }
+
+/* --------------------------------------------------------- 4. page chassis */
+
+.wrap { width: 100%; max-width: var(--wrap); margin-inline: auto; padding-inline: var(--s-6); }
+.wrap--flush { max-width: none; padding-inline: var(--s-5); }
+
+.section { padding-block: var(--s-20); border-top: 1px solid var(--border); }
+.section:first-of-type { border-top: 0; }
+
+.section__head { display: flex; flex-wrap: wrap; gap: var(--s-4) var(--s-8); align-items: baseline; margin-bottom: var(--s-8); }
+.section__head .label { flex: 0 0 auto; }
+.section__head .h1 { flex: 1 1 22ch; }
+
+/* The status ribbon. The board wears one; so does every page of the site,
+   because the site is shown at the same luminance the product runs at. */
+.ribbon {
+  display: flex; flex-wrap: wrap; gap: var(--s-2) var(--s-5);
+  align-items: center;
+  padding: var(--s-2) var(--s-5);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  font: 500 12px/16px var(--f-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+}
+.ribbon b { color: var(--text-muted); font-weight: 500; }
+.ribbon .v { color: var(--text); }
+.ribbon .v--ok { color: var(--normal); }
+.ribbon .v--caution { color: var(--caution); }
+.ribbon .v--warning { color: var(--warning); }
+
+.live { display: inline-flex; align-items: center; gap: var(--s-2); }
+.live::before {
+  content: ""; width: 6px; height: 6px; border-radius: var(--r-round);
+  background: var(--normal);
+  animation: live-tick var(--d-live) var(--ease-in-out) infinite;
+}
+@keyframes live-tick { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+/* masthead — wordmark and route, not logo-left/links-centre/CTA-right */
+.masthead {
+  display: flex; flex-wrap: wrap; gap: var(--s-4) var(--s-8);
+  align-items: center;
+  padding: var(--s-4) var(--s-5);
+  border-bottom: 1px solid var(--border);
+}
+.mark { display: flex; align-items: baseline; gap: var(--s-3); padding-block: var(--s-1); text-decoration: none; }
+.mark__word { font: 700 17px/20px var(--f-ui); letter-spacing: 0.02em; }
+.mark__sub { font: 600 11px/14px var(--f-mono); letter-spacing: 0.085em; text-transform: uppercase; color: var(--text-dim); }
+
+.nav { display: flex; flex-wrap: wrap; gap: var(--s-5); margin-left: auto; align-items: center; }
+.nav a {
+  font: 600 12px/16px var(--f-mono);
+  letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--text-muted); text-decoration: none;
+  padding-block: var(--s-2);
+  border-bottom: 1px solid transparent;
+  transition: color var(--d-tick) var(--ease-out), border-color var(--d-tick) var(--ease-out);
+}
+.nav a:hover, .nav a[aria-current] { color: var(--text); border-bottom-color: var(--caution); }
+
+.foot {
+  border-top: 1px solid var(--border);
+  padding-block: var(--s-10);
+  font: 500 12px/20px var(--f-mono);
+  color: var(--text-dim);
+}
+.foot__cols { display: flex; flex-wrap: wrap; gap: var(--s-8) var(--s-12); }
+.foot h2 { font: 600 11px/14px var(--f-mono); letter-spacing: 0.085em; text-transform: uppercase; color: var(--text-muted); margin-bottom: var(--s-3); }
+.foot li + li { margin-top: var(--s-1); }
+.foot a { display: inline-block; padding-block: 5px; text-decoration: none; }
+.foot a:hover { color: var(--text); }
+
+/* ------------------------------------------------------------- 5. controls */
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--s-2);
+  min-height: 44px;
+  padding: 0.7em 1.3em;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--text);
+  font: 600 13px/1 var(--f-mono);
+  letter-spacing: 0.05em; text-transform: uppercase;
+  text-decoration: none; cursor: pointer;
+  transition: background-color var(--d-tick) var(--ease-out),
+              color var(--d-tick) var(--ease-out),
+              border-color var(--d-tick) var(--ease-out),
+              transform var(--d-fast) var(--ease-out);
+}
+.btn:hover { background: var(--surface-2); border-color: var(--text-dim); }
+.btn:active { transform: translateY(1px); }
+
+.btn--primary {
+  background: var(--caution); border-color: var(--caution); color: var(--on-signal);
+}
+.btn--primary:hover { background: var(--text); border-color: var(--text); color: var(--on-signal); }
+
+.btn--quiet {
+  border-color: transparent; color: var(--text-muted);
+  padding-inline: var(--s-2);
+  text-decoration: underline; text-decoration-color: var(--border-strong);
+}
+.btn--quiet:hover { background: transparent; color: var(--text); text-decoration-color: var(--caution); }
+
+.btn--console { min-height: 32px; padding: 0 var(--s-3); font-size: 12px; }
+
+.btn-row { display: flex; flex-wrap: wrap; gap: var(--s-3); align-items: center; }
+
+/* ----------------------------------------------------- 6. panels (no cards) */
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-none);
+}
+.panel__head {
+  display: flex; align-items: center; gap: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  border-bottom: 1px solid var(--border);
+}
+.panel__head .label { margin-right: auto; }
+.panel__body { padding: var(--s-4); }
+.panel--focus { background: var(--surface-2); border-color: var(--border-strong); }
+
+/* ------------------------------------------- 7. the strip rack (signature) */
+
+.rack-scroll { overflow-x: auto; border: 1px solid var(--border); background: var(--surface); }
+
+.rack {
+  width: 100%;
+  min-width: 940px;
+  border-collapse: collapse;
+  font: 500 13px/16px var(--f-mono);
+  font-variant-numeric: tabular-nums;
+}
+/* the same strip grammar at rail width: no min-width, no horizontal escape */
+.rack--inline { min-width: 0; }
+.rack--inline td { padding-inline: var(--s-2); }
+
+.rack caption {
+  text-align: left;
+  padding: var(--s-3) var(--s-4);
+  border-bottom: 1px solid var(--border);
+  font: 600 11px/14px var(--f-mono);
+  letter-spacing: 0.085em; text-transform: uppercase;
+  color: var(--text-dim);
+}
+.rack thead th {
+  position: sticky; top: 0; z-index: 2;
+  padding: var(--s-2) var(--s-3);
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border-strong);
+  font: 600 10px/14px var(--f-mono);
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--text-dim);
+  text-align: left;
+  white-space: nowrap;
+}
+.rack tbody tr {
+  height: var(--row);
+  border-bottom: 1px solid var(--border);
+  transition: background-color var(--d-tick) var(--ease-out);
+}
+.rack tbody tr:last-child { border-bottom: 0; }
+.rack td {
+  padding: 0 var(--s-3);
+  /* the printed cell rules of a real progress strip */
+  border-right: 1px solid var(--border);
+  white-space: nowrap;
+  color: var(--text-muted);
+}
+.rack td:last-child { border-right: 0; }
+.rack tbody tr:hover { background: var(--surface-2); }
+.rack tbody tr:focus-within { background: var(--surface-2); }
+
+/* fields, in the order they are printed */
+.f-bay    { width: 26px; text-align: center; color: var(--text-dim); font-weight: 600; }
+.f-flt    { color: var(--text); font-weight: 600; }
+.f-tail   { color: var(--text); }
+.f-type   { color: var(--text-dim); }
+.f-route  { color: var(--text); letter-spacing: 0.04em; }
+.f-time   { text-align: right; }
+.f-delta  { text-align: right; color: var(--text-dim); }
+.f-crew   { color: var(--text-muted); }
+.f-pax    { text-align: right; }
+.f-status { width: 1%; }
+.f-num    { text-align: right; }
+
+.delta--late { color: var(--caution); }
+.delta--hard { color: var(--warning); }
+.delta--none { color: var(--text-dim); }
+
+/* row tint = the colour of the card stock. Never the only signal: every
+   tinted row also carries a printed status token and a signed delta. */
+.strip--caution  { background: var(--tint-caution); }
+.strip--warning  { background: var(--tint-warning); }
+.strip--advisory { background: var(--tint-advisory); }
+.strip--caution:hover, .strip--warning:hover, .strip--advisory:hover { background: var(--surface-2); }
+
+/* the printed status token */
+.tok {
+  display: inline-block;
+  padding: 2px var(--s-2);
+  border: 1px solid currentColor;
+  border-radius: var(--r-none);
+  font: 600 11px/14px var(--f-mono);
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--text-dim);
+  transition: color var(--d-base) var(--ease-out),
+              background-color var(--d-base) var(--ease-out);
+}
+.tok--normal   { color: var(--normal); }
+.tok--advisory { color: var(--advisory); }
+.tok--caution  { color: var(--caution); }
+/* warning is the only token that fills: at a glance it is the one thing on the
+   board that reads as ink-on-stock rather than stamp-on-stock */
+.tok--warning  { background: var(--warning); border-color: var(--warning); color: var(--on-signal); }
+
+/* ------------------------------------------------------- 8. rack in states */
+
+.state { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-4); }
+.state__note {
+  display: flex; flex-wrap: wrap; gap: var(--s-2) var(--s-4); align-items: baseline;
+  padding: var(--s-3) var(--s-4);
+  border: 1px solid var(--border);
+  border-bottom: 0;
+  background: var(--surface-2);
+  font: 500 12px/18px var(--f-mono);
+  color: var(--text-muted);
+}
+.state__note b { color: var(--text); font-weight: 600; }
+.state__note + .rack-scroll { border-top: 0; }
+
+.void {
+  display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-4); justify-items: start;
+  padding: var(--s-12) var(--s-6);
+  border-top: 1px solid var(--border);
+}
+.void__title { font: 600 16px/22px var(--f-ui); letter-spacing: -0.006em; }
+.void__body { color: var(--text-muted); max-width: 56ch; font-size: 13px; line-height: 20px; }
+.void--error { background: var(--tint-warning); }
+.void--error .void__title { color: var(--warning); }
+
+/* unfilled strip fields: the rack is drawn, the print head has not arrived */
+.unfilled {
+  display: block; height: 8px;
+  background: var(--border);
+  animation: unfilled-pulse var(--d-unfilled) var(--ease-in-out) infinite;
+}
+.unfilled--sm { width: 42px; }
+.unfilled--md { width: 68px; }
+.unfilled--lg { width: 104px; }
+@keyframes unfilled-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+/* Deliberately unstaggered. A wave down the rack would imply rows arrive in
+   order; they arrive in one frame, and the pulse should say so. */
+
+/* --------------------------------------------------------- 9. marketing UI */
+
+.hero { padding-block: var(--s-16) var(--s-20); }
+.hero__grid { display: grid; gap: var(--s-12); grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); align-items: start; }
+.hero__line {
+  display: flex; flex-wrap: wrap; gap: var(--s-2) var(--s-4);
+  font: 500 20px/24px var(--f-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+  padding-bottom: var(--s-4);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: var(--s-6);
+}
+.hero__line .v { color: var(--text); }
+.hero__line .v--caution { color: var(--caution); }
+.hero .display { margin-bottom: var(--s-5); }
+.hero .lede { margin-bottom: var(--s-8); }
+
+.timeline { display: grid; gap: 0; border-top: 1px solid var(--border); }
+.beat {
+  display: grid; gap: var(--s-3) var(--s-8);
+  grid-template-columns: 92px minmax(0, 1fr);
+  padding-block: var(--s-8);
+  border-bottom: 1px solid var(--border);
+}
+.beat__t { font: 600 13px/20px var(--f-mono); font-variant-numeric: tabular-nums; color: var(--caution); letter-spacing: 0.04em; }
+.beat__title { font: 600 16px/22px var(--f-ui); letter-spacing: -0.006em; margin-bottom: var(--s-2); }
+.beat__body { color: var(--text-muted); max-width: var(--measure); }
+
+.roster {
+  display: grid; gap: 0;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+.roster__cell { padding: var(--s-4) var(--s-5); border-right: 1px solid var(--border); }
+.roster__cell:last-child { border-right: 0; }
+.roster__name { font: 600 14px/20px var(--f-ui); margin-bottom: var(--s-1); }
+.roster__meta { font: 500 12px/18px var(--f-mono); font-variant-numeric: tabular-nums; color: var(--text-dim); }
+
+.quotes { display: grid; gap: var(--s-6); grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+.quote { border-left: 1px solid var(--border-strong); padding-left: var(--s-5); }
+.quote blockquote { margin: 0 0 var(--s-4); font-size: 16px; line-height: 26px; }
+.quote figcaption { font: 500 12px/18px var(--f-mono); color: var(--text-dim); }
+.quote figcaption b { display: block; color: var(--text-muted); font-weight: 600; }
+
+.cta { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-6); justify-items: start; padding-block: var(--s-16); border-top: 1px solid var(--border); }
+
+/* ----------------------------------------------------------- 10. pricing UI */
+
+.tiers { display: grid; gap: 0; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1px solid var(--border); }
+.tier { padding: var(--s-6) var(--s-5) var(--s-8); border-right: 1px solid var(--border); background: var(--surface); display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: var(--s-4); }
+.tier:last-child { border-right: 0; }
+.tier--picked { background: var(--surface-2); }
+.tier__name { font: 700 21px/27px var(--f-ui); letter-spacing: -0.012em; }
+.tier__price { font: 500 30px/34px var(--f-mono); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.tier__price span { font-size: 13px; color: var(--text-dim); letter-spacing: 0; }
+.tier__for { color: var(--text-muted); font-size: 13px; line-height: 20px; }
+.tier__list { display: grid; gap: var(--s-2); font-size: 13px; line-height: 20px; color: var(--text-muted); }
+.tier__list li { display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: var(--s-2); }
+.tier__list .mk { color: var(--normal); font-family: var(--f-mono); }
+
+.compare { width: 100%; min-width: 780px; border-collapse: collapse; font-size: 13px; }
+.compare caption { text-align: left; padding-bottom: var(--s-3); color: var(--text-dim); font: 600 11px/14px var(--f-mono); letter-spacing: 0.085em; text-transform: uppercase; }
+.compare th, .compare td { padding: var(--s-3) var(--s-4); border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+.compare thead th { background: var(--surface-2); border-bottom: 1px solid var(--border-strong); font: 600 11px/14px var(--f-mono); letter-spacing: 0.085em; text-transform: uppercase; color: var(--text-dim); }
+.compare tbody th { font-weight: 500; color: var(--text); width: 30%; }
+.compare td { color: var(--text-muted); font-family: var(--f-mono); font-variant-numeric: tabular-nums; font-size: 12px; }
+.compare .yes { color: var(--normal); }
+.compare .no { color: var(--text-dim); }
+
+.faq { display: grid; gap: 0; border-top: 1px solid var(--border); }
+.qa { border-bottom: 1px solid var(--border); }
+.qa > summary {
+  display: flex; gap: var(--s-4); align-items: baseline;
+  padding: var(--s-5) 0;
+  cursor: pointer;
+  font: 600 16px/24px var(--f-ui); letter-spacing: -0.006em;
+  list-style: none;
+  transition: color var(--d-tick) var(--ease-out);
+}
+.qa > summary::-webkit-details-marker { display: none; }
+.qa > summary::before {
+  content: "+";
+  font: 500 16px/24px var(--f-mono);
+  color: var(--caution);
+  flex: 0 0 16px;
+}
+.qa[open] > summary::before { content: "\2212"; }
+.qa > summary:hover { color: var(--caution); }
+.qa__body { padding: 0 0 var(--s-5) var(--s-8); color: var(--text-muted); max-width: var(--measure); }
+
+/* ---------------------------------------------------------- 11. the console */
+
+.console { display: grid; grid-template-rows: auto auto minmax(0, 1fr); min-height: 100vh; }
+.console__main {
+  display: grid;
+  grid-template-columns: 330px minmax(0, 1fr) 350px;
+  gap: 0;
+  min-height: 0;
+}
+.col { border-right: 1px solid var(--border); min-width: 0; display: grid; grid-template-rows: auto minmax(0, 1fr); align-content: start; }
+.col:last-child { border-right: 0; }
+.col__head {
+  display: flex; align-items: center; gap: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.col__head .label { margin-right: auto; }
+.col__body { padding: var(--s-4); min-width: 0; }
+.col__body--flush { padding: 0; }
+
+.count { font: 600 11px/14px var(--f-mono); color: var(--text-dim); letter-spacing: 0.08em; }
+
+/* disruption queue — each entry opens in place, the rack never moves */
+.queue { display: grid; }
+.q {
+  border-bottom: 1px solid var(--border);
+  transition: background-color var(--d-tick) var(--ease-out);
+}
+.q:hover { background: var(--surface-2); }
+.q > summary {
+  display: grid; gap: var(--s-1) var(--s-3);
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: var(--s-3) var(--s-4);
+  cursor: pointer; list-style: none;
+  min-height: 36px; align-content: center;
+}
+.q > summary::-webkit-details-marker { display: none; }
+.q__id { font: 600 13px/18px var(--f-mono); color: var(--text); letter-spacing: 0.02em; }
+.q__why { grid-column: 1 / -1; font: 500 12px/18px var(--f-mono); color: var(--text-dim); }
+.q__detail {
+  display: grid; grid-template-rows: 0fr;
+  transition: grid-template-rows var(--d-base) var(--ease-in-out);
+}
+.q[open] .q__detail { grid-template-rows: 1fr; }
+.q__inner { overflow: hidden; }
+.q__pad { padding: 0 var(--s-4) var(--s-4); display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-3); }
+.q--caution { background: var(--tint-caution); }
+.q--warning { background: var(--tint-warning); }
+.q--caution:hover, .q--warning:hover { background: var(--surface-2); }
+
+.kv { display: grid; grid-template-columns: 13ch minmax(0, 1fr); gap: var(--s-1) var(--s-3); font: 500 12px/18px var(--f-mono); font-variant-numeric: tabular-nums; }
+.kv dt { color: var(--text-dim); letter-spacing: 0.06em; text-transform: uppercase; font-size: 11px; }
+.kv dd { margin: 0; color: var(--text); }
+
+/* candidate tails offered for the swap */
+.cand { display: grid; gap: var(--s-2); padding: var(--s-3) 0; border-bottom: 1px solid var(--border); }
+.cand:last-of-type { border-bottom: 0; }
+.cand__top { display: flex; gap: var(--s-3); align-items: baseline; flex-wrap: wrap; }
+.cand__tail { font: 600 14px/20px var(--f-mono); color: var(--text); }
+.cand__why { font: 500 12px/18px var(--f-mono); color: var(--text-muted); }
+.cand__why b { color: var(--text); font-weight: 600; }
+.cand--out .cand__tail { color: var(--text-dim); }
+
+/* duty clock — the crew half of every swap */
+.clock { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--s-1) var(--s-3); padding: var(--s-2) 0; border-bottom: 1px solid var(--border); font: 500 12px/18px var(--f-mono); font-variant-numeric: tabular-nums; }
+.clock:last-child { border-bottom: 0; }
+.clock__who { color: var(--text-muted); }
+.clock__left { color: var(--normal); font-weight: 600; }
+.clock__left--near { color: var(--caution); }
+.clock__left--out { color: var(--warning); }
+.clock__bar { grid-column: 1 / -1; height: 3px; background: var(--border); }
+.clock__fill { display: block; height: 100%; background: var(--normal); }
+.clock__fill--near { background: var(--caution); }
+.clock__fill--out { background: var(--warning); }
+
+/* ------------------------------------------------------------- 12. helpers */
+
+.stack { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-4); }
+.stack--lg { gap: var(--s-8); }
+.stack--xl { gap: var(--s-10); }
+.section__head + .lede { margin-bottom: var(--s-10); }
+.foot .divider { margin-block: var(--s-8); }
+.tiers + .small { margin-top: var(--s-4); }
+.divider { height: 1px; background: var(--border); border: 0; }
+.hairbox { border: 1px solid var(--border); padding: var(--s-4); background: var(--surface); }
+.table-scroll { overflow-x: auto; }
+
+.anatomy { display: grid; gap: 0; border: 1px solid var(--border); background: var(--surface); }
+.anatomy__row { display: grid; grid-template-columns: 12ch minmax(0, 1fr); gap: var(--s-4); padding: var(--s-3) var(--s-4); border-bottom: 1px solid var(--border); }
+.anatomy__row:last-child { border-bottom: 0; }
+.anatomy__k { font: 600 11px/18px var(--f-mono); letter-spacing: 0.085em; text-transform: uppercase; color: var(--caution); }
+.anatomy__v { color: var(--text-muted); font-size: 13px; line-height: 18px; }
+
+/* ---------------------------------------------------- 13. motion, gated */
+
+/* Hover displacement only where a pointer can actually hover; on touch a
+   sticky :hover reads as a stuck control. */
+@media (hover: hover) and (pointer: fine) {
+  .btn--primary:hover { transform: translateY(-1px); }
+  .btn--primary:active { transform: translateY(1px); }
+}
+
+/* Reduced motion: fewer and gentler, not zero. Colour still changes — it is
+   how state is read — but nothing loops and nothing travels. */
+@media (prefers-reduced-motion: reduce) {
+  .live::before { animation: none; opacity: 1; }
+  .unfilled { animation: none; opacity: 0.7; }
+  .q__detail { transition-duration: 1ms; }
+  .btn--primary:hover, .btn--primary:active { transform: none; }
+  .btn:active { transform: none; }
+  *, *::before, *::after { animation-iteration-count: 1; scroll-behavior: auto; }
+}
+
+/* --------------------------------------------------------- 14. responsive */
+
+@media (max-width: 1180px) {
+  .console__main { grid-template-columns: 300px minmax(0, 1fr); }
+  .console__main > .col:last-child { grid-column: 1 / -1; border-top: 1px solid var(--border); border-right: 0; }
+}
+
+@media (max-width: 900px) {
+  :root { --s-20: 56px; --s-16: 48px; }
+  .display { font-size: 34px; line-height: 38px; }
+  .h1 { font-size: 24px; line-height: 29px; }
+  .hero__grid { grid-template-columns: minmax(0, 1fr); gap: var(--s-8); }
+  .hero__line { font-size: 15px; line-height: 20px; }
+  .tiers { grid-template-columns: minmax(0, 1fr); }
+  .tier { border-right: 0; border-bottom: 1px solid var(--border); }
+  .tier:last-child { border-bottom: 0; }
+  .console__main { grid-template-columns: minmax(0, 1fr); }
+  .console__main > .col { border-right: 0; border-bottom: 1px solid var(--border); }
+  .beat { grid-template-columns: minmax(0, 1fr); gap: var(--s-2); }
+  .roster__cell { border-right: 0; border-bottom: 1px solid var(--border); }
+}
+
+@media (max-width: 560px) {
+  .nav { gap: var(--s-4); }
+  .wrap { padding-inline: var(--s-4); }
+  .qa__body { padding-left: var(--s-6); }
+}
+
+@media print {
+  body { background: transparent; color: inherit; }
+  .nav, .skip { display: none; }
+}
+
+</style>
+</head>
+<body>
+<main style="padding:2rem">
+<section class="section wrap">
+    <div class="section__head">
+      <span class="label">State 2</span>
+      <h2 class="h1">Empty</h2>
+    </div>
+    <p class="lede">
+      An empty rack is ambiguous — it can mean a quiet hour or a filter that excluded
+      everything — so it always says which, restates the filter that produced it, and
+      offers the single widest action rather than a shrug.
+    </p>
+
+    <div class="state">
+      <div class="state__note">
+        <span><b>0 legs</b> · filter: bay C · irregular only · 1400Z–1800Z</span>
+        <span>updated 3s ago</span>
+      </div>
+      <div class="rack-scroll">
+        <table class="rack">
+          <caption>Rack · empty</caption>
+          <thead>
+            <tr>
+              <th scope="col"><span class="sr">Bay</span><span aria-hidden="true">BAY</span></th>
+              <th scope="col">Flight</th>
+              <th scope="col">Tail</th>
+              <th scope="col">Type</th>
+              <th scope="col">Route</th>
+              <th scope="col">STD</th>
+              <th scope="col">ETD</th>
+              <th scope="col">Delta</th>
+              <th scope="col">Crew</th>
+              <th scope="col">Duty left</th>
+              <th scope="col">Load</th>
+              <th scope="col">State</th>
+            </tr>
+          </thead>
+        </table>
+        <div class="void">
+          <p class="void__title">Nothing irregular in bay C this window.</p>
+          <p class="void__body">
+            Bay C has four scheduled legs between 1400Z and 1800Z and all four are
+            running to plan. The rack is empty because of the filter, not because the
+            feed is quiet — the ribbon above still reads three seconds.
+          </p>
+          <div class="btn-row">
+            <button class="btn btn--console btn--primary" type="button">Show all 4 bay C legs</button>
+            <button class="btn btn--console" type="button">Clear filters</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+</body>
+</html>

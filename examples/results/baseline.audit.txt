@@ -1,0 +1,22 @@
+wrote D:\design-direction\examples\results\baseline.audit.json
+Scanned 5 files under C:\Users\govin\AppData\Local\Temp\parti_baseline_px12797t
+
+COLOR    26 unique · 21 chromatic · oklch:0 hsl:0
+         #35c6e0  ×40
+         #f4685f  ×35
+         #45c98a  ×30
+         #000000  ×25
+         #04121a  ×25
+         #6fa8ff  ×20
+         ⚠ 3 sampled pairs below 4.5:1 (worst #35c6e0 on #ffffff = 2.04:1)
+TYPE     0 families: —
+         28 distinct sizes: [9.92, 10.56, 10.88, 11.2, 11.52, 11.84, 12.0, 12.16, 12.48, 12.8, 13.12, 13.44]
+SPACE    23 values · base unit none detected · 20 off-grid
+SHAPE    9 radii · 8 shadows · 4 z-index values (max 100)
+MOTION   libs: none · 1 durations · custom easing 0 vs default 106
+         reduced-motion handled: True
+SYSTEM   48 vars defined / 44 used · 0 arbitrary TW values · 20 !important
+A11Y     outline:none ×0 · backdrop-filter ×10
+
+TELLS    1 detected
+         • Glassmorphic card (backdrop-blur + translucent bg)  →  01-landing-page__index.html, 02-pricing-page__pricing.html, 03-dashboard__dashboard.html

@@ -416,6 +416,15 @@ def test_lint_drift(R, tmp):
             "token_drift" in ids and "#8a8f98" in ids["token_drift"]["label"].lower(),
             f"findings: {list(ids)}")
 
+    # False-positive guard. Without this, a bug that empties the allowed set
+    # passes all three checks above — every color reads as drift, including the
+    # spec'd ones, and "flags the unspec'd gray" is still technically true.
+    drift_labels = " ".join(f["label"].lower() for f in r["findings"]
+                            if f["id"] == "token_drift")
+    R.check("Lint — token drift", "colors that ARE in the spec are not flagged",
+            "#faf9f6" not in drift_labels and "#2b2620" not in drift_labels,
+            f"drift labels: {drift_labels}")
+
     rc2, r2 = lint(drift_dir, None)  # same code, no --tokens
     R.check("Lint — token drift", "without --tokens, drift isn't checked (no false claim)",
             not any(f["id"] == "token_drift" for f in r2["findings"]))
