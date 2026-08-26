@@ -234,8 +234,14 @@ SKILL.md       the skill itself — frontmatter + full process
 references/    15 files, loaded on demand rather than up front
 scripts/       audit.py  color.py  lint.py  motion.py  score.py  — stdlib only
 evals/         run_script_evals.py  rubric.md  trigger_cases.json
-docs/          script reference
+docs/          scripts.md  CONTRIBUTING.md  RUNBOOK.md
 ```
+
+| Doc | Contents |
+|---|---|
+| [`docs/scripts.md`](docs/scripts.md) | every flag, real captured output, JSON schemas, exit codes, CI wiring |
+| [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) | setup, the four testing layers, what each kind of change requires, PR checklist |
+| [`docs/RUNBOOK.md`](docs/RUNBOOK.md) | install verification, diagnosing a skill that won't fire, script failures, release and rollback |
 
 References are split out because SKILL.md loads on every match while a reference loads only when the run actually needs it.
 
