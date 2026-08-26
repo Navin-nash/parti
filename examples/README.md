@@ -140,6 +140,13 @@ examples/
 
 **16 previewable artifacts** — 8 pages and 8 component states.
 
+### Also here: a Next.js build of the same direction
+
+[`nextjs/`](nextjs/) rebuilds the parti arm as a real component library — one app,
+16 components, each previewable in isolation at `/gallery/[slug]`. Same token spec,
+different stack, which is the thing a single-file example cannot show:
+`DESIGN.md` holding across a change of framework. See [`nextjs/README.md`](nextjs/README.md).
+
 ### Suggested viewing order
 
 | Look at | To see |

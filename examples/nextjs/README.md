@@ -1,0 +1,96 @@
+# Meridian — Next.js reference build
+
+One Next.js app. Every component and page previewable inside it, in isolation, at `/gallery`.
+
+This is the same design direction as the static examples one level up (**Strip Rack**, specified in [`../shared/DESIGN.md`](../shared/DESIGN.md)), rebuilt as a real component library — which is the shape a SaaS team actually consumes. It exists to show something the single-file examples can't: **the same token spec surviving a change of stack.**
+
+```bash
+npm install
+npm run dev      # http://localhost:3000
+```
+
+## Routes
+
+| Route | What it is |
+|---|---|
+| `/` | Landing page — hero, features, social proof, CTA |
+| `/pricing` | Three tiers, comparison, FAQ |
+| `/dashboard` | The dispatcher board — rack, disruption queue, desk log |
+| `/gallery` | Index of all 16 components |
+| `/gallery/[slug]` | **One component, previewed alone** |
+
+The gallery is the point. Each entry renders a single component against the real page ground — not a white card, because a component shown on a background it will never sit on tells you nothing about whether it works — with the *decision that shaped it* printed above. That note is not documentation written afterwards; it is the reason the component looks the way it does, which is what usually goes missing between a design and its code.
+
+## Components
+
+| Group | Components |
+|---|---|
+| **Primitives** | `Button` · `StatusToken` · `Panel` · `Field` |
+| **Marketing** | `Hero` · `Features` · `CTA` · `SocialProof` · `PricingTable` · `FAQ` |
+| **Board** | `FlightRack` · `DisruptionQueue` |
+| **States** | Rack populated · empty · loading · error |
+
+```
+app/
+  globals.css          the token layer — every value from ../shared/tokens.json
+  layout.tsx           nav + footer shell
+  page.tsx             landing
+  pricing/page.tsx
+  dashboard/page.tsx
+  gallery/page.tsx     component index
+  gallery/[slug]/      isolated preview per component
+components/
+  ui/                  Button, Panel, StatusToken, Field
+  marketing/           Hero, Features, CTA, SocialProof, PricingTable, FAQ
+  dashboard/           FlightRack, DisruptionQueue
+  states/              RackStates — empty, loading, error
+  layout/              Nav, Footer
+lib/
+  data.ts              real dispatch data — no placeholder content
+  registry.tsx         the gallery manifest
+```
+
+## What the direction forced
+
+These are the decisions a component library normally defaults on. Each is enforced in code, not just written down:
+
+| Rule | Consequence in this build |
+|---|---|
+| Elevation is a lightness step, never a shadow | **0 `box-shadow`** — at this ground luminance a drop shadow is invisible; a 4% lightness step is not |
+| No gradients | signal colours stay unmistakable |
+| A panel never contains a panel | interior grouping is a hairline plus a label |
+| Status is never colour alone | `StatusToken` carries word + colour + signed delta, three redundant channels |
+| No icon library | actions carry their verb; a word survives grayscale where a 16px glyph doesn't |
+| No KPI tile row | board state is one line of mono in the ribbon — how ops status is actually transmitted |
+| No `01 / 02 / 03` | the features section uses `T+0:00 … T+3:40`, real dispatch units, and genuinely *is* a sequence |
+| Every data field mono + tabular | columns don't jitter when the board refreshes |
+
+## Verification
+
+Run the skill's instruments against this tree:
+
+```bash
+npm run lint:design    # tells + token drift, against ../shared/tokens.json
+npm run lint:motion    # motion rules at file:line
+```
+
+Current state, reproducible:
+
+```
+lint.py   --tokens ../shared/tokens.json   →  No findings. Clean.   rc=0
+motion.py                                  →  PASS (P2: 1)          rc=0
+```
+
+**Three caveats, stated rather than buried:**
+
+1. **This was not compiled.** `npm install` and `next build` were not run here, so there is no compile-time guarantee. What *was* verified: all 48 internal imports resolve to real files, every imported symbol is actually exported, lint is clean, motion passes. A type error is still possible.
+
+2. **"Token drift: none" is weaker than it looks.** `lint.py`'s drift check only reads hex. This build authors colour in `oklch()`, so there were no hex literals for it to examine. It passed by having nothing to scan.
+
+3. **The remaining motion P2** is `a11y-reduced-motion-nuked`, which fires when only one file handles reduced motion. With a single `globals.css` that is structurally the maximum. The handling inside it *is* per-element — the live dot and skeleton pulse hold static, press keeps its colour change and drops the transform — which is what the rule actually wants.
+
+### A finding worth keeping
+
+The first lint run reported a P0 and two P1s. All three were **my own comments** explaining which tells to avoid — the strings `"Feature One"` and `"Get Started / Learn More"` appeared in prose arguing against them, and a regex detector cannot tell "using a tell" from "writing about a tell."
+
+The linter was right to be dumb. The fix was to reword the comments rather than special-case the detector: a lint rule that starts making exceptions for context it can't actually see is a rule that stops meaning anything.

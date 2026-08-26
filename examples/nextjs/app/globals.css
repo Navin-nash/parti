@@ -1,0 +1,279 @@
+/* ---------------------------------------------------------------------------
+   Meridian — Strip Rack
+   Tokens are law. Every value below comes from ../shared/tokens.json; nothing
+   here is invented at build time. Colour is authored in oklch() so there are
+   no undeclared hex literals anywhere in this tree.
+
+   Binding constraints from ../shared/DESIGN.md:
+     - elevation is a lightness step, never a shadow (no box-shadow, anywhere)
+     - no gradients
+     - no card nested inside a card
+     - status is never carried by colour alone
+     - every data field is monospace and tabular
+--------------------------------------------------------------------------- */
+
+:root {
+  /* ground + panels */
+  --bg: oklch(19.30% 0.0170 252.6);
+  --surface: oklch(22.72% 0.0212 251.7);
+  --surface-2: oklch(26.75% 0.0257 248.8);
+
+  /* row card-stock tints — the redundant channel behind every status */
+  --tint-caution: oklch(26.03% 0.0235 80.8);
+  --tint-warning: oklch(24.38% 0.0273 23.0);
+  --tint-advisory: oklch(25.72% 0.0243 223.6);
+
+  --border: oklch(33.80% 0.0331 248.8);
+  --border-strong: oklch(54.36% 0.0342 246.9);
+
+  /* text — 15.26:1 / 8.25:1 / 4.56:1 worst case, all AA body */
+  --text: oklch(93.68% 0.0121 248.0);
+  --text-muted: oklch(74.92% 0.0299 246.6);
+  --text-dim: oklch(64.23% 0.0353 249.8);
+
+  /* EFIS caution/warning set — the vocabulary this audience already knows */
+  --caution: oklch(80.13% 0.1390 75.0);
+  --warning: oklch(69.27% 0.1675 29.8);
+  --normal: oklch(77.38% 0.1449 154.0);
+  --advisory: oklch(78.24% 0.0979 215.9);
+  --on-signal: oklch(19.30% 0.0170 252.6);
+
+  --f-ui: -apple-system, BlinkMacSystemFont, "Segoe UI Variable Text", "Segoe UI",
+    Roboto, system-ui, sans-serif;
+  --f-mono: ui-monospace, "SF Mono", "Cascadia Mono", "Segoe UI Mono",
+    "Roboto Mono", Menlo, Consolas, monospace;
+
+  --s-1: 4px;  --s-2: 8px;  --s-3: 12px; --s-4: 16px;
+  --s-5: 20px; --s-6: 24px; --s-8: 32px; --s-10: 40px;
+  --s-12: 48px; --s-16: 64px; --s-20: 80px;
+  --wrap: 1180px;
+  --row: 34px;
+  --measure: 64ch;
+
+  --r-none: 0;
+  --r-sm: 2px;
+
+  --d-tick: 90ms; --d-fast: 140ms; --d-base: 200ms; --d-slow: 260ms;
+  --d-live: 2400ms; --d-unfilled: 1400ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 400 14px/22px var(--f-ui);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* One global focus treatment. Never removed without replacement. */
+:focus-visible {
+  outline: 2px solid var(--advisory);
+  outline-offset: 2px;
+}
+
+a { color: inherit; }
+
+/* --- type scale ---------------------------------------------------------- */
+.display { font: 700 46px/48px var(--f-ui); letter-spacing: -0.028em; margin: 0; }
+.h1 { font: 700 30px/34px var(--f-ui); letter-spacing: -0.02em; margin: 0; }
+.h2 { font: 650 21px/27px var(--f-ui); letter-spacing: -0.012em; margin: 0; }
+.h3 { font: 600 16px/22px var(--f-ui); letter-spacing: -0.006em; margin: 0; }
+.body { font: 400 14px/22px var(--f-ui); margin: 0; }
+.small { font: 400 13px/19px var(--f-ui); margin: 0; }
+.measure { max-width: var(--measure); }
+.muted { color: var(--text-muted); }
+.dim { color: var(--text-dim); }
+
+/* Every field a dispatcher reads as data is mono and tabular. */
+.strip { font: 500 13px/16px var(--f-mono); font-variant-numeric: tabular-nums; }
+.strip-lg { font: 500 20px/24px var(--f-mono); font-variant-numeric: tabular-nums; }
+.label {
+  font: 600 11px/14px var(--f-mono);
+  letter-spacing: 0.085em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+/* --- layout -------------------------------------------------------------- */
+.wrap { max-width: var(--wrap); margin: 0 auto; padding: 0 var(--s-6); }
+.section { padding: var(--s-20) 0; border-top: 1px solid var(--border); }
+.stack > * + * { margin-top: var(--s-4); }
+.row-between { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s-4); }
+
+/* --- panel (the only container) ------------------------------------------
+   A panel never contains another panel. Interior grouping is a hairline plus
+   a .label — see DESIGN.md § Anti-rules.
+--------------------------------------------------------------------------- */
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-none);
+}
+.panel--focus { background: var(--surface-2); border-color: var(--border-strong); }
+.panel__head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  border-bottom: 1px solid var(--border);
+}
+.panel__body { padding: var(--s-4); }
+.divider { height: 1px; background: var(--border); border: 0; margin: var(--s-4) 0; }
+
+/* --- controls ------------------------------------------------------------ */
+.btn {
+  display: inline-flex; align-items: center; gap: var(--s-2);
+  min-height: 32px; padding: 0 var(--s-4);
+  font: 600 13px/1 var(--f-mono);
+  letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background var(--d-tick) var(--ease-out),
+              border-color var(--d-tick) var(--ease-out),
+              transform var(--d-fast) var(--ease-out);
+}
+.btn:active { transform: translateY(1px); }
+.btn--primary {
+  background: var(--advisory); color: var(--on-signal);
+  border-color: var(--advisory); font-weight: 700;
+}
+.btn--quiet { background: transparent; border-color: var(--border); }
+.btn--lg { min-height: 36px; padding: 0 var(--s-5); }
+
+@media (hover: hover) {
+  .btn:hover { background: var(--surface-2); border-color: var(--border-strong); }
+  .btn--primary:hover { background: var(--advisory); }
+}
+
+/* --- status token --------------------------------------------------------
+   Three redundant channels: printed word, colour, and a signed delta. The
+   board has to survive grayscale, peripheral vision and CVD.
+--------------------------------------------------------------------------- */
+.token {
+  display: inline-flex; align-items: center; gap: var(--s-2);
+  padding: 2px var(--s-2);
+  border-radius: var(--r-sm);
+  font: 600 11px/14px var(--f-mono);
+  letter-spacing: 0.085em; text-transform: uppercase;
+  border: 1px solid currentColor;
+  transition: color var(--d-base) var(--ease-out);
+}
+.token--normal { color: var(--normal); }
+.token--caution { color: var(--caution); }
+.token--warning { color: var(--warning); }
+.token--advisory { color: var(--advisory); }
+.token__delta { font-variant-numeric: tabular-nums; opacity: 0.85; }
+
+/* --- rack (the flight table) --------------------------------------------- */
+.rack-scroll { overflow-x: auto; }
+.rack { width: 100%; min-width: 880px; border-collapse: collapse; }
+.rack th, .rack td {
+  height: var(--row);
+  padding: 0 var(--s-3);
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.rack thead th {
+  font: 600 11px/14px var(--f-mono);
+  letter-spacing: 0.085em; text-transform: uppercase;
+  color: var(--text-dim);
+  border-bottom-color: var(--border-strong);
+}
+.rack td { font: 500 13px/16px var(--f-mono); font-variant-numeric: tabular-nums; }
+.rack tbody tr { transition: background var(--d-tick) var(--ease-out); }
+.rack tbody tr[data-state="caution"] { background: var(--tint-caution); }
+.rack tbody tr[data-state="warning"] { background: var(--tint-warning); }
+.rack tbody tr[data-state="advisory"] { background: var(--tint-advisory); }
+.rack .num { text-align: right; font-variant-numeric: tabular-nums; }
+
+@media (hover: hover) {
+  .rack tbody tr:hover { background: var(--surface-2); }
+}
+
+/* --- ribbon (board state — replaces the KPI tile row) --------------------- */
+.ribbon {
+  display: flex; flex-wrap: wrap; gap: var(--s-5);
+  padding: var(--s-3) var(--s-4);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font: 500 13px/16px var(--f-mono);
+  font-variant-numeric: tabular-nums;
+}
+.ribbon__item { display: flex; align-items: baseline; gap: var(--s-2); }
+
+.dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--normal);
+  animation: live var(--d-live) ease-in-out infinite;
+}
+@keyframes live { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+/* --- states -------------------------------------------------------------- */
+.state { padding: var(--s-12) var(--s-6); text-align: center; }
+.state__title { font: 600 16px/22px var(--f-ui); margin: 0 0 var(--s-2); }
+.state__body { color: var(--text-muted); margin: 0 auto var(--s-5); max-width: 52ch; }
+
+.skel {
+  height: 10px; border-radius: var(--r-sm);
+  background: var(--surface-2);
+  animation: unfilled var(--d-unfilled) ease-in-out infinite;
+}
+@keyframes unfilled { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
+
+/* --- marketing ----------------------------------------------------------- */
+.eyebrow { display: flex; align-items: center; gap: var(--s-2); margin-bottom: var(--s-4); }
+.grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-6); }
+.grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-6); }
+.tier__price { font: 500 20px/24px var(--f-mono); font-variant-numeric: tabular-nums; }
+.checklist { list-style: none; margin: 0; padding: 0; }
+.checklist li {
+  padding: var(--s-2) 0;
+  border-bottom: 1px solid var(--border);
+  font: 400 13px/19px var(--f-ui);
+}
+.checklist li:last-child { border-bottom: 0; }
+
+.nav {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--s-4);
+  padding: var(--s-3) 0;
+  border-bottom: 1px solid var(--border);
+}
+.nav__links { display: flex; gap: var(--s-5); }
+.nav__link {
+  font: 600 11px/14px var(--f-mono);
+  letter-spacing: 0.085em; text-transform: uppercase;
+  color: var(--text-muted);
+  text-decoration: none;
+  padding: var(--s-2) 0;
+  border-bottom: 1px solid transparent;
+  transition: color var(--d-tick) var(--ease-out),
+              border-color var(--d-tick) var(--ease-out);
+}
+.nav__link[aria-current="page"] { color: var(--text); border-bottom-color: var(--advisory); }
+
+.foot { padding: var(--s-10) 0; border-top: 1px solid var(--border); color: var(--text-dim); }
+
+@media (max-width: 860px) {
+  .grid-2, .grid-3 { grid-template-columns: minmax(0, 1fr); }
+  .display { font-size: 34px; line-height: 38px; }
+}
+
+/* Reduced motion degrades per element rather than globally: the live dot and
+   the unfilled pulse hold static, press keeps its colour change and drops the
+   transform. Nothing is nuked wholesale. */
+@media (prefers-reduced-motion: reduce) {
+  .dot, .skel { animation: none; opacity: 1; }
+  .btn:active { transform: none; }
+  .btn, .rack tbody tr, .token, .nav__link { transition-duration: 1ms; }
+}
