@@ -277,3 +277,198 @@ a { color: inherit; }
   .btn:active { transform: none; }
   .btn, .rack tbody tr, .token, .nav__link { transition-duration: 1ms; }
 }
+
+/* ---------------------------------------------------------------------------
+   Docs shell — sidebar, preview pane, right rail.
+
+   This is navigation chrome around the work, not the work. It stays
+   deliberately conventional: Jakob's Law applies hardest to the parts of an
+   interface that are not the point. Every value still comes from the token
+   scale — the chrome does not get its own private spacing.
+--------------------------------------------------------------------------- */
+
+.docs {
+  display: grid;
+  grid-template-columns: 244px minmax(0, 1fr);
+  align-items: start;
+  gap: 0;
+}
+
+.docs__side {
+  position: sticky;
+  top: 0;
+  max-height: 100vh;
+  overflow-y: auto;
+  padding: var(--s-6) var(--s-4) var(--s-10);
+  border-right: 1px solid var(--border);
+}
+.docs__section + .docs__section { margin-top: var(--s-6); }
+.docs__sectionTitle { padding: 0 var(--s-2) var(--s-2); }
+.docs__list { list-style: none; margin: 0; padding: 0; }
+
+.docs__link {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--s-2);
+  padding: var(--s-2) var(--s-2);
+  font: 400 13px/19px var(--f-ui);
+  color: var(--text-muted);
+  text-decoration: none;
+  border-left: 2px solid transparent;
+  transition: color var(--d-tick) var(--ease-out),
+              background var(--d-tick) var(--ease-out);
+}
+.docs__link[aria-current="page"] {
+  color: var(--text);
+  background: var(--surface);
+  border-left-color: var(--advisory);
+}
+@media (hover: hover) {
+  .docs__link:hover { color: var(--text); background: var(--surface); }
+}
+
+.docs__soloTag {
+  font: 600 10px/1 var(--f-mono);
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 2px 4px;
+}
+.docs__footnote { margin: var(--s-8) 0 0; padding: 0 var(--s-2); }
+
+.docs__main { min-width: 0; }
+.docs__article {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 232px;
+  gap: var(--s-8);
+  padding: var(--s-8) var(--s-6) var(--s-20);
+  max-width: 1320px;
+}
+.docs__body { min-width: 0; }
+
+.docs__rail { position: sticky; top: var(--s-8); align-self: start; }
+.docs__railList { list-style: none; margin: var(--s-3) 0 0; padding: 0; }
+.docs__railLink {
+  display: block;
+  padding: var(--s-1) 0;
+  font: 400 13px/19px var(--f-ui);
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color var(--d-tick) var(--ease-out);
+}
+@media (hover: hover) { .docs__railLink:hover { color: var(--text); } }
+
+.docs__railCard {
+  margin-top: var(--s-6);
+  padding: var(--s-4);
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+.docs__inline { color: var(--advisory); }
+
+.docs__pager {
+  display: flex; justify-content: space-between; gap: var(--s-4);
+  margin-top: var(--s-12);
+  padding-top: var(--s-5);
+  border-top: 1px solid var(--border);
+}
+.docs__pagerLink { text-decoration: none; color: var(--text-muted); }
+@media (hover: hover) { .docs__pagerLink:hover { color: var(--text); } }
+
+/* --- preview pane -------------------------------------------------------- */
+.pv { margin-top: var(--s-6); border: 1px solid var(--border); }
+
+.pv__toolbar {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--s-4); flex-wrap: wrap;
+  padding: var(--s-2) var(--s-3);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.pv__tabs, .pv__vps { display: flex; gap: var(--s-1); flex-wrap: wrap; }
+
+.pv__tab, .pv__vp {
+  min-height: 28px;
+  padding: 0 var(--s-3);
+  font: 600 11px/1 var(--f-mono);
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: color var(--d-tick) var(--ease-out),
+              background var(--d-tick) var(--ease-out),
+              border-color var(--d-tick) var(--ease-out);
+}
+.pv__tab--on, .pv__vp--on {
+  color: var(--text);
+  background: var(--surface-2);
+  border-color: var(--border-strong);
+}
+.pv__tab:disabled { color: var(--text-dim); cursor: not-allowed; opacity: 0.55; }
+@media (hover: hover) {
+  .pv__tab:not(:disabled):hover, .pv__vp:hover { color: var(--text); }
+}
+
+.pv__frameWrap {
+  display: flex; justify-content: center;
+  padding: var(--s-4);
+  background: var(--bg);
+}
+.pv__frame {
+  height: 620px;
+  max-width: 100%;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  display: block;
+}
+
+.pv__split { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-3); padding: var(--s-3); }
+.pv__splitLabel { padding-bottom: var(--s-2); }
+.pv__split .pv__frame { height: 460px; width: 100%; }
+.pv__split .pv__frameWrap { padding: 0; }
+
+.pv__measured { padding: var(--s-5); }
+.pv__table { width: 100%; border-collapse: collapse; margin-top: var(--s-5); }
+.pv__table th, .pv__table td {
+  padding: var(--s-2) var(--s-3);
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  font: 400 13px/19px var(--f-ui);
+}
+.pv__table thead th {
+  font: 600 11px/14px var(--f-mono);
+  letter-spacing: 0.085em; text-transform: uppercase;
+  color: var(--text-dim);
+  border-bottom-color: var(--border-strong);
+}
+.pv__table td.num, .pv__table th.num {
+  text-align: right;
+  font: 500 13px/16px var(--f-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.pv__dims { display: grid; gap: var(--s-4); margin-top: var(--s-3); }
+.pv__dim { padding-bottom: var(--s-3); border-bottom: 1px solid var(--border); }
+.pv__dimRow { display: flex; align-items: center; gap: var(--s-3); margin-top: var(--s-1); }
+.pv__dimRow .strip { min-width: 5ch; text-align: right; }
+.pv__bar { flex: 1; height: 6px; background: var(--surface-2); }
+.pv__barFill { height: 100%; background: var(--border-strong); }
+.pv__dimRow:last-child .pv__barFill { background: var(--advisory); }
+
+.pv__caveat {
+  margin-top: var(--s-8);
+  padding: var(--s-4);
+  background: var(--tint-caution);
+  border: 1px solid var(--border-strong);
+}
+
+@media (max-width: 1100px) {
+  .docs__article { grid-template-columns: minmax(0, 1fr); }
+  .docs__rail { position: static; }
+  .pv__split { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 860px) {
+  .docs { grid-template-columns: minmax(0, 1fr); }
+  .docs__side { position: static; max-height: none; border-right: 0; border-bottom: 1px solid var(--border); }
+}

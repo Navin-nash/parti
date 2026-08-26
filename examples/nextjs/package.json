@@ -2,14 +2,16 @@
   "name": "meridian-parti-example",
   "version": "0.1.0",
   "private": true,
-  "description": "Reference component library built to the Strip Rack direction — see ../shared/DESIGN.md",
+  "description": "Reference component library built to the Strip Rack direction \u2014 see ../shared/DESIGN.md",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint:design": "python ../../scripts/lint.py . --tokens ../shared/tokens.json",
-    "lint:motion": "python ../../scripts/motion.py .",
-    "audit:design": "python ../../scripts/audit.py ."
+    "lint:design": "python ../../scripts/lint.py app --tokens ../shared/tokens.json && python ../../scripts/lint.py components --tokens ../shared/tokens.json && python ../../scripts/lint.py lib --tokens ../shared/tokens.json",
+    "lint:motion": "python ../../scripts/motion.py app",
+    "audit:design": "python ../../scripts/audit.py .",
+    "sync:arms": "python scripts/sync-arms.py",
+    "predev": "python scripts/sync-arms.py"
   },
   "dependencies": {
     "next": "^15.1.0",

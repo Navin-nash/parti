@@ -8,6 +8,7 @@ const LINKS = [
   { href: "/pricing", label: "Pricing" },
   { href: "/dashboard", label: "Board" },
   { href: "/gallery", label: "Components" },
+  { href: "/compare", label: "Compare" },
 ];
 
 /**
