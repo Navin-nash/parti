@@ -43,6 +43,23 @@ except Exception:
 UA = "Mozilla/5.0 (compatible; parti-capture/1.0; +https://github.com/Navin-nash/parti)"
 FETCH_CAP = 3_000_000
 
+RE_LINK_CSS = re.compile(r"<link\b[^>]*>", re.I)
+RE_HREF = re.compile(r"""href\s*=\s*["']([^"']+)["']""", re.I)
+RE_REL_SHEET = re.compile(r"""rel\s*=\s*["']?[^"'>]*stylesheet""", re.I)
+RE_STYLE_BLOCK = re.compile(r"<style\b[^>]*>(.*?)</style>", re.I | re.S)
+
+RE_KEYFRAMES = re.compile(r"@(?:-webkit-)?keyframes\s+([\w-]+)\s*\{", re.I)
+RE_DECL_TRANSITION = re.compile(r"transition(?:-property|-duration|-timing-function|-delay)?\s*:\s*([^;{}]+)", re.I)
+RE_DECL_ANIMATION = re.compile(r"animation(?:-name|-duration|-timing-function|-delay|-iteration-count)?\s*:\s*([^;{}]+)", re.I)
+RE_DUR = re.compile(r"(?<![\w.-])(\d+(?:\.\d+)?)(ms|s)(?![\w-])")
+RE_CUBIC = re.compile(r"cubic-bezier\([^)]*\)")
+RE_STEPS = re.compile(r"steps\([^)]*\)")
+RE_EASE_KW = re.compile(r"\b(ease-in-out|ease-out|ease-in|linear|ease)\b")
+RE_PROP = re.compile(r"\b(transform|opacity|filter|backdrop-filter|clip-path|height|width|top|left|right|bottom|margin|color|background(?:-color)?|box-shadow)\b")
+RE_SCROLL_TL = re.compile(r"animation-timeline\s*:\s*(?:scroll|view)\s*\(", re.I)
+RE_VIEW_TRANS = re.compile(r"@view-transition|view-transition-name\s*:|::view-transition", re.I)
+RE_STARTING = re.compile(r"@starting-style", re.I)
+
 
 def today():
     return datetime.date.today().isoformat()
@@ -109,11 +126,104 @@ def render_markdown(report):
     return "\n".join(lines) + "\n"
 
 
+def _to_ms(value, unit):
+    v = float(value)
+    return int(round(v * 1000.0)) if unit == "s" else int(round(v))
+
+
+def extract_stylesheets(html, base_url):
+    css_parts = list(RE_STYLE_BLOCK.findall(html))
+    sources = []
+    for tag in RE_LINK_CSS.findall(html):
+        if not RE_REL_SHEET.search(tag):
+            continue
+        m = RE_HREF.search(tag)
+        if not m:
+            continue
+        href = urllib.parse.urljoin(base_url, m.group(1))
+        got = fetch(href)
+        if got["ok"] and got["text"].strip():
+            css_parts.append(got["text"])
+            sources.append(href)
+    return "\n".join(css_parts), sources
+
+
+def parse_css_motion(css):
+    keyframes = sorted(set(RE_KEYFRAMES.findall(css)))
+    durations, easings, transitions, animations = set(), set(), [], []
+    for rx, bucket in ((RE_DECL_TRANSITION, transitions), (RE_DECL_ANIMATION, animations)):
+        for decl in rx.findall(css):
+            decl = " ".join(decl.split())
+            bucket.append(decl)
+            for m in RE_DUR.finditer(decl):
+                durations.add(_to_ms(m.group(1), m.group(2)))
+            for m in RE_CUBIC.finditer(decl):
+                easings.add(m.group(0).replace(" ", ""))
+            for m in RE_STEPS.finditer(decl):
+                easings.add(m.group(0).replace(" ", ""))
+            for m in RE_EASE_KW.finditer(decl):
+                easings.add(m.group(1))
+    return {
+        "keyframes": keyframes,
+        "durations_ms": sorted(durations),
+        "easings": sorted(easings),
+        "transitions": sorted(set(transitions)),
+        "animations": sorted(set(animations)),
+        "scroll_timeline": bool(RE_SCROLL_TL.search(css)),
+        "view_transitions": bool(RE_VIEW_TRANS.search(css)),
+        "starting_style": bool(RE_STARTING.search(css)),
+    }
+
+
+def _css_findings(css):
+    m = parse_css_motion(css)
+    reduced = "declared" if "prefers-reduced-motion" in css else \
+              "not handled by the reference"
+    findings = []
+    for name in m["keyframes"]:
+        findings.append({
+            "element": "(css)", "trigger": "unknown",
+            "mechanism": f"@keyframes {name}",
+            "properties": "", "timing": {"durations_ms": [], "easings": []},
+            "library": "CSS", "scrubbed": False, "reduced_motion": reduced,
+        })
+    for decl in m["transitions"] + m["animations"]:
+        findings.append({
+            "element": "(css)", "trigger": "unknown", "mechanism": decl[:200],
+            "properties": sorted(set(RE_PROP.findall(decl))),
+            "timing": {
+                "durations_ms": sorted({d for d in
+                                        (_to_ms(a, b) for a, b in RE_DUR.findall(decl))}),
+                "easings": sorted({e.replace(" ", "") for e in
+                                   (RE_CUBIC.findall(decl) + RE_STEPS.findall(decl))}
+                                  | set(RE_EASE_KW.findall(decl))),
+            },
+            "library": "CSS", "scrubbed": False, "reduced_motion": reduced,
+        })
+    return findings, m
+
+
 def run_capture(urls, focus, tier):
-    want_runtime = tier in ("auto", "runtime")
     per_url = [fetch(u) for u in urls]
-    effective_tier = "static"
-    report, any_ok = build_report(urls, focus, effective_tier, per_url)
+    report, any_ok = build_report(urls, focus, "static", per_url)
+    all_css = []
+    for u in per_url:
+        if not u["ok"]:
+            continue
+        css, css_srcs = extract_stylesheets(u["text"], u["url"])
+        report["sources"] = list(dict.fromkeys(report["sources"] + css_srcs))
+        all_css.append((u, css))
+    combined = "\n".join(css for _, css in all_css)
+    findings, m = _css_findings(combined)
+    report["motion_findings"] = findings
+    if m["scroll_timeline"]:
+        report["not_captured"].append(
+            "scroll-timeline is present; its per-element scroll->property mapping "
+            "needs Tier 2 (runtime) to measure")
+    if m["view_transitions"]:
+        report.setdefault("features", []).append("view-transitions")
+    if m["starting_style"]:
+        report.setdefault("features", []).append("@starting-style")
     return report, any_ok
 
 

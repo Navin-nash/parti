@@ -549,6 +549,21 @@ CAPTURE_HTML = """<!doctype html><html><head>
 <style>.b{transition:transform 160ms cubic-bezier(0.16,1,0.3,1)}</style>
 </head><body><button class="b">go</button></body></html>"""
 
+CAPTURE_CSS_PAGE = """<!doctype html><html><head>
+<link rel="stylesheet" href="a.css">
+<style>
+@keyframes slide-in { from { transform: translateY(20px); opacity: 0 } to { transform: none; opacity: 1 } }
+.hero { animation: slide-in 600ms cubic-bezier(0.16,1,0.3,1) }
+.nav { transition: height 240ms cubic-bezier(0.4,0,0.2,1) }
+</style></head><body></body></html>"""
+
+CAPTURE_CSS_EXTERNAL = """
+.card { transition: transform 180ms ease-out, box-shadow 180ms ease-out }
+@media (prefers-reduced-motion: reduce) { .card { transition: none } }
+.panel { animation-timeline: scroll(root block) }
+::view-transition-old(root) { animation-duration: 300ms }
+"""
+
 
 def _write_capture_page(tmp, name="page.html", html=CAPTURE_HTML, extra=None):
     d = os.path.join(tmp, "capture_" + name.replace(".", "_"))
@@ -593,6 +608,32 @@ def test_capture_envelope(R, tmp):
             capture("file:///no/such/file.html", tmp=tmp)[0] == 1)
 
 
+def test_capture_css_motion(R, tmp):
+    url = _write_capture_page(tmp, name="css.html", html=CAPTURE_CSS_PAGE,
+                              extra={"a.css": CAPTURE_CSS_EXTERNAL})
+    rc, data, _, se = capture(url, focus="the nav", tmp=tmp)
+    G = "Capture — CSS motion"
+    R.check(G, "exits 0", rc == 0, f"rc={rc} se={se[:200]}")
+    findings = data.get("motion_findings", []) if data else []
+    blob = json.dumps(data)
+    R.check(G, "captures the @keyframes block",
+            any("slide-in" in json.dumps(f) for f in findings), blob[:300])
+    R.check(G, "captures the nav transition with its duration",
+            any(240 in f.get("timing", {}).get("durations_ms", []) for f in findings),
+            blob[:400])
+    R.check(G, "captures the exact cubic-bezier, not a keyword",
+            "cubic-bezier(0.4,0,0.2,1)" in blob.replace(" ", "")
+            or "cubic-bezier(0.4, 0, 0.2, 1)" in blob, blob[:400])
+    R.check(G, "reads the linked stylesheet too (ease-out card transition)",
+            any("ease-out" in json.dumps(f.get("timing", {})) for f in findings), blob[:400])
+    R.check(G, "notes the reference DOES handle reduced motion",
+            any(f.get("reduced_motion") == "declared" for f in findings), blob[:400])
+    R.check(G, "flags scroll-timeline / view-transitions presence",
+            "scroll-timeline" in blob or "view-transition" in blob
+            or any(k in json.dumps(data.get("not_captured", []) + list(data.keys()))
+                   for k in ("scroll", "view_transition")), blob[:400])
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--verbose", action="store_true")
@@ -620,6 +661,7 @@ def main():
     test_sparse_fixture(R, sparse)
     test_determinism(R, clean)
     test_capture_envelope(R, tmp)
+    test_capture_css_motion(R, tmp)
     test_lint_slop(R, slop)
     test_lint_clean(R, clean)
     test_lint_drift(R, tmp)
