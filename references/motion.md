@@ -302,6 +302,10 @@ The tells, in rough order of how often they appear:
 
 Every direction's motion section should answer these, concretely:
 
+> If the direction is being specified from an inspiration site, capture it first —
+> `references/motion-capture.md` — and write this section as a diff from the capture's
+> Faithful/Adapted columns rather than from a blank page.
+
 1. **Posture** — still / responsive-only / choreographed / ambient. One word that governs everything else.
 2. **The one moment** — the single choreographed sequence or signature interaction, described shot by shot.
 3. **What animates**, as a list, with duration and easing for each.

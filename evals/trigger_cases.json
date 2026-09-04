@@ -206,5 +206,9 @@
   {
     "query": "set up a CI pipeline that runs our test suite",
     "should_trigger": false
-  }
+  },
+  { "query": "build this hero the way linear.app/method does it", "should_trigger": true },
+  { "query": "I want the scroll animations from https://stripe.com/payments on our page", "should_trigger": true },
+  { "query": "capture the nav collapse from vercel.com and use it in our dashboard", "should_trigger": true },
+  { "query": "just download the raw HTML of example.com for me", "should_trigger": false }
 ]

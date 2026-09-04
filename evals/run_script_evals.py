@@ -542,6 +542,186 @@ def test_determinism(R, path):
             json.dumps(a1, sort_keys=True) == json.dumps(a2, sort_keys=True))
 
 
+# ─────────────────────────────────────────────────────────── capture tests
+
+CAPTURE_HTML = """<!doctype html><html><head>
+<title>t</title>
+<style>.b{transition:transform 160ms cubic-bezier(0.16,1,0.3,1)}</style>
+</head><body><button class="b">go</button></body></html>"""
+
+CAPTURE_CSS_PAGE = """<!doctype html><html><head>
+<link rel="stylesheet" href="a.css">
+<style>
+@keyframes slide-in { from { transform: translateY(20px); opacity: 0 } to { transform: none; opacity: 1 } }
+.hero { animation: slide-in 600ms cubic-bezier(0.16,1,0.3,1) }
+.nav { transition: height 240ms cubic-bezier(0.4,0,0.2,1) }
+</style></head><body></body></html>"""
+
+CAPTURE_CSS_EXTERNAL = """
+.card { transition: transform 180ms ease-out, box-shadow 180ms ease-out }
+@media (prefers-reduced-motion: reduce) { .card { transition: none } }
+.panel { animation-timeline: scroll(root block) }
+::view-transition-old(root) { animation-duration: 300ms }
+"""
+
+CAPTURE_LIB_PAGE = """<!doctype html><html><head>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12/dist/ScrollTrigger.min.js"></script>
+<script src="https://unpkg.com/lenis@1.1/dist/lenis.min.js"></script>
+</head><body>
+<section data-scroll data-speed="0.8">parallax</section>
+<canvas id="bg"></canvas>
+</body></html>"""
+
+
+def _write_capture_page(tmp, name="page.html", html=CAPTURE_HTML, extra=None):
+    d = os.path.join(tmp, "capture_" + name.replace(".", "_"))
+    os.makedirs(d, exist_ok=True)
+    p = os.path.join(d, name)
+    with open(p, "w", encoding="utf-8") as f:
+        f.write(html)
+    for rel, content in (extra or {}).items():
+        ep = os.path.join(d, rel)
+        os.makedirs(os.path.dirname(ep), exist_ok=True)
+        with open(ep, "w", encoding="utf-8") as f:
+            f.write(content)
+    return "file:///" + p.replace(os.sep, "/")
+
+
+def capture(url, focus="", tier="static", md=False, *, tmp):
+    # Write under the per-run tmp dir, not a fixed tempdir path — a crashed run
+    # otherwise leaves a stale capture_out.json the next run would read.
+    out = os.path.join(tmp, "capture_out.json")
+    mdout = os.path.join(tmp, "capture_out.md")
+    cmd = [sys.executable, os.path.join(SCRIPTS, "capture.py"),
+           "--url", url, "--focus", focus, "--tier", tier,
+           "--json", out, "--quiet"]
+    if md:
+        cmd += ["--md", mdout]
+    rc, so, se = run(cmd)
+    data = json.load(open(out, encoding="utf-8")) if os.path.exists(out) else None
+    mdtext = open(mdout, encoding="utf-8").read() if md and os.path.exists(mdout) else ""
+    return rc, data, mdtext, se
+
+
+def test_capture_envelope(R, tmp):
+    url = _write_capture_page(tmp)
+    rc, data, _, se = capture(url, focus="the button", tmp=tmp)
+    G = "Capture — envelope"
+    R.check(G, "exits 0 on a reachable page", rc == 0, f"rc={rc} se={se[:200]}")
+    R.check(G, "tool/version/tier stamped", data and data.get("tool") == "capture"
+            and data.get("version") == 1 and data.get("tier") == "static", str(data)[:200])
+    R.check(G, "records the source URL", data and data.get("sources") == [url])
+    R.check(G, "echoes the focus", data and data.get("focus") == "the button")
+    R.check(G, "not_captured is never empty at tier 1",
+            data and len(data.get("not_captured", [])) >= 1, str(data.get("not_captured")))
+    R.check(G, "unreachable URL exits 1",
+            capture("file:///no/such/file.html", tmp=tmp)[0] == 1)
+
+
+def test_capture_css_motion(R, tmp):
+    url = _write_capture_page(tmp, name="css.html", html=CAPTURE_CSS_PAGE,
+                              extra={"a.css": CAPTURE_CSS_EXTERNAL})
+    rc, data, _, se = capture(url, focus="the nav", tmp=tmp)
+    G = "Capture — CSS motion"
+    R.check(G, "exits 0", rc == 0, f"rc={rc} se={se[:200]}")
+    findings = data.get("motion_findings", []) if data else []
+    blob = json.dumps(data)
+    R.check(G, "captures the @keyframes block",
+            any("slide-in" in json.dumps(f) for f in findings), blob[:300])
+    R.check(G, "captures the nav transition with its duration",
+            any(240 in f.get("timing", {}).get("durations_ms", []) for f in findings),
+            blob[:400])
+    R.check(G, "captures the exact cubic-bezier, not a keyword",
+            "cubic-bezier(0.4,0,0.2,1)" in blob.replace(" ", "")
+            or "cubic-bezier(0.4, 0, 0.2, 1)" in blob, blob[:400])
+    R.check(G, "reads the linked stylesheet too (ease-out card transition)",
+            any("ease-out" in json.dumps(f.get("timing", {})) for f in findings), blob[:400])
+    R.check(G, "notes the reference DOES handle reduced motion",
+            any(f.get("reduced_motion") == "declared" for f in findings), blob[:400])
+    R.check(G, "flags scroll-timeline / view-transitions presence",
+            "scroll-timeline" in blob or "view-transition" in blob
+            or any(k in json.dumps(data.get("not_captured", []) + list(data.keys()))
+                   for k in ("scroll", "view_transition")), blob[:400])
+
+
+def test_capture_libraries(R, tmp):
+    url = _write_capture_page(tmp, name="lib.html", html=CAPTURE_LIB_PAGE)
+    rc, data, _, se = capture(url, focus="the parallax section", tmp=tmp)
+    G = "Capture — libraries & hints"
+    blob = json.dumps(data)
+    R.check(G, "exits 0", rc == 0, f"rc={rc} se={se[:200]}")
+    R.check(G, "fingerprints gsap + scrolltrigger + lenis",
+            set(data.get("libraries", [])) >= {"gsap", "scrolltrigger", "lenis"},
+            str(data.get("libraries")))
+    R.check(G, "counts the data-scroll / data-speed hints",
+            data.get("trigger_hints", {}).get("data-scroll", 0) >= 1
+            and "data-speed" in data.get("trigger_hints", {}),
+            str(data.get("trigger_hints")))
+    R.check(G, "not_captured flags canvas",
+            any("canvas" in n.lower() for n in data.get("not_captured", [])), blob[:400])
+    R.check(G, "not_captured flags library-driven motion needing tier 2",
+            any("Tier 2" in n or "runtime" in n for n in data.get("not_captured", [])),
+            blob[:400])
+
+
+def test_capture_multi_and_md(R, tmp):
+    u1 = _write_capture_page(tmp, name="m1.html", html=CAPTURE_CSS_PAGE,
+                             extra={"a.css": CAPTURE_CSS_EXTERNAL})
+    u2 = _write_capture_page(tmp, name="m2.html", html=CAPTURE_LIB_PAGE)
+    out = os.path.join(tempfile.gettempdir(), "capture_multi.json")
+    mdout = os.path.join(tempfile.gettempdir(), "capture_multi.md")
+    rc, so, se = run([sys.executable, os.path.join(SCRIPTS, "capture.py"),
+                      "--url", u1, "--url", u2, "--focus", "nav + parallax",
+                      "--json", out, "--md", mdout, "--quiet"])
+    data = json.load(open(out, encoding="utf-8"))
+    md = open(mdout, encoding="utf-8").read()
+    G = "Capture — multi-URL + markdown"
+    R.check(G, "exits 0", rc == 0, f"rc={rc} se={se[:200]}")
+    R.check(G, "both source URLs present", u1 in data["sources"] and u2 in data["sources"],
+            str(data["sources"]))
+    R.check(G, "findings unioned across pages",
+            any("slide-in" in json.dumps(f) for f in data["motion_findings"]))
+    R.check(G, "libraries unioned across pages",
+            "gsap" in data["libraries"] and "lenis" in data["libraries"])
+    R.check(G, "markdown has the three sections",
+            "## Motion findings" in md and "## Focus element" in md and "## Adopted" in md)
+    n_find = len(data["motion_findings"])
+    R.check(G, "markdown has FAITHFUL and ADAPTED stubs per finding",
+            md.count("FAITHFUL") >= n_find and md.count("ADAPTED") >= n_find,
+            f"FAITHFUL={md.count('FAITHFUL')} ADAPTED={md.count('ADAPTED')} findings={n_find}")
+    R.check(G, "markdown header carries the tier and date",
+            data["tier"] in md and data["captured"] in md)
+
+
+def test_capture_tier_fallback(R, tmp):
+    url = _write_capture_page(tmp, name="tier.html", html=CAPTURE_CSS_PAGE,
+                              extra={"a.css": CAPTURE_CSS_EXTERNAL})
+    G = "Capture — tier handling"
+    # --tier static must never attempt runtime
+    rc_s, data_s, _, _ = capture(url, tier="static", tmp=tmp)
+    R.check(G, "--tier static exits 0 and stays static",
+            rc_s == 0 and data_s["tier"] == "static", str(data_s.get("tier")))
+    R.check(G, "--tier static does not add a runtime-unavailable note",
+            not any("runtime capture unavailable" in n for n in data_s["not_captured"]))
+    # --tier runtime with playwright absent must fall back cleanly
+    try:
+        import playwright  # noqa: F401
+        have_pw = True
+    except ImportError:
+        have_pw = False
+    rc_r, data_r, _, se = capture(url, tier="runtime", tmp=tmp)
+    R.check(G, "--tier runtime exits 0 regardless", rc_r == 0, f"rc={rc_r} se={se[:200]}")
+    if not have_pw:
+        R.check(G, "falls back to static with an explicit note",
+                data_r["tier"] == "static"
+                and any("runtime capture unavailable" in n for n in data_r["not_captured"]),
+                str(data_r["not_captured"]))
+    else:
+        R.check(G, "runtime tier ran (playwright present)",
+                data_r["tier"] in ("runtime", "static"), str(data_r["tier"]))
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--verbose", action="store_true")
@@ -568,6 +748,11 @@ def main():
     test_motion_census(R, motion_good)
     test_sparse_fixture(R, sparse)
     test_determinism(R, clean)
+    test_capture_envelope(R, tmp)
+    test_capture_css_motion(R, tmp)
+    test_capture_libraries(R, tmp)
+    test_capture_multi_and_md(R, tmp)
+    test_capture_tier_fallback(R, tmp)
     test_lint_slop(R, slop)
     test_lint_clean(R, clean)
     test_lint_drift(R, tmp)

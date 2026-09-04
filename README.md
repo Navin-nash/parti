@@ -281,7 +281,7 @@ Every detector has a matching **false-positive guard** on a clean fixture. A lin
 
 | Layer | Ground truth | Instrument | Objective? |
 |---|---|---|---|
-| 1. Trigger accuracy | 52 labeled prompts | `evals/trigger_cases.json` | yes, binary |
+| 1. Trigger accuracy | 56 labeled prompts | `evals/trigger_cases.json` | yes, binary |
 | 2. Script correctness | WCAG arithmetic + seeded fixtures | `evals/run_script_evals.py` | yes, deterministic |
 | 3. Process compliance | 18 binary items, 5 of them gates | `evals/rubric.md` | yes, per-item binary |
 | 4. **Design quality** | **none** | blind A/B against a baseline | **no** — preference only |
