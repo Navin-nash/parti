@@ -49,8 +49,19 @@ RE_REL_SHEET = re.compile(r"""rel\s*=\s*["']?[^"'>]*stylesheet""", re.I)
 RE_STYLE_BLOCK = re.compile(r"<style\b[^>]*>(.*?)</style>", re.I | re.S)
 
 RE_KEYFRAMES = re.compile(r"@(?:-webkit-)?keyframes\s+([\w-]+)\s*\{", re.I)
+# Broad: every transition/animation longhand. Feeds the census aggregate only.
 RE_DECL_TRANSITION = re.compile(r"transition(?:-property|-duration|-timing-function|-delay|-behavior)?\s*:\s*([^;{}]+)", re.I)
 RE_DECL_ANIMATION = re.compile(r"animation(?:-name|-duration|-timing-function|-delay|-iteration-count)?\s*:\s*([^;{}]+)", re.I)
+# Shorthand only. Feeds motion_findings — a finding is one authored `transition:`/
+# `animation:` declaration, never a stray `transition-duration: .2s` fragment.
+RE_SHORT_TRANSITION = re.compile(r"(?<![-\w])transition\s*:\s*([^;{}]+)", re.I)
+RE_SHORT_ANIMATION = re.compile(r"(?<![-\w])animation\s*:\s*([^;{}]+)", re.I)
+# A declaration that is a single bare value carries no mechanism — drop it.
+RE_BARE_VALUE = re.compile(
+    r"^(all|none|inherit|initial|unset|revert|auto|infinite|both|forwards|backwards|"
+    r"alternate|alternate-reverse|reverse|normal|running|paused|"
+    r"ease|ease-in|ease-out|ease-in-out|linear|step-start|step-end|"
+    r"[\d.]+m?s|[\d.]+|cubic-bezier\([^)]*\)|steps\([^)]*\)|[a-zA-Z][\w-]*)$")
 RE_DUR = re.compile(r"(?<![\w.-])(\d+(?:\.\d+)?)(ms|s)(?![\w-])")
 RE_CUBIC = re.compile(r"cubic-bezier\([^)]*\)")
 RE_STEPS = re.compile(r"steps\([^)]*\)")
@@ -139,6 +150,8 @@ def render_markdown(report):
     src = ", ".join(report["sources"][:6])
     L = [f"# Capture — {src}   ({report['captured']}, tier: {report['tier']})",
          f"Focus: {report['focus'] or '(none stated — narrow this before adopting anything)'}"]
+    if report.get("focus_resolved_selector"):
+        L.append(f"Focus resolved to selector: `{report['focus_resolved_selector']}`")
     if report.get("libraries"):
         L.append(f"Libraries seen: {', '.join(report['libraries'])}")
     if report.get("features"):
@@ -166,9 +179,19 @@ def render_markdown(report):
                  "density and motion posture_")
         L.append("")
     L += ["## Focus element", ""]
-    if report.get("focus_element") is None:
+    fe = report.get("focus_element")
+    if fe is None and report["tier"] != "runtime":
         L.append("_Not captured at Tier 1 (the page was not run). Use Tier 2 or the "
                  "Tier-3 snippet path to capture the element's DOM, states and rationale._")
+    elif fe is None:
+        L.append("_Runtime ran but no focus element resolved — pass `--focus` as a real "
+                 "selector (e.g. `.hero-section`) so Tier 2 can lock onto the reveal layer._")
+    else:
+        L.append(f"```\n{fe.get('html', '')[:1200]}\n```")
+        L.append(f"- box: {fe.get('box')}")
+        L.append(f"- computed: {fe.get('css')}")
+        L.append("- **FAITHFUL →** _its structure + states, in your stack_")
+        L.append("- **ADAPTED →** _the mechanism only, rebuilt in your system_")
     L += ["", "## Adopted", "",
           "_element → FAITHFUL | ADAPTED → build path (filled in at build time; "
           "mirror into DESIGN.md changelog)_", ""]
@@ -178,6 +201,36 @@ def render_markdown(report):
 def _to_ms(value, unit):
     v = float(value)
     return int(round(v * 1000.0)) if unit == "s" else int(round(v))
+
+
+def _norm_ease(s):
+    """Canonicalise an easing literal so spelling variants dedupe.
+    cubic-bezier(0.4, 0, 0.2, 1) / cubic-bezier(.4,0,.2,1) -> cubic-bezier(.4,0,.2,1)
+    (a genuinely different curve like cubic-bezier(0,0,.2,1) stays distinct)."""
+    s = re.sub(r"\s+", "", s.strip().lower())
+    m = re.match(r"(cubic-bezier|steps)\((.*)\)$", s)
+    if m:
+        try:
+            parts = [p.strip() for p in m.group(2).split(",")]
+            nums = [float(p) if re.fullmatch(r"-?[\d.]+", p) else p for p in parts]
+            fmt = ",".join(
+                (p if isinstance(p, str)
+                 else (str(int(p)) if p == int(p) else f"{p:g}".replace("0.", ".")))
+                for p in nums)
+            return f"{m.group(1)}({fmt})"
+        except ValueError:
+            pass
+    return s
+
+
+def _norm_mechanism(decl):
+    """Collapse whitespace and normalise embedded curves / 0.x durations so
+    `transform 0.8s cubic-bezier(0.4, 0, 0.2, 1)` and its terse twin dedupe."""
+    d = " ".join(decl.split())
+    d = re.sub(r"cubic-bezier\([^)]*\)|steps\([^)]*\)",
+               lambda x: _norm_ease(x.group(0)), d)
+    d = re.sub(r"(?<![\d.])0(\.\d+m?s)\b", r"\1", d)   # 0.8s -> .8s
+    return d
 
 
 def extract_stylesheets(html, base_url):
@@ -239,41 +292,66 @@ def _css_findings(css):
             "properties": "", "timing": {"durations_ms": [], "easings": []},
             "library": "CSS", "scrubbed": False, "reduced_motion": reduced,
         })
-    for decl in m["transitions"] + m["animations"]:
+    # Findings come from the SHORTHAND only, so `transition-duration: .2s` and
+    # `animation-name: foo` no longer each spawn a bare-token "finding".
+    for raw in (RE_SHORT_TRANSITION.findall(css) + RE_SHORT_ANIMATION.findall(css)):
+        decl = _norm_mechanism(raw)
+        if RE_BARE_VALUE.match(decl):
+            continue
         findings.append({
             "element": "(css)", "trigger": "unknown", "mechanism": decl[:200],
             "properties": sorted(set(RE_PROP.findall(decl))),
             "timing": {
-                "durations_ms": sorted({d for d in
-                                        (_to_ms(a, b) for a, b in RE_DUR.findall(decl))}),
-                "easings": sorted({e.replace(" ", "") for e in
+                "durations_ms": sorted({_to_ms(a, b) for a, b in RE_DUR.findall(decl)}),
+                "easings": sorted({_norm_ease(e) for e in
                                    (RE_CUBIC.findall(decl) + RE_STEPS.findall(decl))}
-                                  | set(RE_EASE_KW.findall(decl))),
+                                  | {_norm_ease(e) for e in RE_EASE_KW.findall(decl)}),
             },
             "library": "CSS", "scrubbed": False, "reduced_motion": reduced,
         })
-    return findings, m
+    return _dedupe_findings(findings), m
 
 
-_SELECTORISH = re.compile(r"^[.#\[]|^[a-z]+[.#\[]|^[a-z-]+$", re.I)
+def _dedupe_findings(findings):
+    """Collapse findings that describe the same thing (minified + source copy,
+    curve spelled two ways). Order-preserving."""
+    seen, out = set(), []
+    for f in findings:
+        t = f["timing"]
+        key = (f["mechanism"].replace(" ", "").lower(),
+               tuple(t.get("durations_ms", [])),
+               tuple(t.get("easings", [])),
+               tuple(f["properties"]) if isinstance(f["properties"], list) else (),
+               f.get("library", ""))
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(f)
+    return out
 
-RUNTIME_JS = r"""
-() => {
-  const out = { animations: [], scrollTriggers: [] };
-  for (const a of document.getAnimations()) {
-    let kf = [];
+
+# One getAnimations() snapshot. Used for the load-time dump and re-used at every
+# scroll step by SCROLL_CAPTURE_JS.
+_DUMP_ANIMATIONS = """
+  (() => document.getAnimations().map(a => {
+    let kf = [], tm = {};
     try { kf = a.effect.getKeyframes(); } catch (e) {}
-    let tm = {};
     try { tm = a.effect.getTiming(); } catch (e) {}
-    out.animations.push({
+    return {
       type: a.constructor.name,
       id: (a.animationName || a.transitionProperty || ""),
+      target: (a.effect && a.effect.target && a.effect.target.tagName) || "",
       duration: tm.duration, delay: tm.delay, easing: tm.easing,
       iterations: tm.iterations,
       keyframes: kf.map(k => ({ offset: k.offset, easing: k.easing,
         transform: k.transform, opacity: k.opacity })),
-    });
-  }
+    };
+  }))()
+"""
+
+RUNTIME_JS = r"""
+() => {
+  const out = { animations: %s, scrollTriggers: [] };
   if (window.ScrollTrigger && window.ScrollTrigger.getAll) {
     for (const st of window.ScrollTrigger.getAll()) {
       out.scrollTriggers.push({
@@ -286,7 +364,64 @@ RUNTIME_JS = r"""
   }
   return out;
 }
-"""
+""" % _DUMP_ANIMATIONS.strip()
+
+# Scroll the page top-to-bottom, and at every step re-read getAnimations() so
+# reveals that only instantiate once their section enters the viewport are
+# actually seen. Also samples transform/opacity of the focus elements.
+SCROLL_CAPTURE_JS = r"""
+async (focus) => {
+  const raf = () => new Promise(r => requestAnimationFrame(r));
+  const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+  const HEURISTICS = ["[class*='hero']", "main > section", "section",
+                      "[data-scroll]", "[data-aos]", "header", "footer"];
+  let sel = focus, resolved = "";
+  const looksSelector = /^\s*[.#\[]|[.#\[]|^[a-z][\w-]*$/i.test(focus || "");
+  const cands = (focus && looksSelector) ? [focus, ...HEURISTICS] : HEURISTICS;
+  for (const c of cands) {
+    try { if (document.querySelector(c)) { sel = c; resolved = c; break; } } catch (e) {}
+  }
+  const els = resolved ? [...document.querySelectorAll(resolved)].slice(0, 6) : [];
+  const dump = () => %s;
+  const seen = new Map(), samples = [];
+  const key = (a) => a.id + "|" + Math.round(a.duration || 0) + "|" + a.type + "|" + a.target;
+  const H = document.documentElement.scrollHeight;
+  const STEPS = 14;
+  for (let i = 0; i <= STEPS; i++) {
+    const y = Math.round(H * i / STEPS);
+    window.scrollTo(0, y);
+    await raf(); await raf(); await sleep(90);
+    for (const a of dump()) if (!seen.has(key(a))) seen.set(key(a), a);
+    samples.push({ y, e: els.map(el => { const s = getComputedStyle(el);
+      return { t: s.transform, o: s.opacity }; }) });
+  }
+  window.scrollTo(0, 0); await raf();
+  return { animations: [...seen.values()], samples, resolvedSelector: resolved };
+}
+""" % _DUMP_ANIMATIONS.strip()
+
+
+def _anim_to_finding(a, trigger):
+    dur = a.get("duration")
+    return {
+        "element": "(runtime)", "trigger": trigger,
+        "mechanism": _norm_mechanism(
+            f"{a.get('type', 'Animation')} {a.get('id', '')}".strip()),
+        "properties": sorted({k for kf in a.get("keyframes", [])
+                              for k in ("transform", "opacity")
+                              if kf.get(k) is not None}),
+        "timing": {
+            "durations_ms": [int(dur)] if isinstance(dur, (int, float)) else [],
+            "easings": [_norm_ease(a["easing"])] if a.get("easing") else [],
+        },
+        "library": "WAAPI", "scrubbed": False,
+        "reduced_motion": "check both states (see report notes)",
+    }
+
+
+def _anim_key(a):
+    return (a.get("id", ""), int(a.get("duration") or 0),
+            a.get("type", ""), a.get("target", ""))
 
 
 def capture_runtime(urls, focus):
@@ -296,45 +431,36 @@ def capture_runtime(urls, focus):
         return None
     try:
         merged = {"tier": "runtime", "motion_findings": [], "focus_element": None,
-                  "scroll_samples": [], "runtime_libraries": {}}
+                  "scroll_samples": [], "runtime_libraries": {},
+                  "focus_resolved_selector": None}
         with sync_playwright() as p:
             browser = p.chromium.launch()
             for url in urls:
                 page = browser.new_page()
                 page.goto(url, wait_until="networkidle", timeout=20000)
-                data = page.evaluate(RUNTIME_JS)
-                for a in data.get("animations", []):
-                    dur = a.get("duration")
-                    merged["motion_findings"].append({
-                        "element": "(runtime)",
-                        "trigger": "load-or-state",
-                        "mechanism": f"{a.get('type', 'Animation')} {a.get('id', '')}".strip(),
-                        "properties": sorted({k for kf in a.get("keyframes", [])
-                                              for k in ("transform", "opacity")
-                                              if kf.get(k) is not None}),
-                        "timing": {
-                            "durations_ms": [int(dur)] if isinstance(dur, (int, float)) else [],
-                            "easings": [a["easing"]] if a.get("easing") else [],
-                        },
-                        "library": "WAAPI", "scrubbed": False,
-                        "reduced_motion": "check both states (see report notes)",
-                    })
-                if data.get("scrollTriggers"):
-                    merged["runtime_libraries"]["gsap_scrolltrigger"] = data["scrollTriggers"]
-                sel = focus if _SELECTORISH.match(focus or "") else "section, header, [data-scroll]"
+
+                load = page.evaluate(RUNTIME_JS)
+                load_keys = {_anim_key(a) for a in load.get("animations", [])}
+                for a in load.get("animations", []):
+                    merged["motion_findings"].append(
+                        _anim_to_finding(a, "load-or-state"))
+                if load.get("scrollTriggers"):
+                    merged["runtime_libraries"]["gsap_scrolltrigger"] = \
+                        load["scrollTriggers"]
+
                 try:
-                    samples = page.evaluate(
-                        """(sel) => { const els=[...document.querySelectorAll(sel)].slice(0,6);
-                          const rows=[]; const H=document.body.scrollHeight;
-                          for (let i=0;i<=40;i++){ const y=Math.round(H*i/40);
-                            window.scrollTo(0,y);
-                            rows.push({y, e: els.map(el=>{const s=getComputedStyle(el);
-                              return {t:s.transform, o:s.opacity};})}); }
-                          window.scrollTo(0,0); return rows; }""", sel)
-                    merged["scroll_samples"].extend(samples)
+                    sc = page.evaluate(SCROLL_CAPTURE_JS, focus or "")
+                    merged["scroll_samples"].extend(sc.get("samples", []))
+                    merged["focus_resolved_selector"] = sc.get("resolvedSelector") or None
+                    for a in sc.get("animations", []):
+                        if _anim_key(a) not in load_keys:
+                            merged["motion_findings"].append(
+                                _anim_to_finding(a, "in-view / scroll"))
                 except Exception:
                     pass
-                if focus and _SELECTORISH.match(focus):
+
+                resolved = merged["focus_resolved_selector"]
+                if resolved:
                     try:
                         merged["focus_element"] = page.evaluate(
                             """(sel) => { const el=document.querySelector(sel); if(!el) return null;
@@ -343,11 +469,12 @@ def capture_runtime(urls, focus):
                                 box: {w:r.width,h:r.height},
                                 css: {display:s.display, position:s.position,
                                       transition:s.transition, transform:s.transform} }; }""",
-                            focus)
+                            resolved)
                     except Exception:
                         pass
                 page.close()
             browser.close()
+        merged["motion_findings"] = _dedupe_findings(merged["motion_findings"])
         return merged
     except Exception:
         return None
@@ -399,12 +526,20 @@ def run_capture(urls, focus, tier):
                 "launch) — ran Tier 1 only")
         else:
             report["tier"] = "runtime"
-            report["motion_findings"] += rt["motion_findings"]
+            report["motion_findings"] = _dedupe_findings(
+                report["motion_findings"] + rt["motion_findings"])
             report["focus_element"] = rt.get("focus_element")
+            report["focus_resolved_selector"] = rt.get("focus_resolved_selector")
             report["scroll_samples"] = rt.get("scroll_samples", [])
             report["runtime_libraries"] = rt.get("runtime_libraries", {})
             report["not_captured"] = [n for n in report["not_captured"]
                                       if "Tier 2 (runtime)" not in n]
+            if not any(f["trigger"] == "in-view / scroll"
+                       for f in rt["motion_findings"]):
+                report["not_captured"].append(
+                    "no scroll-triggered animation surfaced during the scroll pass "
+                    "(the page may reveal via class toggles / transforms rather than "
+                    "the Web Animations API, or the focus selector missed the reveal layer)")
 
     if report["tier"] == "static":
         report["not_captured"].append(
