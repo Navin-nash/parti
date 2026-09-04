@@ -30,6 +30,7 @@ Whatever the level, say what was **not** covered.
 | `motion` | existing motion or a brief | motion spec + library decision | M |
 | `review` | codebase or a diff | rule-id findings at `file:line` + summary table | S |
 | `animate` | a component + a request for motion | the animation, built to the rule catalog | S–M |
+| `reference` | one or more inspiration URLs + a focus | per-element capture (faithful + adapted columns) in `captures/` | M |
 | `density` | a screen | density and rhythm correction | S |
 | `states` | a component or flow | every missing state designed | M |
 | `signature` | a direction or product | the one memorable element | S |
@@ -100,11 +101,11 @@ Extract what the design system actually is. Run `scripts/audit.py`, then write o
 
 ### explore
 
-The core loop. Full process in SKILL.md: brief → constraints → three divergent directions → render → critique → converge → tokens. The one command that produces something new rather than correcting something existing. Render fidelity — the step where a good concept most often still comes out generic — has its own craft rules in `references/render.md`. If the user wants it shipped, continue straight into `build` afterward; the token spec `explore` emits is `build`'s required input.
+The core loop. Full process in SKILL.md: brief → constraints → three divergent directions → render → critique → converge → tokens. If the brief includes an inspiration URL, run `reference` on it first (step 2); its findings are constraints and its Adapted column feeds steps 3–4. The one command that produces something new rather than correcting something existing. Render fidelity — the step where a good concept most often still comes out generic — has its own craft rules in `references/render.md`. If the user wants it shipped, continue straight into `build` afterward; the token spec `explore` emits is `build`'s required input.
 
 ### redesign
 
-Audit first, propose second. Always offer both scales — surgical (5–8 highest-leverage fixes inside the existing system, days) and directional (the full `explore` process, weeks) — and say which you'd pick. Protocol and severity rubric in `references/critique.md`. End with an explicit keep list.
+Audit first, propose second. A 'like siteX' request runs `reference` on siteX during the audit; every borrowed element goes on the keep/change list explicitly. Always offer both scales — surgical (5–8 highest-leverage fixes inside the existing system, days) and directional (the full `explore` process, weeks) — and say which you'd pick. Protocol and severity rubric in `references/critique.md`. End with an explicit keep list.
 
 ### deslop
 
@@ -150,7 +151,7 @@ Deliver in OKLCH with hex alongside, every text pair's ratio stated inline, and 
 
 ### motion
 
-Read `references/motion.md`. Decide first whether each thing should animate at all, then specify: posture, the one choreographed moment, what animates (with duration + easing), what never animates, the library decision including the option of none, and per-item reduced-motion degradation. If the audit shows two general-purpose animation libraries, that's a finding — say so.
+Read `references/motion.md`. Decide first whether each thing should animate at all, then specify: posture, the one choreographed moment, what animates (with duration + easing), what never animates, the library decision including the option of none, and per-item reduced-motion degradation. If the audit shows two general-purpose animation libraries, that's a finding — say so. If a reference URL is given, run `reference` first and write the spec as a diff from the captured findings.
 
 Auditing existing motion rather than specifying new motion is `review`. Building one specific animation is `animate`. Values come from `references/motion-rules.md` §12 — copied, never approximated.
 
@@ -172,6 +173,47 @@ Output: findings ordered by severity as `file:line — [rule-id] one sentence`, 
 Build one animation, through the seven-step sequence in `references/motion.md` §13. Steps 1 and 2 are gates and they exist to produce **zero lines of code** sometimes: an action performed 100+ times a day, or initiated by keyboard, does not animate — say so plainly and offer the non-motion alternative instead of building it anyway.
 
 Start from `references/motion-recipes.md` if the request matches a component it covers. Never present motion options as a menu — make the call, state the reasoning in one line, write the code. Reduced motion and pointer gating ship in the same edit, not as a follow-up. Finish by naming what needs a **feel-check** — anything whose correctness can't be read off the code.
+
+### reference
+
+Capture a specific element, transition, or animation from an inspiration URL and make it
+buildable in the user's own stack. Alias: `capture`.
+
+**Input:** one or more URLs, plus a focus — an element or a named behavior ("the nav",
+"the scroll reveals", "that pricing toggle"). **A focus is required.** Absent, or "the whole
+look", is not a capture: respond with the three options — name a specific element / run
+`explore` *informed by* the reference / proceed element-by-element — and wait.
+
+**Auto-trigger:** any URL in a `parti` invocation ("redesign my hero like stripe.com",
+"build this the way linear.app does it") runs `reference` first, emitting one line:
+`Capturing linear.app first (focus: hero motion). Say "skip capture" to work from description only.`
+
+**Run:**
+
+```bash
+python scripts/capture.py --url <url> --focus "<element>" --tier auto \
+    --json /tmp/capture.json --md captures/<domain>-<date>.md
+```
+
+`--tier static` for the fast, dependency-free pass; `--tier runtime` (needs Playwright) adds
+live `getAnimations()` / `ScrollTrigger` data, a scroll sampler, and the focus element's
+anatomy. `--url` repeats for multiple references — findings are attributed per source and
+stay per-element; there is no cross-site identity merge.
+
+**Output:** `captures/<domain>-<date>.md` (+ `.json`). Per motion finding and for the focus
+element, two columns: **Faithful** (measured values re-expressed in the user's stack; a
+layout-property animation re-expressed as transform/opacity) and **Adapted** (mechanism and
+intent only, values re-derived from the user's tokens, density, and motion posture). The
+report always states which tier ran and what it could not see — it never invents a duration
+or easing.
+
+**Effort modifiers:** `quick` = Tier 1 only. `standard` = Tier 1 + Tier 2 if available.
+`deep` = + a `prefers-reduced-motion` pass, a scroll-through screencast for the feel pass,
+and multiple viewports. Whatever the level, say what was not covered.
+
+**Then:** fold the adopted rows into the motion spec (`references/motion.md` §12 format) or
+the target component, add the DESIGN.md Changelog line, and — at build time — fill each
+Adopted row's build path. Full protocol: `references/motion-capture.md`.
 
 ### density
 
@@ -199,7 +241,7 @@ Emit the full spec per `references/tokens.md`. Format is fixed so it can be cons
 
 ### build
 
-The core build loop. Full process in SKILL.md's Build mode: read the spec → pick the stack → build the job screen with every state → self-review against `references/bans.md` → verify (`references/verify.md`) → report → sync. The one command that produces new shippable code rather than adjusting existing code.
+The core build loop. Full process in SKILL.md's Build mode: read the spec → pick the stack → build the job screen with every state → self-review against `references/bans.md` → verify (`references/verify.md`) → report → sync. If motion was captured via `reference`, re-run `scripts/capture.py --tier runtime` against the shipped build and diff its `getAnimations` dump against the spec — a measured fidelity check, not an eyeball one. The one command that produces new shippable code rather than adjusting existing code.
 
 ### polish
 
@@ -235,7 +277,7 @@ N alternatives of one component, differing on **one named axis** (weight, densit
 
 ### sync
 
-Write recent decisions back into `DESIGN.md`: changed values, new rules, new anti-rules, what a build decided that the spec left open, a dated Changelog line. Run after `explore`, `redesign`, `build`, `harden`, or any command that changed something real. Cheap, and the reason the file stays worth reading.
+Write recent decisions back into `DESIGN.md`: changed values, new rules, new anti-rules, what a build decided that the spec left open, the build path for each Adopted row in the relevant `captures/*.md`, a dated Changelog line. Run after `explore`, `redesign`, `build`, `harden`, or any command that changed something real. Cheap, and the reason the file stays worth reading.
 
 ---
 

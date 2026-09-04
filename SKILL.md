@@ -31,7 +31,7 @@ Before anything else, look for `DESIGN.md` (also `docs/`, `.design/`, `design/`,
 
 - **It exists** → read it fully; it is binding. It outranks your taste; it does not outrank the user's current instruction. If the request conflicts with it, **surface the conflict and offer three options** (exception / amend the file / find another route to the same effect) rather than silently overriding. Silent overrides are how the file stops being trusted.
 - **It doesn't exist** → create it. With a codebase, run the audit first and document the de-facto system honestly, mess included. Greenfield, write it from the chosen direction after the token handoff.
-- **On the way out** → sync it. Any change to color, type, space, shape, motion, or a rule gets written back with a dated Changelog line, and say in one line what changed — whether that change came from a direction pass or a build pass.
+- **On the way out** → sync it. Any change to color, type, space, shape, motion, or a rule gets written back with a dated Changelog line, and say in one line what changed — whether that change came from a direction pass or a build pass. A borrowed element from a `reference` capture gets a dated Changelog line naming the source URL and whether it was taken faithfully or adapted; the capture itself lives in `captures/`.
 
 Protocol and full template: `references/design-md.md`.
 
@@ -48,6 +48,7 @@ Invoke by name, or infer from intent — fresh brief → `explore`; existing thi
 | `deslop` | find and replace the tells | `critique` | evidence-based review, no changes |
 | `typeset` | type scale and pairing | `palette` | color system, contrast-verified |
 | `motion` | animation spec + library call | `density` | rhythm and information density |
+| `reference` | capture an inspiration URL → per-element faithful/adapted spec | `capture` | alias for `reference` |
 | `review` | rule-id findings at `file:line` | `animate` | build one animation, gated |
 | `states` | empty/loading/error/overflow | `signature` | the one memorable element |
 | `variants` | N alternatives on one axis | `copy` | microcopy pass |
@@ -85,9 +86,10 @@ python scripts/color.py fix "#8A8F98" --on "#F7F7F8"          # minimal lightnes
 python scripts/color.py ramp "#B23A2E" --steps 9              # gamut-fit OKLCH ramp
 python scripts/lint.py <built-path> --tokens tokens.json      # built code vs. its own spec: tells + drift
 python scripts/motion.py <path> --json /tmp/motion.json       # motion rule violations at file:line
+python scripts/capture.py --url <url> --focus "<element>" --json /tmp/capture.json  # inspiration-site capture (Tier 1 static; --tier runtime adds Playwright)
 ```
 
-`audit.py` reports palette sprawl, typeface and size counts, spacing base unit and off-grid values, radius/shadow/z-index variance, motion durations and easing (custom vs. browser default), tokenization ratio, reduced-motion handling, and the anti-slop tells it can see in source. `lint.py` runs the equivalent check on code you just built: build-time tells `audit.py` can't see yet at plan time, plus **token drift** — any color in the shipped code that isn't in the spec it was handed. `motion.py` checks the machine-checkable half of `references/motion-rules.md` — `ease-in` on UI, `transition: all`, `scale(0)` entrances, durations over budget, animated layout properties, trigger-anchored surfaces scaling from center, keyframes on rapidly-triggered components, missing reduced motion, ungated hover, easing/duration sprawl — and reports each at `file:line` with its rule id.
+`audit.py` reports palette sprawl, typeface and size counts, spacing base unit and off-grid values, radius/shadow/z-index variance, motion durations and easing (custom vs. browser default), tokenization ratio, reduced-motion handling, and the anti-slop tells it can see in source. `lint.py` runs the equivalent check on code you just built: build-time tells `audit.py` can't see yet at plan time, plus **token drift** — any color in the shipped code that isn't in the spec it was handed. `motion.py` checks the machine-checkable half of `references/motion-rules.md` — `ease-in` on UI, `transition: all`, `scale(0)` entrances, durations over budget, animated layout properties, trigger-anchored surfaces scaling from center, keyframes on rapidly-triggered components, missing reduced motion, ungated hover, easing/duration sprawl — and reports each at `file:line` with its rule id. `capture.py` fetches an inspiration URL and extracts its CSS-level motion, the animation libraries it loads, and — with `--tier runtime` — its live `getAnimations()` / `ScrollTrigger` data and one focus element's anatomy; it never captures a whole site, only the element or behavior named in `--focus`. Full protocol: `references/motion-capture.md`.
 
 **On scoring — never report one blended number, in either direction.** `score.py` returns the *measured* half only; hierarchy, signature, content fit, copy, state coverage, and concept are judged by you, with written evidence, and reported separately. `lint.py` and `motion.py` are the same kind of instrument at the build stage: regression guards, not design-quality judgments — a clean run means nothing on the known list is wrong, not that the build is good. `motion.py` in particular cannot see whether an animation has a *purpose* or how often its surface is actually used, which is the half of a motion review that decides most findings; those stay with you. If the input is a screenshot rather than a codebase, say so and score the judged half only — contrast ratios estimated by eye are guesses in the costume of measurement.
 
