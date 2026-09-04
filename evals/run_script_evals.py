@@ -588,9 +588,11 @@ def _write_capture_page(tmp, name="page.html", html=CAPTURE_HTML, extra=None):
     return "file:///" + p.replace(os.sep, "/")
 
 
-def capture(url, focus="", tier="static", md=False, tmp=None):
-    out = os.path.join(tempfile.gettempdir(), "capture_out.json")
-    mdout = os.path.join(tempfile.gettempdir(), "capture_out.md")
+def capture(url, focus="", tier="static", md=False, *, tmp):
+    # Write under the per-run tmp dir, not a fixed tempdir path — a crashed run
+    # otherwise leaves a stale capture_out.json the next run would read.
+    out = os.path.join(tmp, "capture_out.json")
+    mdout = os.path.join(tmp, "capture_out.md")
     cmd = [sys.executable, os.path.join(SCRIPTS, "capture.py"),
            "--url", url, "--focus", focus, "--tier", tier,
            "--json", out, "--quiet"]
@@ -684,8 +686,10 @@ def test_capture_multi_and_md(R, tmp):
             "gsap" in data["libraries"] and "lenis" in data["libraries"])
     R.check(G, "markdown has the three sections",
             "## Motion findings" in md and "## Focus element" in md and "## Adopted" in md)
+    n_find = len(data["motion_findings"])
     R.check(G, "markdown has FAITHFUL and ADAPTED stubs per finding",
-            md.count("FAITHFUL") >= 1 and md.count("ADAPTED") >= 1)
+            md.count("FAITHFUL") >= n_find and md.count("ADAPTED") >= n_find,
+            f"FAITHFUL={md.count('FAITHFUL')} ADAPTED={md.count('ADAPTED')} findings={n_find}")
     R.check(G, "markdown header carries the tier and date",
             data["tier"] in md and data["captured"] in md)
 
