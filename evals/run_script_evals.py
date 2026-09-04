@@ -690,6 +690,34 @@ def test_capture_multi_and_md(R, tmp):
             data["tier"] in md and data["captured"] in md)
 
 
+def test_capture_tier_fallback(R, tmp):
+    url = _write_capture_page(tmp, name="tier.html", html=CAPTURE_CSS_PAGE,
+                              extra={"a.css": CAPTURE_CSS_EXTERNAL})
+    G = "Capture — tier handling"
+    # --tier static must never attempt runtime
+    rc_s, data_s, _, _ = capture(url, tier="static", tmp=tmp)
+    R.check(G, "--tier static exits 0 and stays static",
+            rc_s == 0 and data_s["tier"] == "static", str(data_s.get("tier")))
+    R.check(G, "--tier static does not add a runtime-unavailable note",
+            not any("runtime capture unavailable" in n for n in data_s["not_captured"]))
+    # --tier runtime with playwright absent must fall back cleanly
+    try:
+        import playwright  # noqa: F401
+        have_pw = True
+    except ImportError:
+        have_pw = False
+    rc_r, data_r, _, se = capture(url, tier="runtime", tmp=tmp)
+    R.check(G, "--tier runtime exits 0 regardless", rc_r == 0, f"rc={rc_r} se={se[:200]}")
+    if not have_pw:
+        R.check(G, "falls back to static with an explicit note",
+                data_r["tier"] == "static"
+                and any("runtime capture unavailable" in n for n in data_r["not_captured"]),
+                str(data_r["not_captured"]))
+    else:
+        R.check(G, "runtime tier ran (playwright present)",
+                data_r["tier"] in ("runtime", "static"), str(data_r["tier"]))
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--verbose", action="store_true")
@@ -720,6 +748,7 @@ def main():
     test_capture_css_motion(R, tmp)
     test_capture_libraries(R, tmp)
     test_capture_multi_and_md(R, tmp)
+    test_capture_tier_fallback(R, tmp)
     test_lint_slop(R, slop)
     test_lint_clean(R, clean)
     test_lint_drift(R, tmp)

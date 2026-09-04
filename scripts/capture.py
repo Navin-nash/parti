@@ -251,17 +251,116 @@ def _css_findings(css):
     return findings, m
 
 
+_SELECTORISH = re.compile(r"^[.#\[]|^[a-z]+[.#\[]|^[a-z-]+$", re.I)
+
+RUNTIME_JS = r"""
+() => {
+  const out = { animations: [], scrollTriggers: [] };
+  for (const a of document.getAnimations()) {
+    let kf = [];
+    try { kf = a.effect.getKeyframes(); } catch (e) {}
+    let tm = {};
+    try { tm = a.effect.getTiming(); } catch (e) {}
+    out.animations.push({
+      type: a.constructor.name,
+      id: (a.animationName || a.transitionProperty || ""),
+      duration: tm.duration, delay: tm.delay, easing: tm.easing,
+      iterations: tm.iterations,
+      keyframes: kf.map(k => ({ offset: k.offset, easing: k.easing,
+        transform: k.transform, opacity: k.opacity })),
+    });
+  }
+  if (window.ScrollTrigger && window.ScrollTrigger.getAll) {
+    for (const st of window.ScrollTrigger.getAll()) {
+      out.scrollTriggers.push({
+        start: String(st.start), end: String(st.end),
+        scrub: st.vars && st.vars.scrub, pin: !!(st.vars && st.vars.pin),
+        trigger: st.trigger && st.trigger.tagName,
+        vars: st.animation && st.animation.vars ? Object.keys(st.animation.vars) : [],
+      });
+    }
+  }
+  return out;
+}
+"""
+
+
+def capture_runtime(urls, focus):
+    try:
+        from playwright.sync_api import sync_playwright
+    except ImportError:
+        return None
+    try:
+        merged = {"tier": "runtime", "motion_findings": [], "focus_element": None,
+                  "scroll_samples": [], "runtime_libraries": {}}
+        with sync_playwright() as p:
+            browser = p.chromium.launch()
+            for url in urls:
+                page = browser.new_page()
+                page.goto(url, wait_until="networkidle", timeout=20000)
+                data = page.evaluate(RUNTIME_JS)
+                for a in data.get("animations", []):
+                    dur = a.get("duration")
+                    merged["motion_findings"].append({
+                        "element": "(runtime)",
+                        "trigger": "load-or-state",
+                        "mechanism": f"{a.get('type', 'Animation')} {a.get('id', '')}".strip(),
+                        "properties": sorted({k for kf in a.get("keyframes", [])
+                                              for k in ("transform", "opacity")
+                                              if kf.get(k) is not None}),
+                        "timing": {
+                            "durations_ms": [int(dur)] if isinstance(dur, (int, float)) else [],
+                            "easings": [a["easing"]] if a.get("easing") else [],
+                        },
+                        "library": "WAAPI", "scrubbed": False,
+                        "reduced_motion": "check both states (see report notes)",
+                    })
+                if data.get("scrollTriggers"):
+                    merged["runtime_libraries"]["gsap_scrolltrigger"] = data["scrollTriggers"]
+                sel = focus if _SELECTORISH.match(focus or "") else "section, header, [data-scroll]"
+                try:
+                    samples = page.evaluate(
+                        """(sel) => { const els=[...document.querySelectorAll(sel)].slice(0,6);
+                          const rows=[]; const H=document.body.scrollHeight;
+                          for (let i=0;i<=40;i++){ const y=Math.round(H*i/40);
+                            window.scrollTo(0,y);
+                            rows.push({y, e: els.map(el=>{const s=getComputedStyle(el);
+                              return {t:s.transform, o:s.opacity};})}); }
+                          window.scrollTo(0,0); return rows; }""", sel)
+                    merged["scroll_samples"].extend(samples)
+                except Exception:
+                    pass
+                if focus and _SELECTORISH.match(focus):
+                    try:
+                        merged["focus_element"] = page.evaluate(
+                            """(sel) => { const el=document.querySelector(sel); if(!el) return null;
+                              const s=getComputedStyle(el); const r=el.getBoundingClientRect();
+                              return { html: el.outerHTML.slice(0,1200),
+                                box: {w:r.width,h:r.height},
+                                css: {display:s.display, position:s.position,
+                                      transition:s.transition, transform:s.transform} }; }""",
+                            focus)
+                    except Exception:
+                        pass
+                page.close()
+            browser.close()
+        return merged
+    except Exception:
+        return None
+
+
 def run_capture(urls, focus, tier):
     per_url = [fetch(u) for u in urls]
     report, any_ok = build_report(urls, focus, "static", per_url)
+
     all_css = []
     for u in per_url:
         if not u["ok"]:
             continue
         css, css_srcs = extract_stylesheets(u["text"], u["url"])
         report["sources"] = list(dict.fromkeys(report["sources"] + css_srcs))
-        all_css.append((u, css))
-    combined = "\n".join(css for _, css in all_css)
+        all_css.append(css)
+    combined = "\n".join(all_css)
     findings, m = _css_findings(combined)
     report["motion_findings"] = findings
     if m["scroll_timeline"]:
@@ -272,6 +371,7 @@ def run_capture(urls, focus, tier):
         report.setdefault("features", []).append("view-transitions")
     if m["starting_style"]:
         report.setdefault("features", []).append("@starting-style")
+
     html_all = "\n".join(u["text"] for u in per_url if u["ok"])
     libs = fingerprint_libraries(html_all)
     report["libraries"] = libs
@@ -281,11 +381,27 @@ def run_capture(urls, focus, tier):
     if {"rive", "lottie"} & set(libs):
         report["not_captured"].append(
             "Rive / Lottie asset animation (flagged, not reproduced — rebuild the intent)")
-    js_motion_libs = [l for l in libs if l not in ("three",)]
+    js_motion_libs = [l for l in libs if l != "three"]
     if js_motion_libs:
         report["not_captured"].append(
             f"library-driven motion ({', '.join(js_motion_libs)}) — values need "
             f"Tier 2 (runtime) or the Tier-3 snippet path in references/motion-capture.md")
+
+    if tier in ("auto", "runtime") and any_ok:
+        rt = capture_runtime([u["url"] for u in per_url if u["ok"]], focus)
+        if rt is None:
+            report["not_captured"].append(
+                "runtime capture unavailable (playwright not installed or failed to "
+                "launch) — ran Tier 1 only")
+        else:
+            report["tier"] = "runtime"
+            report["motion_findings"] += rt["motion_findings"]
+            report["focus_element"] = rt.get("focus_element")
+            report["scroll_samples"] = rt.get("scroll_samples", [])
+            report["runtime_libraries"] = rt.get("runtime_libraries", {})
+            report["not_captured"] = [n for n in report["not_captured"]
+                                      if "Tier 2 (runtime)" not in n]
+
     return report, any_ok
 
 
