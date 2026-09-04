@@ -629,6 +629,12 @@ def test_capture_css_motion(R, tmp):
     blob = json.dumps(data)
     R.check(G, "captures the @keyframes block",
             any("slide-in" in json.dumps(f) for f in findings), blob[:300])
+    kf = next((f for f in findings if f["mechanism"] == "@keyframes slide-in"), None)
+    R.check(G, "keyframe finding carries the from/to values, not just the name",
+            kf is not None and kf.get("keyframes", {}).get("0%", {}).get("transform")
+            == "translateY(20px)"
+            and kf["keyframes"].get("100%", {}).get("opacity") == "1",
+            json.dumps(kf.get("keyframes") if kf else None))
     R.check(G, "captures the nav transition with its duration",
             any(240 in f.get("timing", {}).get("durations_ms", []) for f in findings),
             blob[:400])

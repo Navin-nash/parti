@@ -179,6 +179,12 @@ def render_markdown(report):
         L.append(f"- library: {f.get('library', 'CSS')} · "
                  f"scrubbed: {f.get('scrubbed', False)}")
         L.append(f"- reduced-motion on the reference: {f.get('reduced_motion', 'unknown')}")
+        kf = f.get("keyframes") or {}
+        if kf:
+            stops = " → ".join(
+                pct + " { " + ", ".join(f"{p}: {v}" for p, v in d.items()) + " }"
+                for pct, d in kf.items())
+            L.append(f"- keyframes: {stops}")
         L.append("- **FAITHFUL →** _measured values, re-expressed in your stack "
                  "(swap a layout property for transform/opacity here)_")
         L.append("- **ADAPTED →** _mechanism only; values re-derived from your tokens, "
@@ -196,6 +202,11 @@ def render_markdown(report):
         L.append(f"```\n{fe.get('html', '')[:1200]}\n```")
         L.append(f"- box: {fe.get('box')}")
         L.append(f"- computed: {fe.get('css')}")
+        st = fe.get("states") or {}
+        for name, vals in st.items():
+            L.append(f"- state `{name}`: {vals}")
+        if list(st) == ["default"]:
+            L.append("- (no :hover / :focus difference observed on this element)")
         L.append("- **FAITHFUL →** _its structure + states, in your stack_")
         L.append("- **ADAPTED →** _the mechanism only, rebuilt in your system_")
     rl = report.get("runtime_libraries") or {}
@@ -306,16 +317,58 @@ def parse_css_motion(css):
     }
 
 
+_KF_PROPS = ("transform", "opacity", "filter", "backdrop-filter", "clip-path",
+             "translate", "scale", "rotate", "offset-distance",
+             "background-position", "left", "top", "right", "bottom")
+RE_KEYFRAMES_HEAD = re.compile(r"@(?:-webkit-)?keyframes\s+([\w-]+)\s*\{", re.I)
+
+
+def _keyframe_bodies(css):
+    """{name: {"0%": {prop: value}, "100%": {...}}} — the actual from/to values,
+    so a builder gets `translateY(20px) -> none` not just the keyframe's name."""
+    out = {}
+    for m in RE_KEYFRAMES_HEAD.finditer(css):
+        i, depth = m.end(), 1
+        while i < len(css) and depth:
+            depth += (css[i] == "{") - (css[i] == "}")
+            i += 1
+        body = css[m.end():i - 1]
+        stops = {}
+        for sm in re.finditer(r"([^{}]+)\{([^{}]*)\}", body):
+            decls = {}
+            for dm in re.finditer(r"([\w-]+)\s*:\s*([^;]+)", sm.group(2)):
+                p = dm.group(1).strip().lower()
+                if p in _KF_PROPS:
+                    decls[p] = " ".join(dm.group(2).split())
+            if not decls:
+                continue
+            for token in sm.group(1).lower().split(","):
+                token = {"from": "0%", "to": "100%"}.get(token.strip(), token.strip())
+                stops.setdefault(token, {}).update(decls)
+        if stops:
+            def pct(k):
+                k = k.rstrip("%")
+                return float(k) if re.fullmatch(r"[\d.]+", k) else 50.0
+            ordered = sorted(stops, key=pct)
+            out[m.group(1)] = {k: stops[k] for k in ordered}
+    return out
+
+
 def _css_findings(css):
     m = parse_css_motion(css)
     reduced = "declared" if "prefers-reduced-motion" in css else \
               "not handled by the reference"
+    kf_bodies = _keyframe_bodies(css)
     findings = []
     for name in m["keyframes"]:
+        stops = kf_bodies.get(name, {})
+        props = sorted({p for d in stops.values() for p in d})
         findings.append({
             "element": "(css)", "trigger": "unknown",
             "mechanism": f"@keyframes {name}",
-            "properties": "", "timing": {"durations_ms": [], "easings": []},
+            "properties": props,
+            "keyframes": stops,
+            "timing": {"durations_ms": [], "easings": []},
             "library": "CSS", "scrubbed": False, "reduced_motion": reduced,
         })
     # Findings come from the SHORTHAND only, so `transition-duration: .2s` and
@@ -442,10 +495,19 @@ def _anim_to_finding(a, trigger):
     # Nameless but real (transform/opacity): label it by what it moves so the
     # repeats across a list dedupe to one finding instead of N × "Animation".
     label = f"{a.get('type', 'Animation')} {aid or '/'.join(props)}".strip()
+    # Keep the from/to stops — a builder needs the values, not just the names.
+    stops = {}
+    for kf in a.get("keyframes", []):
+        off = kf.get("offset")
+        pct = f"{round(off * 100)}%" if isinstance(off, (int, float)) else "?"
+        d = {k: kf[k] for k in ("transform", "opacity") if kf.get(k) is not None}
+        if d:
+            stops[pct] = d
     return {
         "element": "(runtime)", "trigger": trigger,
         "mechanism": _norm_mechanism(label),
         "properties": props,
+        "keyframes": stops,
         "timing": {
             "durations_ms": [ms] if ms else [],
             "easings": [_norm_ease(a["easing"])] if a.get("easing") else [],
@@ -513,6 +575,12 @@ def capture_runtime(urls, focus):
                 resolved = merged["focus_resolved_selector"]
                 if resolved:
                     try:
+                        snap = ("""(sel) => { const el=document.querySelector(sel);
+                          if(!el) return null; const s=getComputedStyle(el);
+                          return { bg:s.backgroundColor, color:s.color, opacity:s.opacity,
+                            transform:s.transform, boxShadow:s.boxShadow,
+                            borderColor:s.borderColor, outline:s.outline,
+                            filter:s.filter }; }""")
                         merged["focus_element"] = page.evaluate(
                             """(sel) => { const el=document.querySelector(sel); if(!el) return null;
                               const s=getComputedStyle(el); const r=el.getBoundingClientRect();
@@ -521,6 +589,24 @@ def capture_runtime(urls, focus):
                                 css: {display:s.display, position:s.position,
                                       transition:s.transition, transform:s.transform} }; }""",
                             resolved)
+                        states = {"default": page.evaluate(snap, resolved)}
+                        try:
+                            page.hover(resolved, timeout=2000)
+                            page.wait_for_timeout(250)
+                            states["hover"] = page.evaluate(snap, resolved)
+                        except Exception:
+                            pass
+                        try:
+                            page.eval_on_selector(resolved, "el => el.focus && el.focus()")
+                            page.wait_for_timeout(150)
+                            states["focus"] = page.evaluate(snap, resolved)
+                        except Exception:
+                            pass
+                        # keep only states that actually differ from default
+                        d0 = states["default"]
+                        merged["focus_element"]["states"] = {
+                            k: v for k, v in states.items()
+                            if k == "default" or v != d0}
                     except Exception:
                         pass
                 page.close()
