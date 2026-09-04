@@ -632,9 +632,9 @@ def test_capture_css_motion(R, tmp):
     R.check(G, "captures the nav transition with its duration",
             any(240 in f.get("timing", {}).get("durations_ms", []) for f in findings),
             blob[:400])
-    R.check(G, "captures the exact cubic-bezier, not a keyword",
-            "cubic-bezier(0.4,0,0.2,1)" in blob.replace(" ", "")
-            or "cubic-bezier(0.4, 0, 0.2, 1)" in blob, blob[:400])
+    R.check(G, "captures the exact cubic-bezier, not a keyword (curve normalised)",
+            "cubic-bezier(.4,0,.2,1)" in blob.replace(" ", "")
+            or "cubic-bezier(0.4,0,0.2,1)" in blob.replace(" ", ""), blob[:400])
     R.check(G, "reads the linked stylesheet too (ease-out card transition)",
             any("ease-out" in json.dumps(f.get("timing", {})) for f in findings), blob[:400])
     R.check(G, "notes the reference DOES handle reduced motion",
@@ -694,6 +694,37 @@ def test_capture_multi_and_md(R, tmp):
             data["tier"] in md and data["captured"] in md)
 
 
+CAPTURE_NOISE_PAGE = """<!doctype html><html><head><style>
+/* longhand fragments — must NOT each become a finding */
+.a { transition-duration: .15s; transition-timing-function: cubic-bezier(0.4,0,0.2,1);
+     transition-property: all; }
+.b { animation-name: fadeUp; animation-duration: 2s; animation-iteration-count: 1; }
+@keyframes fadeUp { from { transform: translateY(20px) } to { transform: none } }
+/* three spellings of ONE curve + one genuinely different curve */
+.c { transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1) }
+.d { transition: transform .8s cubic-bezier(.4,0,.2,1) }
+.e { transition: opacity 800ms cubic-bezier(0, 0, 0.2, 1) }
+</style></head><body></body></html>"""
+
+
+def test_capture_noise_and_dedup(R, tmp):
+    url = _write_capture_page(tmp, name="noise.html", html=CAPTURE_NOISE_PAGE)
+    rc, data, _, se = capture(url, focus="the button", tmp=tmp)
+    G = "Capture — noise drop + dedup"
+    R.check(G, "exits 0", rc == 0, f"rc={rc} se={se[:200]}")
+    fs = data.get("motion_findings", [])
+    mechs = [f["mechanism"] for f in fs]
+    R.check(G, "no bare-token findings (.15s / all / fadeUp / cubic-bezier(...) alone)",
+            not any(m in ("all", ".15s", "1", "2s", "fadeUp", "cubic-bezier(.4,0,.2,1)")
+                    for m in mechs), str(mechs))
+    R.check(G, "keeps the @keyframes finding", any(m == "@keyframes fadeUp" for m in mechs))
+    tf = [f for f in fs if f["mechanism"].startswith("transform ")]
+    R.check(G, "the two spellings of one curve collapse to a single finding",
+            len(tf) == 1, str([f["mechanism"] for f in tf]))
+    R.check(G, "the genuinely different curve stays a separate finding",
+            any(f["mechanism"].startswith("opacity 800ms") for f in fs), str(mechs))
+
+
 def test_capture_tier_fallback(R, tmp):
     url = _write_capture_page(tmp, name="tier.html", html=CAPTURE_CSS_PAGE,
                               extra={"a.css": CAPTURE_CSS_EXTERNAL})
@@ -703,7 +734,7 @@ def test_capture_tier_fallback(R, tmp):
     R.check(G, "--tier static exits 0 and stays static",
             rc_s == 0 and data_s["tier"] == "static", str(data_s.get("tier")))
     R.check(G, "--tier static does not add a runtime-unavailable note",
-            not any("runtime capture unavailable" in n for n in data_s["not_captured"]))
+            not any("runtime capture did not run" in n for n in data_s["not_captured"]))
     # --tier runtime with playwright absent must fall back cleanly
     try:
         import playwright  # noqa: F401
@@ -715,7 +746,7 @@ def test_capture_tier_fallback(R, tmp):
     if not have_pw:
         R.check(G, "falls back to static with an explicit note",
                 data_r["tier"] == "static"
-                and any("runtime capture unavailable" in n for n in data_r["not_captured"]),
+                and any("runtime capture did not run" in n for n in data_r["not_captured"]),
                 str(data_r["not_captured"]))
     else:
         R.check(G, "runtime tier ran (playwright present)",
@@ -752,6 +783,7 @@ def main():
     test_capture_css_motion(R, tmp)
     test_capture_libraries(R, tmp)
     test_capture_multi_and_md(R, tmp)
+    test_capture_noise_and_dedup(R, tmp)
     test_capture_tier_fallback(R, tmp)
     test_lint_slop(R, slop)
     test_lint_clean(R, clean)
