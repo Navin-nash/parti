@@ -1,0 +1,582 @@
+@import "tailwindcss";
+
+@import "shadcn/tailwind.css";
+
+
+
+/* ==========================================================================
+
+   Specimen - the token layer.
+
+
+
+   Authored in OKLCH by design/palette.py, which round-trips through
+
+   ../scripts/color.py and refuses to write a value whose contrast pair fails
+
+   its floor. The hex below is that script's output. Do not hand-edit:
+
+   change palette.py, re-run it, re-run `pnpm tokens`.
+
+
+
+   shadcn's variable names are kept so its primitives keep working. Their
+
+   *values* are all replaced - the default grayscale ramp and 0.625rem radius
+
+   ship on every shadcn site and would make this build an example of the
+
+   thing it exists to argue against.
+
+   ========================================================================== */
+
+
+
+:root {
+
+  /* --- ground and ink ------------------------------------------------- */
+
+  --paper: #F1F2F4;
+
+  --plate: #FCFDFD;
+
+  --plate-2: #E8EAEC;
+
+  --rule: #D7D9DC;
+
+  --rule-strong: #878A8E;
+
+  --ink: #111315;
+
+  --ink-muted: #565A5E;
+
+  --ink-dim: #65696D;
+
+  --mark: #B82F2B;
+
+  --mark-tint: #FAEAE8;
+
+  --on-mark: #FCFCFC;
+
+
+
+  /* --- shape ---------------------------------------------------------- */
+
+  --radius: 14px;
+
+
+
+  /* --- space: 4px base, 13 steps -------------------------------------- */
+
+  --s-1: 4px;   --s-2: 8px;   --s-3: 12px;  --s-4: 16px;  --s-5: 20px;
+
+  --s-6: 24px;  --s-7: 32px;  --s-8: 40px;  --s-9: 48px;  --s-10: 64px;
+
+  --s-11: 80px; --s-12: 96px; --s-13: 128px;
+
+
+
+  /* --- type ----------------------------------------------------------- */
+
+  --t-mono-xs: 0.6875rem; --t-xs: 0.75rem;    --t-sm: 0.8125rem;
+
+  --t-base: 0.9375rem;    --t-md: 1.0625rem;  --t-lg: 1.3125rem;
+
+  --t-xl: 1.75rem;        --t-2xl: 2.375rem;  --t-3xl: 3.25rem;
+
+
+
+  /* --- motion: responsive-only ---------------------------------------- */
+
+  --d-fast: 120ms; --d-base: 180ms; --d-slow: 260ms;
+
+  --ease: cubic-bezier(0.32, 0.72, 0, 1);
+
+
+
+  /* --- the measurement gutter (the signature) -------------------------- */
+
+  --gutter: 4.5rem;
+
+
+
+  /* --- shadcn compatibility surface ------------------------------------ */
+
+  --background: var(--paper);
+
+  --foreground: var(--ink);
+
+  --card: var(--plate);
+
+  --card-foreground: var(--ink);
+
+  --popover: var(--plate);
+
+  --popover-foreground: var(--ink);
+
+  --primary: var(--ink);
+
+  --primary-foreground: var(--plate);
+
+  --secondary: var(--plate-2);
+
+  --secondary-foreground: var(--ink);
+
+  --muted: var(--plate-2);
+
+  --muted-foreground: var(--ink-muted);
+
+  --accent: var(--plate-2);
+
+  --accent-foreground: var(--ink);
+
+  --destructive: var(--mark);
+
+  --border: var(--rule);
+
+  --input: var(--rule-strong);
+
+  --ring: var(--mark);
+
+  --chart-1: var(--mark);
+
+  --chart-2: var(--ink-muted);
+
+  --chart-3: var(--rule-strong);
+
+  --chart-4: var(--ink-dim);
+
+  --chart-5: var(--rule);
+
+  --sidebar: var(--plate-2);
+
+  --sidebar-foreground: var(--ink);
+
+  --sidebar-primary: var(--ink);
+
+  --sidebar-primary-foreground: var(--plate);
+
+  --sidebar-accent: var(--plate);
+
+  --sidebar-accent-foreground: var(--ink);
+
+  --sidebar-border: var(--rule);
+
+  --sidebar-ring: var(--mark);
+
+}
+
+
+
+.dark {
+
+  --paper: #0B0D0F;
+
+  --plate: #131518;
+
+  --plate-2: #070809;
+
+  --rule: #272A2E;
+
+  --rule-strong: #606469;
+
+  --ink: #EBEDEF;
+
+  --ink-muted: #A1A5A9;
+
+  --ink-dim: #7E8287;
+
+  --mark: #F17262;
+
+  --mark-tint: #361C18;
+
+  --on-mark: #100C0C;
+
+}
+
+
+
+@theme inline {
+
+  --color-paper: var(--paper);
+
+  --color-plate: var(--plate);
+
+  --color-plate-2: var(--plate-2);
+
+  --color-rule: var(--rule);
+
+  --color-rule-strong: var(--rule-strong);
+
+  --color-ink: var(--ink);
+
+  --color-ink-muted: var(--ink-muted);
+
+  --color-ink-dim: var(--ink-dim);
+
+  --color-mark: var(--mark);
+
+  --color-mark-tint: var(--mark-tint);
+
+  --color-on-mark: var(--on-mark);
+
+
+
+  --color-background: var(--background);
+
+  --color-foreground: var(--foreground);
+
+  --color-card: var(--card);
+
+  --color-card-foreground: var(--card-foreground);
+
+  --color-popover: var(--popover);
+
+  --color-popover-foreground: var(--popover-foreground);
+
+  --color-primary: var(--primary);
+
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-secondary: var(--secondary);
+
+  --color-secondary-foreground: var(--secondary-foreground);
+
+  --color-muted: var(--muted);
+
+  --color-muted-foreground: var(--muted-foreground);
+
+  --color-accent: var(--accent);
+
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-destructive: var(--destructive);
+
+  --color-border: var(--border);
+
+  --color-input: var(--input);
+
+  --color-ring: var(--ring);
+
+  --color-chart-1: var(--chart-1);
+
+  --color-chart-2: var(--chart-2);
+
+  --color-chart-3: var(--chart-3);
+
+  --color-chart-4: var(--chart-4);
+
+  --color-chart-5: var(--chart-5);
+
+  --color-sidebar: var(--sidebar);
+
+  --color-sidebar-foreground: var(--sidebar-foreground);
+
+  --color-sidebar-primary: var(--sidebar-primary);
+
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+
+  --color-sidebar-accent: var(--sidebar-accent);
+
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+
+  --color-sidebar-border: var(--sidebar-border);
+
+  --color-sidebar-ring: var(--sidebar-ring);
+
+
+
+  --font-sans: var(--font-geist-sans);
+
+  --font-mono: var(--font-geist-mono);
+
+  --font-display: var(--font-display-face);
+
+  --font-heading: var(--font-display-face);
+
+
+
+  --radius-sm: calc(var(--radius) * 0.4);
+
+  --radius-md: calc(var(--radius) * 0.6);
+
+  --radius-lg: var(--radius);
+
+  --radius-xl: calc(var(--radius) * 1.3);
+
+  --radius-2xl: calc(var(--radius) * 1.7);
+
+  --radius-3xl: calc(var(--radius) * 2.2);
+
+  --radius-4xl: calc(var(--radius) * 2.8);
+
+
+
+  --text-mono-xs: var(--t-mono-xs);
+
+  --text-2xs: var(--t-xs);
+
+  --spacing-gutter: var(--gutter);
+
+
+
+  --ease-specimen: var(--ease);
+
+}
+
+
+
+@custom-variant dark (&:is(.dark *));
+
+
+
+@layer base {
+
+  * {
+
+    border-color: var(--rule);
+
+  }
+
+
+
+  html {
+
+    font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+
+    /* No smooth-scroll: it fights a comparison slider and a keyboard user. */
+
+  }
+
+
+
+  body {
+
+    background: var(--paper);
+
+    color: var(--ink);
+
+    font-size: var(--t-base);
+
+    line-height: 1.55;
+
+    -webkit-font-smoothing: antialiased;
+
+    text-rendering: optimizeLegibility;
+
+  }
+
+
+
+  /* One focus treatment, everywhere, and it is the mark colour - the same
+
+     colour annotation uses, because focus is the reader annotating the page. */
+
+  :focus-visible {
+
+    outline: 2px solid var(--mark);
+
+    outline-offset: 2px;
+
+    border-radius: 1px;
+
+  }
+
+
+
+  ::selection {
+
+    background: var(--mark);
+
+    color: var(--on-mark);
+
+  }
+
+
+
+  /* Figures align in columns or they are not evidence. */
+
+  .tabular, table, code, kbd, pre {
+
+    font-variant-numeric: tabular-nums;
+
+  }
+
+}
+
+
+
+@layer components {
+
+  /* The plate label: uppercase mono, tracked, dim. Every comparable surface
+
+     on this site carries one. It is the signature, and it is cheap. */
+
+  .plate-label {
+
+    font-family: var(--font-geist-mono), ui-monospace, monospace;
+
+    font-size: var(--t-mono-xs);
+
+    letter-spacing: 0.14em;
+
+    text-transform: uppercase;
+
+    color: var(--ink-dim);
+
+    font-weight: 500;
+
+  }
+
+
+
+  .display {
+
+    font-family: var(--font-display-face), var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+
+    font-weight: 560;
+
+    letter-spacing: -0.02em;
+
+    line-height: 1.08;
+
+  }
+
+
+
+  /* Elevation is a lightness step and a hairline. There is no shadow token
+
+     in this system; see tokens.json _elevation for why. */
+
+  .plate {
+
+    background: var(--plate);
+
+    border: 1px solid var(--rule);
+
+  }
+
+
+
+  .well {
+
+    background: var(--plate-2);
+
+    border: 1px solid var(--rule);
+
+  }
+
+}
+
+
+
+/* Motion is responsive-only, so this removes interaction feedback rather than
+
+   an ambient show. Transitions collapse to instant; nothing is lost. */
+
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+
+  *::before,
+
+  *::after {
+
+    animation-duration: 0.01ms !important;
+
+    animation-iteration-count: 1 !important;
+
+    transition-duration: 0.01ms !important;
+
+    scroll-behavior: auto !important;
+
+  }
+
+}
+
+
+/* --------------------------------------------------------------------------
+   Shiki. Both themes are emitted into the markup as custom properties; this
+   picks one. No client-side highlighter, so a theme switch costs nothing.
+   -------------------------------------------------------------------------- */
+.shiki-host pre {
+  margin: 0;
+  padding: var(--s-3) var(--s-4);
+  background: transparent !important;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.shiki-host code {
+  display: block;
+  width: fit-content;
+  min-width: 100%;
+}
+
+.shiki-host .line {
+  display: block;
+  min-height: 1.65em;
+}
+
+.shiki-host span {
+  color: var(--sh-light);
+}
+
+.dark .shiki-host span {
+  color: var(--sh-dark);
+}
+
+/* Line numbers are a counter, not markup, so they are never selected when the
+   reader copies the block. */
+.shiki-numbered .shiki-host code {
+  counter-reset: sh-line;
+}
+
+.shiki-numbered .shiki-host .line::before {
+  counter-increment: sh-line;
+  content: counter(sh-line);
+  display: inline-block;
+  width: 2.5ch;
+  margin-right: var(--s-4);
+  text-align: right;
+  color: var(--ink-dim);
+  opacity: 0.55;
+  user-select: none;
+}
+
+.shiki-wrap .shiki-host pre,
+.shiki-wrap .shiki-host code {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* --------------------------------------------------------------------------
+   Prose. Narrow measure, because 45-75ch is a legibility floor and a full
+   1600px container is roughly 200ch.
+   -------------------------------------------------------------------------- */
+.prose-specimen {
+  max-width: 68ch;
+}
+
+.prose-specimen p {
+  margin-block: var(--s-4);
+  color: var(--ink-muted);
+  line-height: 1.7;
+}
+
+.prose-specimen p:first-child { margin-top: 0; }
+.prose-specimen p:last-child { margin-bottom: 0; }
+
+.prose-specimen strong {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.prose-specimen code {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.9em;
+  background: var(--plate-2);
+  border: 1px solid var(--rule);
+  padding: 0.05em 0.35em;
+  color: var(--ink);
+}
