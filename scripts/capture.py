@@ -60,6 +60,34 @@ RE_SCROLL_TL = re.compile(r"animation-timeline\s*:\s*(?:scroll|view)\s*\(", re.I
 RE_VIEW_TRANS = re.compile(r"@view-transition|view-transition-name\s*:|::view-transition", re.I)
 RE_STARTING = re.compile(r"@starting-style", re.I)
 
+RE_SCRIPT_SRC = re.compile(r"""<script\b[^>]*\bsrc\s*=\s*["']([^"']+)["'][^>]*>""", re.I)
+RE_SCRIPT_BLOCK = re.compile(r"<script\b[^>]*>(.*?)</script>", re.I | re.S)
+
+LIB_SIGNATURES = [
+    ("gsap", re.compile(r"gsap|greensock", re.I)),
+    ("scrolltrigger", re.compile(r"scrolltrigger", re.I)),
+    ("splittext", re.compile(r"splittext", re.I)),
+    ("motion", re.compile(r"framer-motion|/motion@|/motion/|motion\.min|motion/react", re.I)),
+    ("lenis", re.compile(r"lenis|studio-freight", re.I)),
+    ("locomotive-scroll", re.compile(r"locomotive-scroll", re.I)),
+    ("swiper", re.compile(r"swiper", re.I)),
+    ("aos", re.compile(r"aos\.js|aos\.css|/aos@|\baos/dist\b", re.I)),
+    ("lottie", re.compile(r"lottie", re.I)),
+    ("rive", re.compile(r"rive-js|@rive-app|\brive\.min", re.I)),
+    ("three", re.compile(r"three\.min\.js|three\.module|/three@|react-three|@react-three", re.I)),
+]
+TRIGGER_ATTRS = ["data-scroll", "data-aos", "data-speed", "data-lag",
+                 "data-gsap", "data-splitting"]
+
+
+def fingerprint_libraries(html):
+    hay = " ".join(RE_SCRIPT_SRC.findall(html)) + " " + " ".join(RE_SCRIPT_BLOCK.findall(html))
+    return sorted({lid for lid, rx in LIB_SIGNATURES if rx.search(hay)})
+
+
+def trigger_hints(html):
+    return {a: html.count(a) for a in TRIGGER_ATTRS if html.count(a)}
+
 
 def today():
     return datetime.date.today().isoformat()
@@ -224,6 +252,20 @@ def run_capture(urls, focus, tier):
         report.setdefault("features", []).append("view-transitions")
     if m["starting_style"]:
         report.setdefault("features", []).append("@starting-style")
+    html_all = "\n".join(u["text"] for u in per_url if u["ok"])
+    libs = fingerprint_libraries(html_all)
+    report["libraries"] = libs
+    report["trigger_hints"] = trigger_hints(html_all)
+    if "<canvas" in html_all.lower():
+        report["not_captured"].append("canvas / WebGL animation (not readable from source)")
+    if {"rive", "lottie"} & set(libs):
+        report["not_captured"].append(
+            "Rive / Lottie asset animation (flagged, not reproduced — rebuild the intent)")
+    js_motion_libs = [l for l in libs if l not in ("three",)]
+    if js_motion_libs:
+        report["not_captured"].append(
+            f"library-driven motion ({', '.join(js_motion_libs)}) — values need "
+            f"Tier 2 (runtime) or the Tier-3 snippet path in references/motion-capture.md")
     return report, any_ok
 
 

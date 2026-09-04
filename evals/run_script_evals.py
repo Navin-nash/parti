@@ -564,6 +564,15 @@ CAPTURE_CSS_EXTERNAL = """
 ::view-transition-old(root) { animation-duration: 300ms }
 """
 
+CAPTURE_LIB_PAGE = """<!doctype html><html><head>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12/dist/ScrollTrigger.min.js"></script>
+<script src="https://unpkg.com/lenis@1.1/dist/lenis.min.js"></script>
+</head><body>
+<section data-scroll data-speed="0.8">parallax</section>
+<canvas id="bg"></canvas>
+</body></html>"""
+
 
 def _write_capture_page(tmp, name="page.html", html=CAPTURE_HTML, extra=None):
     d = os.path.join(tmp, "capture_" + name.replace(".", "_"))
@@ -634,6 +643,26 @@ def test_capture_css_motion(R, tmp):
                    for k in ("scroll", "view_transition")), blob[:400])
 
 
+def test_capture_libraries(R, tmp):
+    url = _write_capture_page(tmp, name="lib.html", html=CAPTURE_LIB_PAGE)
+    rc, data, _, se = capture(url, focus="the parallax section", tmp=tmp)
+    G = "Capture — libraries & hints"
+    blob = json.dumps(data)
+    R.check(G, "exits 0", rc == 0, f"rc={rc} se={se[:200]}")
+    R.check(G, "fingerprints gsap + scrolltrigger + lenis",
+            set(data.get("libraries", [])) >= {"gsap", "scrolltrigger", "lenis"},
+            str(data.get("libraries")))
+    R.check(G, "counts the data-scroll / data-speed hints",
+            data.get("trigger_hints", {}).get("data-scroll", 0) >= 1
+            and "data-speed" in data.get("trigger_hints", {}),
+            str(data.get("trigger_hints")))
+    R.check(G, "not_captured flags canvas",
+            any("canvas" in n.lower() for n in data.get("not_captured", [])), blob[:400])
+    R.check(G, "not_captured flags library-driven motion needing tier 2",
+            any("Tier 2" in n or "runtime" in n for n in data.get("not_captured", [])),
+            blob[:400])
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--verbose", action="store_true")
@@ -662,6 +691,7 @@ def main():
     test_determinism(R, clean)
     test_capture_envelope(R, tmp)
     test_capture_css_motion(R, tmp)
+    test_capture_libraries(R, tmp)
     test_lint_slop(R, slop)
     test_lint_clean(R, clean)
     test_lint_drift(R, tmp)
