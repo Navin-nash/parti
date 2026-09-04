@@ -542,6 +542,57 @@ def test_determinism(R, path):
             json.dumps(a1, sort_keys=True) == json.dumps(a2, sort_keys=True))
 
 
+# ─────────────────────────────────────────────────────────── capture tests
+
+CAPTURE_HTML = """<!doctype html><html><head>
+<title>t</title>
+<style>.b{transition:transform 160ms cubic-bezier(0.16,1,0.3,1)}</style>
+</head><body><button class="b">go</button></body></html>"""
+
+
+def _write_capture_page(tmp, name="page.html", html=CAPTURE_HTML, extra=None):
+    d = os.path.join(tmp, "capture_" + name.replace(".", "_"))
+    os.makedirs(d, exist_ok=True)
+    p = os.path.join(d, name)
+    with open(p, "w", encoding="utf-8") as f:
+        f.write(html)
+    for rel, content in (extra or {}).items():
+        ep = os.path.join(d, rel)
+        os.makedirs(os.path.dirname(ep), exist_ok=True)
+        with open(ep, "w", encoding="utf-8") as f:
+            f.write(content)
+    return "file:///" + p.replace(os.sep, "/")
+
+
+def capture(url, focus="", tier="static", md=False, tmp=None):
+    out = os.path.join(tempfile.gettempdir(), "capture_out.json")
+    mdout = os.path.join(tempfile.gettempdir(), "capture_out.md")
+    cmd = [sys.executable, os.path.join(SCRIPTS, "capture.py"),
+           "--url", url, "--focus", focus, "--tier", tier,
+           "--json", out, "--quiet"]
+    if md:
+        cmd += ["--md", mdout]
+    rc, so, se = run(cmd)
+    data = json.load(open(out, encoding="utf-8")) if os.path.exists(out) else None
+    mdtext = open(mdout, encoding="utf-8").read() if md and os.path.exists(mdout) else ""
+    return rc, data, mdtext, se
+
+
+def test_capture_envelope(R, tmp):
+    url = _write_capture_page(tmp)
+    rc, data, _, se = capture(url, focus="the button", tmp=tmp)
+    G = "Capture — envelope"
+    R.check(G, "exits 0 on a reachable page", rc == 0, f"rc={rc} se={se[:200]}")
+    R.check(G, "tool/version/tier stamped", data and data.get("tool") == "capture"
+            and data.get("version") == 1 and data.get("tier") == "static", str(data)[:200])
+    R.check(G, "records the source URL", data and data.get("sources") == [url])
+    R.check(G, "echoes the focus", data and data.get("focus") == "the button")
+    R.check(G, "not_captured is never empty at tier 1",
+            data and len(data.get("not_captured", [])) >= 1, str(data.get("not_captured")))
+    R.check(G, "unreachable URL exits 1",
+            capture("file:///no/such/file.html", tmp=tmp)[0] == 1)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--verbose", action="store_true")
@@ -568,6 +619,7 @@ def main():
     test_motion_census(R, motion_good)
     test_sparse_fixture(R, sparse)
     test_determinism(R, clean)
+    test_capture_envelope(R, tmp)
     test_lint_slop(R, slop)
     test_lint_clean(R, clean)
     test_lint_drift(R, tmp)
