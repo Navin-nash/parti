@@ -1,0 +1,28 @@
+{
+  "light": {
+    "paper": "#F1F2F4",
+    "plate": "#FCFDFD",
+    "plate-2": "#E8EAEC",
+    "rule": "#D7D9DC",
+    "rule-strong": "#878A8E",
+    "ink": "#111315",
+    "ink-muted": "#565A5E",
+    "ink-dim": "#65696D",
+    "mark": "#B82F2B",
+    "mark-tint": "#FAEAE8",
+    "on-mark": "#FCFCFC"
+  },
+  "dark": {
+    "paper": "#0B0D0F",
+    "plate": "#131518",
+    "plate-2": "#070809",
+    "rule": "#272A2E",
+    "rule-strong": "#606469",
+    "ink": "#EBEDEF",
+    "ink-muted": "#A1A5A9",
+    "ink-dim": "#7E8287",
+    "mark": "#F17262",
+    "mark-tint": "#361C18",
+    "on-mark": "#100C0C"
+  }
+}
