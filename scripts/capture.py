@@ -27,8 +27,8 @@ Stdlib only for Tier 1. Never writes into the fetched site.
 
 import argparse
 import datetime
+import http.client
 import json
-import os
 import re
 import sys
 import urllib.error
@@ -49,7 +49,7 @@ RE_REL_SHEET = re.compile(r"""rel\s*=\s*["']?[^"'>]*stylesheet""", re.I)
 RE_STYLE_BLOCK = re.compile(r"<style\b[^>]*>(.*?)</style>", re.I | re.S)
 
 RE_KEYFRAMES = re.compile(r"@(?:-webkit-)?keyframes\s+([\w-]+)\s*\{", re.I)
-RE_DECL_TRANSITION = re.compile(r"transition(?:-property|-duration|-timing-function|-delay)?\s*:\s*([^;{}]+)", re.I)
+RE_DECL_TRANSITION = re.compile(r"transition(?:-property|-duration|-timing-function|-delay|-behavior)?\s*:\s*([^;{}]+)", re.I)
 RE_DECL_ANIMATION = re.compile(r"animation(?:-name|-duration|-timing-function|-delay|-iteration-count)?\s*:\s*([^;{}]+)", re.I)
 RE_DUR = re.compile(r"(?<![\w.-])(\d+(?:\.\d+)?)(ms|s)(?![\w-])")
 RE_CUBIC = re.compile(r"cubic-bezier\([^)]*\)")
@@ -107,17 +107,16 @@ def fetch(url, timeout=15, cap=FETCH_CAP):
             final = r.geturl()
         return {"url": final, "ok": True, "content_type": ctype,
                 "text": raw.decode("utf-8", "ignore"), "error": ""}
-    except (urllib.error.URLError, ValueError, OSError) as e:
+    except (urllib.error.URLError, http.client.HTTPException, ValueError, OSError) as e:
         return {"url": url, "ok": False, "content_type": "", "text": "",
                 "error": str(e)[:200]}
 
 
 def build_report(urls, focus, tier, per_url):
     ok = [u for u in per_url if u.get("ok")]
-    not_captured = []
-    if tier == "static":
-        not_captured.append(
-            "JS-driven motion inside minified bundles is not executed at this tier")
+    not_captured = [
+        "content behind authentication, interaction, or geo/region gating is not captured",
+    ]
     report = {
         "tool": "capture",
         "version": 1,
@@ -142,6 +141,8 @@ def render_markdown(report):
          f"Focus: {report['focus'] or '(none stated — narrow this before adopting anything)'}"]
     if report.get("libraries"):
         L.append(f"Libraries seen: {', '.join(report['libraries'])}")
+    if report.get("features"):
+        L.append(f"Features: {', '.join(report['features'])}")
     if report["not_captured"]:
         L.append("")
         L.append("Not captured: " + "; ".join(report["not_captured"]))
@@ -182,13 +183,16 @@ def _to_ms(value, unit):
 def extract_stylesheets(html, base_url):
     css_parts = list(RE_STYLE_BLOCK.findall(html))
     sources = []
-    for tag in RE_LINK_CSS.findall(html):
+    base_scheme = urllib.parse.urlparse(base_url).scheme
+    for tag in RE_LINK_CSS.findall(html)[:25]:  # a hostile page can carry hundreds
         if not RE_REL_SHEET.search(tag):
             continue
         m = RE_HREF.search(tag)
         if not m:
             continue
         href = urllib.parse.urljoin(base_url, m.group(1))
+        if urllib.parse.urlparse(href).scheme != base_scheme:
+            continue  # block cross-scheme inclusion (e.g. remote page linking file://)
         got = fetch(href)
         if got["ok"] and got["text"].strip():
             css_parts.append(got["text"])
@@ -402,6 +406,16 @@ def run_capture(urls, focus, tier):
             report["not_captured"] = [n for n in report["not_captured"]
                                       if "Tier 2 (runtime)" not in n]
 
+    if report["tier"] == "static":
+        report["not_captured"].append(
+            "JS-driven motion inside minified bundles is not executed at this tier")
+    else:
+        report["not_captured"] += [
+            "canvas / WebGL / shader internals are not readable even at runtime",
+            "Rive / Lottie asset animation is flagged, not reproduced",
+            "a prefers-reduced-motion pass was not run this capture",
+        ]
+
     return report, any_ok
 
 
@@ -428,6 +442,10 @@ def main():
     args = ap.parse_args()
     if not args.urls:
         sys.exit("no --url given")
+    for u in args.urls:
+        scheme = urllib.parse.urlparse(u).scheme.lower()
+        if scheme not in ("http", "https", "file"):
+            sys.exit(f"unsupported --url scheme {scheme!r} (allowed: http, https, file): {u}")
 
     report, any_ok = run_capture(args.urls, args.focus, args.tier)
 
