@@ -137,21 +137,41 @@ def build_report(urls, focus, tier, per_url):
 
 
 def render_markdown(report):
-    # Skeleton only. The agent fills Faithful/Adapted columns and "why it works".
-    lines = [f"# Capture — {', '.join(report['sources'])}   "
-             f"({report['captured']}, tier: {report['tier']})",
-             f"Focus: {report['focus'] or '(none stated — narrow this before adopting anything)'}",
-             ""]
+    src = ", ".join(report["sources"][:6])
+    L = [f"# Capture — {src}   ({report['captured']}, tier: {report['tier']})",
+         f"Focus: {report['focus'] or '(none stated — narrow this before adopting anything)'}"]
+    if report.get("libraries"):
+        L.append(f"Libraries seen: {', '.join(report['libraries'])}")
     if report["not_captured"]:
-        lines.append("Not captured: " + "; ".join(report["not_captured"]))
-        lines.append("")
-    lines += ["## Motion findings", "",
-              "_One row per distinct behavior. Fill FAITHFUL and ADAPTED per row._", ""]
-    lines += ["## Focus element", "",
-              "_structure / states / why it works — then FAITHFUL and ADAPTED._", ""]
-    lines += ["## Adopted", "",
-              "_element → FAITHFUL|ADAPTED → build path (filled in at build time)_", ""]
-    return "\n".join(lines) + "\n"
+        L.append("")
+        L.append("Not captured: " + "; ".join(report["not_captured"]))
+    L += ["", "## Motion findings", ""]
+    if not report["motion_findings"]:
+        L.append("_No CSS-level motion found. If the page clearly animates, it is "
+                 "library-driven — use Tier 2 or the Tier-3 snippets._")
+    for f in report["motion_findings"]:
+        L.append(f"### {f['mechanism']}")
+        L.append(f"- trigger: {f.get('trigger', 'unknown')}")
+        L.append(f"- properties: {f.get('properties') or '—'}")
+        t = f.get("timing", {})
+        L.append(f"- timing: durations {t.get('durations_ms') or '—'} · "
+                 f"easings {t.get('easings') or '—'}")
+        L.append(f"- library: {f.get('library', 'CSS')} · "
+                 f"scrubbed: {f.get('scrubbed', False)}")
+        L.append(f"- reduced-motion on the reference: {f.get('reduced_motion', 'unknown')}")
+        L.append("- **FAITHFUL →** _measured values, re-expressed in your stack "
+                 "(swap a layout property for transform/opacity here)_")
+        L.append("- **ADAPTED →** _mechanism only; values re-derived from your tokens, "
+                 "density and motion posture_")
+        L.append("")
+    L += ["## Focus element", ""]
+    if report.get("focus_element") is None:
+        L.append("_Not captured at Tier 1 (the page was not run). Use Tier 2 or the "
+                 "Tier-3 snippet path to capture the element's DOM, states and rationale._")
+    L += ["", "## Adopted", "",
+          "_element → FAITHFUL | ADAPTED → build path (filled in at build time; "
+          "mirror into DESIGN.md changelog)_", ""]
+    return "\n".join(L) + "\n"
 
 
 def _to_ms(value, unit):

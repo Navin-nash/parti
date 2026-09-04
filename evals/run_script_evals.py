@@ -663,6 +663,33 @@ def test_capture_libraries(R, tmp):
             blob[:400])
 
 
+def test_capture_multi_and_md(R, tmp):
+    u1 = _write_capture_page(tmp, name="m1.html", html=CAPTURE_CSS_PAGE,
+                             extra={"a.css": CAPTURE_CSS_EXTERNAL})
+    u2 = _write_capture_page(tmp, name="m2.html", html=CAPTURE_LIB_PAGE)
+    out = os.path.join(tempfile.gettempdir(), "capture_multi.json")
+    mdout = os.path.join(tempfile.gettempdir(), "capture_multi.md")
+    rc, so, se = run([sys.executable, os.path.join(SCRIPTS, "capture.py"),
+                      "--url", u1, "--url", u2, "--focus", "nav + parallax",
+                      "--json", out, "--md", mdout, "--quiet"])
+    data = json.load(open(out, encoding="utf-8"))
+    md = open(mdout, encoding="utf-8").read()
+    G = "Capture — multi-URL + markdown"
+    R.check(G, "exits 0", rc == 0, f"rc={rc} se={se[:200]}")
+    R.check(G, "both source URLs present", u1 in data["sources"] and u2 in data["sources"],
+            str(data["sources"]))
+    R.check(G, "findings unioned across pages",
+            any("slide-in" in json.dumps(f) for f in data["motion_findings"]))
+    R.check(G, "libraries unioned across pages",
+            "gsap" in data["libraries"] and "lenis" in data["libraries"])
+    R.check(G, "markdown has the three sections",
+            "## Motion findings" in md and "## Focus element" in md and "## Adopted" in md)
+    R.check(G, "markdown has FAITHFUL and ADAPTED stubs per finding",
+            md.count("FAITHFUL") >= 1 and md.count("ADAPTED") >= 1)
+    R.check(G, "markdown header carries the tier and date",
+            data["tier"] in md and data["captured"] in md)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--verbose", action="store_true")
@@ -692,6 +719,7 @@ def main():
     test_capture_envelope(R, tmp)
     test_capture_css_motion(R, tmp)
     test_capture_libraries(R, tmp)
+    test_capture_multi_and_md(R, tmp)
     test_lint_slop(R, slop)
     test_lint_clean(R, clean)
     test_lint_drift(R, tmp)
