@@ -40,7 +40,10 @@ try:  # a Windows console defaults to cp1252; this output uses real typography
 except Exception:
     pass
 
-UA = "Mozilla/5.0 (compatible; parti-capture/1.0; +https://github.com/Navin-nash/parti)"
+# A real browser UA — a "compatible; bot" string gets 403'd by common WAFs,
+# which would drop the whole Tier-1 CSS read for no good reason.
+UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+      "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36")
 FETCH_CAP = 3_000_000
 
 RE_LINK_CSS = re.compile(r"<link\b[^>]*>", re.I)
@@ -159,6 +162,9 @@ def render_markdown(report):
     if report["not_captured"]:
         L.append("")
         L.append("Not captured: " + "; ".join(report["not_captured"]))
+    if report.get("finding_counts"):
+        L.append("Findings by kind: " + ", ".join(
+            f"{k} {v}" for k, v in sorted(report["finding_counts"].items())))
     L += ["", "## Motion findings", ""]
     if not report["motion_findings"]:
         L.append("_No CSS-level motion found. If the page clearly animates, it is "
@@ -192,6 +198,15 @@ def render_markdown(report):
         L.append(f"- computed: {fe.get('css')}")
         L.append("- **FAITHFUL →** _its structure + states, in your stack_")
         L.append("- **ADAPTED →** _the mechanism only, rebuilt in your system_")
+    rl = report.get("runtime_libraries") or {}
+    if rl.get("gsap_scrolltrigger"):
+        L += ["", "## ScrollTrigger (GSAP)", "",
+              "_Each trigger, from `ScrollTrigger.getAll()` — GSAP animates off the "
+              "Web Animations API, so these do not appear in Motion findings._"]
+        for st in rl["gsap_scrolltrigger"][:20]:
+            L.append(f"- trigger `{st.get('trigger')}` · start `{st.get('start')}` · "
+                     f"end `{st.get('end')}` · scrub `{st.get('scrub')}` · "
+                     f"pin `{st.get('pin')}` · vars {st.get('vars')}")
     L += ["", "## Adopted", "",
           "_element → FAITHFUL | ADAPTED → build path (filled in at build time; "
           "mirror into DESIGN.md changelog)_", ""]
@@ -227,10 +242,21 @@ def _norm_mechanism(decl):
     """Collapse whitespace and normalise embedded curves / 0.x durations so
     `transform 0.8s cubic-bezier(0.4, 0, 0.2, 1)` and its terse twin dedupe."""
     d = " ".join(decl.split())
+    d = re.sub(r"\s*!important\b", "", d, flags=re.I)
     d = re.sub(r"cubic-bezier\([^)]*\)|steps\([^)]*\)",
                lambda x: _norm_ease(x.group(0)), d)
     d = re.sub(r"(?<![\d.])0(\.\d+m?s)\b", r"\1", d)   # 0.8s -> .8s
     return d
+
+
+def _is_noise_mechanism(m):
+    """A declaration that carries no reproducible mechanism — an indirection
+    (`var(--x)`), a bare value, or a single token."""
+    if not m or " " not in m:
+        return True
+    if re.fullmatch(r"(var\(--[\w-]+\)\s*)+", m):     # `transition: var(--speed)`
+        return True
+    return bool(RE_BARE_VALUE.match(m))
 
 
 def extract_stylesheets(html, base_url):
@@ -296,7 +322,7 @@ def _css_findings(css):
     # `animation-name: foo` no longer each spawn a bare-token "finding".
     for raw in (RE_SHORT_TRANSITION.findall(css) + RE_SHORT_ANIMATION.findall(css)):
         decl = _norm_mechanism(raw)
-        if RE_BARE_VALUE.match(decl):
+        if _is_noise_mechanism(decl):
             continue
         findings.append({
             "element": "(css)", "trigger": "unknown", "mechanism": decl[:200],
@@ -402,16 +428,26 @@ async (focus) => {
 
 
 def _anim_to_finding(a, trigger):
+    """Returns a finding dict, or None when the animation carries nothing
+    reproducible — an anonymous `Animation` with no id, duration or props."""
     dur = a.get("duration")
+    ms = int(dur) if isinstance(dur, (int, float)) else None
+    aid = (a.get("id") or "").strip()
+    props = sorted({k for kf in a.get("keyframes", [])
+                    for k in ("transform", "opacity") if kf.get(k) is not None})
+    # A nameless animation with no transform/opacity keyframe is not actionable
+    # ("Animation" on its own tells the reader nothing) — drop it.
+    if not aid and not props:
+        return None
+    # Nameless but real (transform/opacity): label it by what it moves so the
+    # repeats across a list dedupe to one finding instead of N × "Animation".
+    label = f"{a.get('type', 'Animation')} {aid or '/'.join(props)}".strip()
     return {
         "element": "(runtime)", "trigger": trigger,
-        "mechanism": _norm_mechanism(
-            f"{a.get('type', 'Animation')} {a.get('id', '')}".strip()),
-        "properties": sorted({k for kf in a.get("keyframes", [])
-                              for k in ("transform", "opacity")
-                              if kf.get(k) is not None}),
+        "mechanism": _norm_mechanism(label),
+        "properties": props,
         "timing": {
-            "durations_ms": [int(dur)] if isinstance(dur, (int, float)) else [],
+            "durations_ms": [ms] if ms else [],
             "easings": [_norm_ease(a["easing"])] if a.get("easing") else [],
         },
         "library": "WAAPI", "scrubbed": False,
@@ -435,15 +471,29 @@ def capture_runtime(urls, focus):
                   "focus_resolved_selector": None}
         with sync_playwright() as p:
             browser = p.chromium.launch()
+            reached = 0
             for url in urls:
                 page = browser.new_page()
-                page.goto(url, wait_until="networkidle", timeout=20000)
+                try:
+                    # A heavy site never hits `networkidle` (analytics long-polls);
+                    # settle on DOM + a bounded idle wait, then continue regardless.
+                    page.goto(url, wait_until="domcontentloaded", timeout=25000)
+                    try:
+                        page.wait_for_load_state("networkidle", timeout=6000)
+                    except Exception:
+                        pass
+                    page.wait_for_timeout(400)
+                except Exception:
+                    page.close()
+                    continue  # one bad URL must not sink the whole runtime pass
+                reached += 1
 
                 load = page.evaluate(RUNTIME_JS)
                 load_keys = {_anim_key(a) for a in load.get("animations", [])}
                 for a in load.get("animations", []):
-                    merged["motion_findings"].append(
-                        _anim_to_finding(a, "load-or-state"))
+                    f = _anim_to_finding(a, "load-or-state")
+                    if f:
+                        merged["motion_findings"].append(f)
                 if load.get("scrollTriggers"):
                     merged["runtime_libraries"]["gsap_scrolltrigger"] = \
                         load["scrollTriggers"]
@@ -454,8 +504,9 @@ def capture_runtime(urls, focus):
                     merged["focus_resolved_selector"] = sc.get("resolvedSelector") or None
                     for a in sc.get("animations", []):
                         if _anim_key(a) not in load_keys:
-                            merged["motion_findings"].append(
-                                _anim_to_finding(a, "in-view / scroll"))
+                            f = _anim_to_finding(a, "in-view / scroll")
+                            if f:
+                                merged["motion_findings"].append(f)
                 except Exception:
                     pass
 
@@ -474,6 +525,8 @@ def capture_runtime(urls, focus):
                         pass
                 page.close()
             browser.close()
+        if not reached:
+            return None  # no URL loaded in the browser — let Tier 1 stand
         merged["motion_findings"] = _dedupe_findings(merged["motion_findings"])
         return merged
     except Exception:
@@ -518,13 +571,18 @@ def run_capture(urls, focus, tier):
             f"library-driven motion ({', '.join(js_motion_libs)}) — values need "
             f"Tier 2 (runtime) or the Tier-3 snippet path in references/motion-capture.md")
 
-    if tier in ("auto", "runtime") and any_ok:
-        rt = capture_runtime([u["url"] for u in per_url if u["ok"]], focus)
+    runtime_ok = False
+    if tier in ("auto", "runtime"):
+        # Run the browser even if Tier 1 got nothing — many sites 403 a plain
+        # urllib request but load fine in Chromium.
+        rt_urls = [u["url"] for u in per_url if u["ok"]] or list(urls)
+        rt = capture_runtime(rt_urls, focus)
         if rt is None:
             report["not_captured"].append(
-                "runtime capture unavailable (playwright not installed or failed to "
-                "launch) — ran Tier 1 only")
+                "runtime capture did not run (Playwright missing, or no page loaded "
+                "in the browser — e.g. a headless-Chrome bot wall) — Tier 1 only")
         else:
+            runtime_ok = True
             report["tier"] = "runtime"
             report["motion_findings"] = _dedupe_findings(
                 report["motion_findings"] + rt["motion_findings"])
@@ -550,8 +608,28 @@ def run_capture(urls, focus, tier):
             "Rive / Lottie asset animation is flagged, not reproduced",
             "a prefers-reduced-motion pass was not run this capture",
         ]
+    if not any_ok and runtime_ok:
+        report["not_captured"].append(
+            "Tier 1 could not fetch the page directly (likely a bot filter) — "
+            "findings and sources are from the browser run only")
 
-    return report, any_ok
+    n = len(report["motion_findings"])
+    if n > 150:
+        report["not_captured"].append(
+            f"{n} findings — this page's CSS carries many generated / hashed "
+            f"identifiers (CSS-in-JS); start from the 'in-view / scroll' and "
+            f"'load-or-state' subset, not the full list")
+    report["finding_counts"] = _finding_counts(report["motion_findings"])
+
+    return report, (any_ok or runtime_ok)
+
+
+def _finding_counts(findings):
+    c = {}
+    for f in findings:
+        for k in (f.get("library", "?"), f.get("trigger", "?")):
+            c[k] = c.get(k, 0) + 1
+    return c
 
 
 def _selfcheck():

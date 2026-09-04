@@ -734,7 +734,7 @@ def test_capture_tier_fallback(R, tmp):
     R.check(G, "--tier static exits 0 and stays static",
             rc_s == 0 and data_s["tier"] == "static", str(data_s.get("tier")))
     R.check(G, "--tier static does not add a runtime-unavailable note",
-            not any("runtime capture unavailable" in n for n in data_s["not_captured"]))
+            not any("runtime capture did not run" in n for n in data_s["not_captured"]))
     # --tier runtime with playwright absent must fall back cleanly
     try:
         import playwright  # noqa: F401
@@ -746,7 +746,7 @@ def test_capture_tier_fallback(R, tmp):
     if not have_pw:
         R.check(G, "falls back to static with an explicit note",
                 data_r["tier"] == "static"
-                and any("runtime capture unavailable" in n for n in data_r["not_captured"]),
+                and any("runtime capture did not run" in n for n in data_r["not_captured"]),
                 str(data_r["not_captured"]))
     else:
         R.check(G, "runtime tier ran (playwright present)",
