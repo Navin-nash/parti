@@ -6,7 +6,7 @@ Any single number claiming to score "is this design good" is a rubric wearing a 
 
 | Layer | Ground truth | Instrument | Objective? |
 |---|---|---|---|
-| 1. Trigger accuracy | 52 labeled prompts | `run_eval.py` (skill-creator) | Yes, binary |
+| 1. Trigger accuracy | 56 labeled prompts | `run_eval.py` (skill-creator) | Yes, binary |
 | 2. Script correctness | WCAG arithmetic + seeded fixtures | `run_script_evals.py` (50 checks) | Yes, deterministic |
 | 3. Process compliance | 18 binary items, 5 gates | `rubric.md` | Yes, per-item binary |
 | 4. Design quality | **none** | blind A/B against a baseline | **No** — preference only |
@@ -35,7 +35,7 @@ python -m scripts.run_eval \
   --runs-per-query 3 --verbose
 ```
 
-52 labeled cases: 29 positive, 23 negative. The negatives are the ones that make this metric mean anything — four of them use the word "design" for non-visual work ("design a database schema", "design an API", "design a rate limiter", "design a retry strategy"). A description that fires on those is over-broad, and over-broad descriptions are worse than narrow ones because they burn context on every unrelated request.
+56 labeled cases: 32 positive, 24 negative. The negatives are the ones that make this metric mean anything — four of them use the word "design" for non-visual work ("design a database schema", "design an API", "design a rate limiter", "design a retry strategy"). A description that fires on those is over-broad, and over-broad descriptions are worse than narrow ones because they burn context on every unrelated request.
 
 **Thresholds:**
 

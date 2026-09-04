@@ -31,8 +31,10 @@ Provenance **is** the anti-clone mechanism: nothing is borrowed silently.
 | `motion` pass, "like site X" | `reference`, then the spec is written as a diff from the findings |
 | Focus absent, or "the whole look" | **no capture.** The three options above, then wait. |
 
-Multiple URLs (`reference A.com B.com`) produce one report with each element attributed to its
-source. Still per element — no cross-site identity merge.
+Multiple URLs (`reference A.com B.com`) produce one report whose findings are **unioned into a
+single list** — the script does not tag each row with its source URL. The agent attributes each
+finding to the URL it came from **when it renders the capture markdown** (it knows which page it
+fetched what from). Still per element — no cross-site identity merge.
 
 ---
 
@@ -43,7 +45,7 @@ answered.** The report always records which tier ran and what it could not see.
 
 | Tier | What runs | Sees | Blind to |
 |---|---|---|---|
-| **Tier 1 — static** (always; stdlib only) | `scripts/capture.py`, `urllib` fetches the HTML + every linked stylesheet **by URL** + referenced JS | `@keyframes`, `transition` / `animation` shorthand + longhand, `cubic-bezier()` / `steps()`, `animation-timeline: scroll()` / `view()`, `@starting-style`, `transition-behavior: allow-discrete`, `@view-transition`, `view-transition-name`; library fingerprint (GSAP / ScrollTrigger / SplitText, Motion, Lenis, Locomotive, Swiper, AOS, Lottie, Rive, Three / R3F) from `<script src>` + chunk names; trigger hints `data-scroll`, `data-aos`, `data-speed`, `data-lag`, `data-gsap` | minified-JS motion (most React sites), canvas / WebGL, anything JS-triggered |
+| **Tier 1 — static** (always; stdlib only) | `scripts/capture.py`, `urllib` fetches the HTML + every linked stylesheet **by URL**; reads the `<script src>` list + inline `<script>` text for library fingerprinting only (it does not fetch that JS) | `@keyframes`, `transition` / `animation` shorthand + longhand, `cubic-bezier()` / `steps()`, `animation-timeline: scroll()` / `view()`, `@starting-style`, `transition-behavior: allow-discrete`, `@view-transition`, `view-transition-name`; library fingerprint (GSAP / ScrollTrigger / SplitText, Motion, Lenis, Locomotive, Swiper, AOS, Lottie, Rive, Three / R3F) from `<script src>` + chunk names; trigger hints `data-scroll`, `data-aos`, `data-speed`, `data-lag`, `data-gsap` | minified-JS motion (most React sites), canvas / WebGL, anything JS-triggered |
 | **Tier 2 — Playwright runtime** (`--tier runtime` or `auto`) | headless Chromium; the import is guarded — absent → Tier 1 + a note | `document.getAnimations()` dump (`CSSAnimation` / `CSSTransition` / WAAPI — catches Motion, which runs through WAAPI); `ScrollTrigger.getAll()` → each trigger's `start` / `end` / `scrub` / `pin` / `trigger` / `vars`; a 40-step scroll sampler → the scroll→property curve; a focus-element snapshot (trimmed `outerHTML`, computed box, states by synthetic toggle) | needs `pip install playwright && playwright install chromium`; still can't read shader/canvas internals |
 | **Tier 3 — agent-driven** (harness has an MCP browser, no Playwright) | the agent pastes the §4 snippets into whatever browser tool the harness has (Claude Browser pane, claude-in-chrome, Playwright MCP) and folds the results into the capture markdown by hand | same three dumps as Tier 2, non-deterministically | report is stamped `tier 3 (agent-captured)` |
 
@@ -63,8 +65,9 @@ python scripts/capture.py --url https://siteX.com/pricing --focus "the plan togg
 
 - `--tier auto` (default) → Tier 1, then Tier 2 if `playwright` imports. `--tier static` is the
   fast, dependency-free pass; `--tier runtime` forces the Tier 2 attempt.
-- `--url` is repeatable for multiple references. The findings union into one report; each row
-  keeps its source. **Still per element — no identity merge.**
+- `--url` is repeatable for multiple references. The findings union into one combined list in the
+  report — the script adds no per-source tag; the agent attributes each finding to its URL when
+  it renders the capture markdown. **Still per element — no identity merge.**
 - Exit code is `1` if every URL failed to fetch, so a caller can gate on it.
 - The markdown lands in `captures/<domain>-<date>.md`; the JSON is the machine copy on the §5
   schema. `DESIGN.md` gets one Changelog line per adopted element.

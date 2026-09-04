@@ -197,8 +197,9 @@ python scripts/capture.py --url <url> --focus "<element>" --tier auto \
 
 `--tier static` for the fast, dependency-free pass; `--tier runtime` (needs Playwright) adds
 live `getAnimations()` / `ScrollTrigger` data, a scroll sampler, and the focus element's
-anatomy. `--url` repeats for multiple references — findings are attributed per source and
-stay per-element; there is no cross-site identity merge.
+anatomy. `--url` repeats for multiple references — their findings are **unioned into one
+list** (the script adds no per-source tag); the agent attributes each finding to its source
+when rendering the capture markdown. Still per-element; no cross-site identity merge.
 
 **Output:** `captures/<domain>-<date>.md` (+ `.json`). Per motion finding and for the focus
 element, two columns: **Faithful** (measured values re-expressed in the user's stack; a
