@@ -21,6 +21,10 @@ Every invocation of this skill starts by reading it and ends by updating it.
    - **Greenfield** → write it from the direction the user picked, after the token handoff.
 5. **On the way out, sync it.** Any change to color, type, spacing, radius, elevation, motion, or a rule gets written back, with a dated line in the Changelog. Tell the user in one line what changed.
 
+   > - A borrowed element from a `reference` capture: `YYYY-MM-DD — adopted <element> from <url>
+   >   (faithful|adapted); see captures/<domain>-<date>.md`. One line per element, not one per
+   >   capture.
+
 ### What it is and isn't
 
 **Is:** the binding constraints. Values, rules, bans, and the reasons for them.
