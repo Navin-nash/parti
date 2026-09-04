@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-04
 **Skill:** `parti` (this repo)
-**Status:** approved for planning
+**Status:** implemented 2026-09-04 (plan: docs/superpowers/plans/2026-09-04-parti-reference-capture.md)
 
 ---
 
