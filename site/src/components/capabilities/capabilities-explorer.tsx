@@ -140,6 +140,32 @@ export function CapabilitiesExplorer() {
               </div>
             </div>
 
+            {sel.run ? (
+              <div>
+                <p className="plate-label mb-1.5 flex items-center gap-2">
+                  {sel.run.kind === "executed" ? "Real run" : "Output shape"}
+                  <span className="rounded-full bg-plate-2 px-1.5 py-0.5 font-mono text-[0.5625rem] font-normal normal-case tracking-normal text-ink-dim">
+                    {sel.run.kind === "executed"
+                      ? "literal output · 2026-09-04"
+                      : "no script · written by the agent"}
+                  </span>
+                </p>
+                {sel.run.cmd ? (
+                  <code className="mb-1.5 block overflow-x-auto rounded-t-xl border-b border-rule/60 bg-plate-2 px-3 py-2 font-mono text-[0.6875rem] text-ink-muted">
+                    $ {sel.run.cmd}
+                  </code>
+                ) : null}
+                <pre
+                  className={cn(
+                    "overflow-x-auto bg-plate-2 px-3 py-2.5 font-mono text-[0.6875rem] leading-[1.6] text-ink-muted",
+                    sel.run.cmd ? "rounded-b-xl" : "rounded-xl",
+                  )}
+                >
+                  {sel.run.out}
+                </pre>
+              </div>
+            ) : null}
+
             {sel.relatedExamples?.length ? (
               <div>
                 <p className="plate-label mb-2">Seen in this build</p>

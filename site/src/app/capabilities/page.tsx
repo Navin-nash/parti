@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Section } from "@/components/specimen/section";
 import { Display, Lede } from "@/components/specimen/prose";
 import { CapabilitiesExplorer } from "@/components/capabilities/capabilities-explorer";
+import { HowACommandRuns } from "@/components/capabilities/how-a-command-runs";
 
 export const metadata: Metadata = {
   title: "Capabilities",
@@ -18,8 +19,11 @@ export default function CapabilitiesPage() {
         Each command has a defined input, a defined output, and a cost. Invoke
         by name - &ldquo;run evaluate on ./src&rdquo;, &ldquo;do a typeset
         pass&rdquo;, &ldquo;reference stripe.com/pricing&rdquo; - or state a
-        complaint and let it infer which one applies.
+        complaint and let it infer which one applies. Select a command below to
+        see a real run of it, or the shape of what it writes.
       </Lede>
+
+      <HowACommandRuns />
 
       <CapabilitiesExplorer />
     </Section>

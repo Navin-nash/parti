@@ -158,15 +158,19 @@ two or three that serve the user's brief.
 
 ## 8. Real-world validation
 
-`--tier runtime` against five live sites of different build:
+`--tier runtime` against five live sites of different build, plus this repo's own
+dev server. Run `2026-09-04`; per-command transcripts and the `evaluate` / `audit`
+/ `palette` / `lint` / `motion` runs alongside them are in
+[`docs/commands-in-action.md`](./commands-in-action.md).
 
-| Site | Build | Result |
-|---|---|---|
-| **hyperswitch.io** | Astro + hand-rolled CSS | 37 findings; **3 scroll reveals** with measured `1s cubic-bezier(.4,0,.2,1)`; hero parallax via `focus_element` + `scroll_samples`; 13 `@keyframes` with full from/to bodies (`marquee`, `legendSlideUp`, `bounce`, `drift`…) |
-| **vercel.com** | Next.js | 129 findings; ran at runtime despite a 403 on the direct fetch; `var(--animate-*)` indirection noise removed; 1 scroll reveal |
-| **gsap.com** | GSAP + ScrollTrigger | `## ScrollTrigger` section populated from `getAll()`; honest note that GSAP motion isn't in the WAAPI |
-| **linear.app** | React + CSS-in-JS | 298 findings (genuine hashed keyframes) with 0 bare-token noise; density note + `finding_counts` breakdown |
-| **stripe.com** | React, aggressive bot detection | degrades honestly — bot-walls headless Chrome, `not_captured` says so, exits 0 |
+| Site | Build | Tier reached | Findings | Result |
+|---|---|---|---|---|
+| **hyperswitch.io** | Astro + hand-rolled CSS | runtime | 37 | **3 scroll reveals** measured at `1s cubic-bezier(.4,0,.2,1)` and `.8s`; hero parallax via `focus_element` + a `scroll_samples` curve (`matrix(…0)` → `matrix(…-45)`); 13 `@keyframes` with full from/to bodies (`marquee`, `legendSlideUp`, `bounce`, `l3`…) |
+| **vercel.com** | Next.js | runtime (past a 403 on direct fetch) | 129 | `@starting-style` flagged in `features`; 3 WAAPI `in-view / scroll` reveals; `var(--animate-*)` indirection filtered out |
+| **gsap.com** | GSAP + ScrollTrigger | runtime | 21 + **44 ScrollTriggers** | `## ScrollTrigger` section populated from `getAll()`; honest `not_captured` note that no WAAPI reveal surfaced because GSAP animates off direct style writes |
+| **linear.app** | React + CSS-in-JS | runtime | 296 | genuine hashed keyframes (`SjJXIW_fadeIn`) with 0 bare-token noise; density note fires + `finding_counts` breakdown (`CSS 213, WAAPI 83, load-or-state 80, in-view / scroll 3`) |
+| **stripe.com** | React, aggressive bot detection | **static only** | 0 | degrades honestly — bot-walls headless Chrome, `not_captured` says so, exits 0 |
+| **localhost:3000** (this site) | Next.js 16 | runtime | 8 | `load-or-state` reveal at `420ms cubic-bezier(.22,1,.36,1)`; `focus_element` DOM + computed box captured; no inflation — a small site produces a small capture |
 
 Script eval suite: **86/86**, green with Playwright present and import-masked.
 
