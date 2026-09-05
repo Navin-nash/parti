@@ -6,11 +6,11 @@ All output shown below is **real output** from the fixtures in `evals/`, not ill
 
 | Script | Reads | Emits | Exit code |
 |---|---|---|---|
-| [`audit.py`](../scripts/audit.py) | a codebase | de-facto design system + tell list | always `0` |
-| [`score.py`](../scripts/score.py) | `audit.py` JSON | measured score, 6 dimensions | always `0` |
-| [`color.py`](../scripts/color.py) | hex values / palette JSON | contrast, ramps, fixes | always `0` |
-| [`lint.py`](../scripts/lint.py) | code you just built | build-time tells + token drift | `1` if any P0 |
-| [`motion.py`](../scripts/motion.py) | code | motion rule violations | `1` if any P0 |
+| [`audit.py`](../skills/parti/scripts/audit.py) | a codebase | de-facto design system + tell list | always `0` |
+| [`score.py`](../skills/parti/scripts/score.py) | `audit.py` JSON | measured score, 6 dimensions | always `0` |
+| [`color.py`](../skills/parti/scripts/color.py) | hex values / palette JSON | contrast, ramps, fixes | always `0` |
+| [`lint.py`](../skills/parti/scripts/lint.py) | code you just built | build-time tells + token drift | `1` if any P0 |
+| [`motion.py`](../skills/parti/scripts/motion.py) | code | motion rule violations | `1` if any P0 |
 
 **Only `lint.py` and `motion.py` gate.** The other three always exit `0` — they are instruments, not judges, and a CI job that fails on a low score is a CI job that will be disabled within a month. See [CI integration](#ci-integration).
 
@@ -47,7 +47,7 @@ usage: audit.py [-h] [--json OUT] [--quiet] path
 ### Real output
 
 ```
-$ python scripts/audit.py ./slop
+$ python skills/parti/scripts/audit.py ./slop
 
 Scanned 8 files under ...\slop
 
@@ -119,7 +119,7 @@ Total: 100.
 ### Real output
 
 ```
-$ python scripts/score.py audit.json
+$ python skills/parti/scripts/score.py audit.json
 
 MEASURED SCORE  51.5 / 100   (Ad hoc)
                 Decisions are being made per-component. Consolidate before adding surface.
@@ -163,7 +163,7 @@ OKLCH throughout, because its lightness axis is perceptually uniform — a ramp 
 ### `contrast` — one pair
 
 ```
-$ python scripts/color.py contrast "#2B2620" "#FAF9F6"
+$ python skills/parti/scripts/color.py contrast "#2B2620" "#FAF9F6"
 
 #2B2620 on #FAF9F6   14.24:1   AA body ✓  AA large ✓  AAA ✓  UI/non-text ✓
   #2B2620 = oklch(27.2% 0.013 72.3)
@@ -179,7 +179,7 @@ Input is a flat JSON object of role → hex:
 ```
 
 ```
-$ python scripts/color.py check palette.json
+$ python skills/parti/scripts/color.py check palette.json
 
 foreground        background           ratio   verdict
 --------------------------------------------------------------------------
@@ -196,7 +196,7 @@ That last line is the point: the script reports, you decide which pairs are real
 ### `fix` — minimal correction, hue preserved
 
 ```
-$ python scripts/color.py fix "#8A8F98" --on "#F7F7F8"
+$ python skills/parti/scripts/color.py fix "#8A8F98" --on "#F7F7F8"
 
 original  #8A8F98 on #F7F7F8 = 3.03:1   AA body ✗  AA large ✓  AAA ✗
 adjusted  #6D717A on #F7F7F8 = 4.57:1   (L 64.9% → 54.9%, hue and chroma preserved)
@@ -208,7 +208,7 @@ adjusted  #6D717A on #F7F7F8 = 4.57:1   (L 64.9% → 54.9%, hue and chroma prese
 ### `ramp` — gamut-fit OKLCH scale
 
 ```
-$ python scripts/color.py ramp "#B23A2E" --steps 5
+$ python skills/parti/scripts/color.py ramp "#B23A2E" --steps 5
 
 base #B23A2E = oklch(52.1% 0.158 29.2)
 
@@ -256,7 +256,7 @@ usage: lint.py [-h] [--tokens TOKENS] [--json OUT] [--quiet] path
 ### Real output shape
 
 ```
-$ python scripts/lint.py ./slop --json out.json
+$ python skills/parti/scripts/lint.py ./slop --json out.json
 $ echo $?
 1
 ```
@@ -278,13 +278,13 @@ $ echo $?
 
 On the clean fixture: `rc=0`, `findings: []`. The false-positive guard in the eval suite exists specifically to keep it that way — a linter that cries wolf gets muted, and a muted linter catches nothing.
 
-Full catalog of what it looks for: [`references/bans.md`](../references/bans.md).
+Full catalog of what it looks for: [`references/bans.md`](../skills/parti/references/bans.md).
 
 ---
 
 ## motion.py
 
-Checks the machine-checkable half of [`references/motion-rules.md`](../references/motion-rules.md). Every finding carries the rule id, so a review can cite `physics-origin-center` rather than "the dropdown animation feels wrong."
+Checks the machine-checkable half of [`references/motion-rules.md`](../skills/parti/references/motion-rules.md). Every finding carries the rule id, so a review can cite `physics-origin-center` rather than "the dropdown animation feels wrong."
 
 ```
 usage: motion.py [-h] [--json OUT] [--census] [--quiet] path
@@ -313,7 +313,7 @@ usage: motion.py [-h] [--json OUT] [--census] [--quiet] path
 ### `--census` — inventory without judgment
 
 ```
-$ python scripts/motion.py ./good --census
+$ python skills/parti/scripts/motion.py ./good --census
 
 Scanned 3 files under ...\motion_good
 
@@ -339,8 +339,8 @@ Two scripts gate. Wire those two:
 ```yaml
 - name: Design lint
   run: |
-    python scripts/lint.py ./src --tokens ./tokens.json
-    python scripts/motion.py ./src
+    python skills/parti/scripts/lint.py ./src --tokens ./tokens.json
+    python skills/parti/scripts/motion.py ./src
 ```
 
 Both exit `1` on any P0, `0` otherwise. No install step — stdlib only.
@@ -350,8 +350,8 @@ Run the other three for reporting, not gating:
 ```yaml
 - name: Design report (informational)
   run: |
-    python scripts/audit.py ./src --json audit.json --quiet
-    python scripts/score.py audit.json
+    python skills/parti/scripts/audit.py ./src --json audit.json --quiet
+    python skills/parti/scripts/score.py audit.json
 ```
 
 ### Do not gate on the score

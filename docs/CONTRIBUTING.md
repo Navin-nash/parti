@@ -27,16 +27,16 @@ mklink /J "%USERPROFILE%\.claude\skills\parti" "C:\path\to\parti"        # Windo
 
 ## Commands
 
-<!-- AUTO-GENERATED: from argparse in scripts/*.py and evals/run_script_evals.py. Regenerate rather than hand-edit. -->
+<!-- AUTO-GENERATED: from argparse in skills/parti/scripts/*.py and evals/run_script_evals.py. Regenerate rather than hand-edit. -->
 
 | Command | Purpose |
 |---|---|
 | `python evals/run_script_evals.py [-h] [--verbose] [--keep]` | Run the 50-check script suite. Exits `1` on any failure. |
-| `python scripts/audit.py [-h] [--json OUT] [--quiet] path` | Extract the de-facto design system from a codebase. |
-| `python scripts/color.py [-h] {contrast,check,ramp,convert,fix} ...` | Palette math: contrast, ramps, minimal fixes. |
-| `python scripts/lint.py [-h] [--tokens TOKENS] [--json OUT] [--quiet] path` | Build-time tells + token drift. Exits `1` on any P0. |
-| `python scripts/motion.py [-h] [--json OUT] [--census] [--quiet] path` | Motion rule violations at `file:line`. Exits `1` on any P0. |
-| `python scripts/score.py [-h] [--json OUT] audit_json` | Measured score across six dimensions. |
+| `python skills/parti/scripts/audit.py [-h] [--json OUT] [--quiet] path` | Extract the de-facto design system from a codebase. |
+| `python skills/parti/scripts/color.py [-h] {contrast,check,ramp,convert,fix} ...` | Palette math: contrast, ramps, minimal fixes. |
+| `python skills/parti/scripts/lint.py [-h] [--tokens TOKENS] [--json OUT] [--quiet] path` | Build-time tells + token drift. Exits `1` on any P0. |
+| `python skills/parti/scripts/motion.py [-h] [--json OUT] [--census] [--quiet] path` | Motion rule violations at `file:line`. Exits `1` on any P0. |
+| `python skills/parti/scripts/score.py [-h] [--json OUT] audit_json` | Measured score across six dimensions. |
 
 <!-- END AUTO-GENERATED -->
 
@@ -110,7 +110,7 @@ Layer 3, the rubric, is the instrument. Editing prose without running a transcri
 
 ## Documentation
 
-- `README.md` is the front door: what, why, install, command index. It **links to** `SKILL.md` and `references/` rather than restating them — two copies of the same process is how docs drift from behavior.
+- `README.md` is the front door: what, why, install, command index. It **links to** `skills/parti/SKILL.md` and `skills/parti/references/` rather than restating them — two copies of the same process is how docs drift from behavior.
 - Sections wrapped in `<!-- AUTO-GENERATED -->` are derived from source. Change the source, regenerate the section; don't hand-edit inside the markers.
 - Sample output in [`scripts.md`](scripts.md) is **real captured output** from the `evals/` fixtures. If you change a script's output format, re-capture it rather than editing the sample by hand.
 

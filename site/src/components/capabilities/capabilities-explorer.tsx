@@ -142,13 +142,13 @@ export function CapabilitiesExplorer() {
 
             {sel.run ? (
               <div>
-                <p className="plate-label mb-1.5 flex items-center gap-2">
+                <p className="plate-label mb-1">
                   {sel.run.kind === "executed" ? "Real run" : "Output shape"}
-                  <span className="rounded-full bg-plate-2 px-1.5 py-0.5 font-mono text-[0.5625rem] font-normal normal-case tracking-normal text-ink-dim">
-                    {sel.run.kind === "executed"
-                      ? "literal output · 2026-09-04"
-                      : "no script · written by the agent"}
-                  </span>
+                </p>
+                <p className="mb-1.5 text-[0.75rem] leading-snug text-ink-dim">
+                  {sel.run.kind === "executed"
+                    ? "Captured 2026-09-04 — literal terminal output."
+                    : "No script behind this — the fixed shape the agent writes."}
                 </p>
                 {sel.run.cmd ? (
                   <code className="mb-1.5 block overflow-x-auto rounded-t-xl border-b border-rule/60 bg-plate-2 px-3 py-2 font-mono text-[0.6875rem] text-ink-muted">

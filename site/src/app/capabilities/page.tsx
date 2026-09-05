@@ -13,7 +13,7 @@ export default function CapabilitiesPage() {
   return (
     <Section eyebrow="Command explorer">
       <Display level={1} className="mb-4 max-w-[26ch]">
-        Thirty narrow operations.
+        Twenty-nine narrow operations.
       </Display>
       <Lede className="mb-12">
         Each command has a defined input, a defined output, and a cost. Invoke

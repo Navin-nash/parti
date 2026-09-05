@@ -1,0 +1,11 @@
+{
+  "name": "parti",
+  "description": "Anti-slop design, start to finish — evaluates and scores an existing design, derives three divergent directions from the actual subject rather than a style menu, and builds the verified, production-grade code for whichever wins.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Navin Raj Govindan"
+  },
+  "homepage": "https://github.com/Navin-nash/parti",
+  "repository": "https://github.com/Navin-nash/parti",
+  "keywords": ["design", "ui", "ux", "frontend", "tokens", "motion", "accessibility"]
+}

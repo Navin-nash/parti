@@ -33,27 +33,41 @@ Restated for code: **tokens are law, craft is where you're free.** Every color, 
 
 ## Install
 
-Clone straight into your skills directory:
+`parti` follows Claude Code's plugin layout: a `.claude-plugin/plugin.json` manifest at the repo root, with the actual skill at `skills/parti/SKILL.md`. Two ways to install it, both official.
+
+### As a plugin (recommended)
+
+Add this repo as a marketplace, then install from it:
+
+```bash
+claude plugin marketplace add Navin-nash/parti
+claude plugin install parti@parti
+```
+
+Or drop the whole repo under a skills directory — any folder there containing a `.claude-plugin/plugin.json` loads automatically:
 
 ```bash
 git clone https://github.com/Navin-nash/parti.git ~/.claude/skills/parti
 ```
 
-Or clone anywhere and link it — macOS/Linux:
+### As a standalone skill
+
+Only want the skill, without the plugin machinery? Point a skills directory straight at the nested `skills/parti/` folder instead of the repo root:
 
 ```bash
-ln -s "$(pwd)" ~/.claude/skills/parti
+git clone https://github.com/Navin-nash/parti.git /path/to/parti
+ln -s /path/to/parti/skills/parti ~/.claude/skills/parti     # macOS/Linux
 ```
 
 Windows, from PowerShell or `cmd` (a junction needs no admin rights):
 
 ```bash
-mklink /J "%USERPROFILE%\.claude\skills\parti" "C:\path\to\parti"
+mklink /J "%USERPROFILE%\.claude\skills\parti" "C:\path\to\parti\skills\parti"
 ```
 
 From Git Bash the flag needs doubling — `cmd //c "mklink /J ..."` — because MSYS rewrites single-slash arguments as paths.
 
-**Project-scoped instead of global?** Use `<your-project>/.claude/skills/parti`. A project-scoped copy wins over a global one of the same name.
+**Project-scoped instead of global?** Use `<your-project>/.claude/skills/parti` (pointing at `skills/parti/`, same as above). A project-scoped copy wins over a global one of the same name.
 
 **Verify it loaded** by asking Claude Code to list its skills; `parti` should appear with its description.
 
@@ -77,7 +91,7 @@ The skill triggers on intent, so usually you just describe the problem:
 >
 > "build direction 2"
 
-You can also name a command. Full definitions, inputs, and outputs: [`references/commands.md`](references/commands.md).
+You can also name a command. Full definitions, inputs, and outputs: [`skills/parti/references/commands.md`](skills/parti/references/commands.md).
 
 **Cost** is the rough size of the run — `XS` is seconds, `L` is a full working session.
 
@@ -177,9 +191,9 @@ The failure here isn't a bad direction — it's a *good* direction quietly rever
 | Step | What happens |
 |---|---|
 | **B0** | Get the spec — from step 7, `DESIGN.md`, or an existing token file. Nothing to build from? Don't invent one under build authority; run the direction steps first and say plainly if they're compressed. |
-| **B1** | Pick the stack by **detection, not question** — `components.json` → React + Tailwind + shadcn; Vue files → Vue; no framework signal → plain HTML/CSS. Playbooks in [`references/stacks.md`](references/stacks.md), including how to actually override shadcn's defaults rather than shipping them untouched. |
+| **B1** | Pick the stack by **detection, not question** — `components.json` → React + Tailwind + shadcn; Vue files → Vue; no framework signal → plain HTML/CSS. Playbooks in [`skills/parti/references/stacks.md`](skills/parti/references/stacks.md), including how to actually override shadcn's defaults rather than shipping them untouched. |
 | **B2** | Build the job, with every state in the same pass — empty (first-run *and* cleared-by-user), loading, partial, ideal, error, overflow, offline, no-permission. Implementing only the ideal state is the most common way production quietly diverges from what was approved. |
-| **B3** | Don't reintroduce what the direction removed — untouched library variants, `outline-none` with no focus replacement, a starter-template gradient. List: [`references/bans.md`](references/bans.md). |
+| **B3** | Don't reintroduce what the direction removed — untouched library variants, `outline-none` with no focus replacement, a starter-template gradient. List: [`skills/parti/references/bans.md`](skills/parti/references/bans.md). |
 | **B4** | Verify with three checks, none of which catches what the other two do: scripted lint + motion, every contrast pair verified with `color.py`, and a fidelity pass on the **real build** against the same floor the mockup had to clear. |
 | **B5** | Report and sync — files touched, lint by severity, contrast table, states covered, a11y floor, and a **deviations list**. Deviation is a finding, not a shrug. |
 
@@ -197,7 +211,7 @@ Step 0 of every run, before anything else.
 
 **On the way out** it's synced, with a dated changelog line naming what changed.
 
-Protocol and template: [`references/design-md.md`](references/design-md.md).
+Protocol and template: [`skills/parti/references/design-md.md`](skills/parti/references/design-md.md).
 
 ---
 
@@ -206,11 +220,11 @@ Protocol and template: [`references/design-md.md`](references/design-md.md).
 Measured findings survive disagreement; impressions don't.
 
 ```bash
-python scripts/audit.py <path> --json audit.json      # de-facto system + tell detection
-python scripts/score.py audit.json                    # measured score, 6 dimensions
-python scripts/color.py check palette.json            # every pair, AA verdicts
-python scripts/lint.py <path> --tokens tokens.json    # built code vs. its spec: tells + drift
-python scripts/motion.py <path>                       # motion rule violations at file:line
+python skills/parti/scripts/audit.py <path> --json audit.json      # de-facto system + tell detection
+python skills/parti/scripts/score.py audit.json                    # measured score, 6 dimensions
+python skills/parti/scripts/color.py check palette.json            # every pair, AA verdicts
+python skills/parti/scripts/lint.py <path> --tokens tokens.json    # built code vs. its spec: tells + drift
+python skills/parti/scripts/motion.py <path>                       # motion rule violations at file:line
 ```
 
 **Only `lint.py` and `motion.py` exit non-zero** (`1` on any P0). The other three always exit `0` — they're instruments, not judges.
@@ -230,11 +244,13 @@ Given a screenshot rather than a codebase, the skill says so and scores the judg
 ## Repository layout
 
 ```
-SKILL.md       the skill itself — frontmatter + full process
-references/    15 files, loaded on demand rather than up front
-scripts/       audit.py  color.py  lint.py  motion.py  score.py  — stdlib only
-evals/         run_script_evals.py  rubric.md  trigger_cases.json
-docs/          scripts.md  CONTRIBUTING.md  RUNBOOK.md
+.claude-plugin/       plugin.json + marketplace.json — the plugin manifest
+skills/parti/
+  SKILL.md             the skill itself — frontmatter + full process
+  references/          16 files, loaded on demand rather than up front
+  scripts/             audit.py  capture.py  color.py  lint.py  motion.py  score.py  — stdlib only
+evals/                 run_script_evals.py  rubric.md  trigger_cases.json
+docs/                  scripts.md  CONTRIBUTING.md  RUNBOOK.md
 ```
 
 | Doc | Contents |
@@ -247,21 +263,21 @@ References are split out because SKILL.md loads on every match while a reference
 
 | Reference | Contents |
 |---|---|
-| [`commands.md`](references/commands.md) | every sub-command, its inputs, outputs, and cost |
-| [`design-md.md`](references/design-md.md) | `DESIGN.md` protocol, template, writing one from an existing codebase |
-| [`style-vocabulary.md`](references/style-vocabulary.md) | 25+ movements: what each is good at, its failure mode, when to avoid it |
-| [`motion.md`](references/motion.md) | animation decisions, library choice, scroll, View Transitions, reduced motion |
-| [`motion-rules.md`](references/motion-rules.md) | the rule catalog — every rule id, severity, and a fail/pass code pair |
-| [`motion-recipes.md`](references/motion-recipes.md) | correct implementations: button, dropdown, tooltip, modal, drawer, toast, accordion, stagger, tab indicator, shared element, drag-to-dismiss |
-| [`audit-protocol.md`](references/audit-protocol.md) | surveying an interface: recon, effort levels, finding format, leverage rubric |
-| [`plan-template.md`](references/plan-template.md) | the self-contained plan format for handing work to another agent |
-| [`render.md`](references/render.md) | the fidelity floor and component-by-component construction rules |
-| [`critique.md`](references/critique.md) | concept-level tell list, redesign protocol, severity rubric |
-| [`bans.md`](references/bans.md) | build-time tell list: CSS-specificity pitfalls, untouched library defaults |
-| [`stacks.md`](references/stacks.md) | build playbooks per stack |
-| [`verify.md`](references/verify.md) | the build verification loop and report format |
-| [`ux-methods.md`](references/ux-methods.md) | UX laws, heuristics, IA, states, cognitive load, accessibility |
-| [`tokens.md`](references/tokens.md) | token spec format and a worked example |
+| [`commands.md`](skills/parti/references/commands.md) | every sub-command, its inputs, outputs, and cost |
+| [`design-md.md`](skills/parti/references/design-md.md) | `DESIGN.md` protocol, template, writing one from an existing codebase |
+| [`style-vocabulary.md`](skills/parti/references/style-vocabulary.md) | 25+ movements: what each is good at, its failure mode, when to avoid it |
+| [`motion.md`](skills/parti/references/motion.md) | animation decisions, library choice, scroll, View Transitions, reduced motion |
+| [`motion-rules.md`](skills/parti/references/motion-rules.md) | the rule catalog — every rule id, severity, and a fail/pass code pair |
+| [`motion-recipes.md`](skills/parti/references/motion-recipes.md) | correct implementations: button, dropdown, tooltip, modal, drawer, toast, accordion, stagger, tab indicator, shared element, drag-to-dismiss |
+| [`audit-protocol.md`](skills/parti/references/audit-protocol.md) | surveying an interface: recon, effort levels, finding format, leverage rubric |
+| [`plan-template.md`](skills/parti/references/plan-template.md) | the self-contained plan format for handing work to another agent |
+| [`render.md`](skills/parti/references/render.md) | the fidelity floor and component-by-component construction rules |
+| [`critique.md`](skills/parti/references/critique.md) | concept-level tell list, redesign protocol, severity rubric |
+| [`bans.md`](skills/parti/references/bans.md) | build-time tell list: CSS-specificity pitfalls, untouched library defaults |
+| [`stacks.md`](skills/parti/references/stacks.md) | build playbooks per stack |
+| [`verify.md`](skills/parti/references/verify.md) | the build verification loop and report format |
+| [`ux-methods.md`](skills/parti/references/ux-methods.md) | UX laws, heuristics, IA, states, cognitive load, accessibility |
+| [`tokens.md`](skills/parti/references/tokens.md) | token spec format and a worked example |
 
 ---
 
@@ -273,7 +289,7 @@ python evals/run_script_evals.py --verbose  # per-assertion output
 python evals/run_script_evals.py --keep     # leave fixtures on disk to inspect
 ```
 
-50 deterministic checks: WCAG contrast arithmetic against published reference values, and fixtures seeded with a known number of known tells so detection recall and false-positive rate are both countable. Stdlib only, so it drops into CI unmodified.
+86 deterministic checks: WCAG contrast arithmetic against published reference values, and fixtures seeded with a known number of known tells so detection recall and false-positive rate are both countable. Stdlib only, so it drops into CI unmodified.
 
 Every detector has a matching **false-positive guard** on a clean fixture. A linter that cries wolf gets muted, and a muted linter catches nothing.
 

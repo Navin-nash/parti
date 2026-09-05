@@ -208,7 +208,7 @@ export default function Home() {
       <Section eyebrow="Capabilities" id="capabilities">
         <div className="mb-10 grid gap-6 lg:grid-cols-[minmax(0,32rem)_minmax(0,1fr)] lg:items-end lg:gap-16">
           <Display level={2} className="max-w-[18ch]">
-            Thirty narrow operations, not one big button.
+            Twenty-nine narrow operations, not one big button.
           </Display>
           <Lede className="lg:pb-2">
             Each has a defined input, a defined output, and a cost. A narrow

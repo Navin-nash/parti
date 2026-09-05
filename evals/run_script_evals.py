@@ -34,7 +34,7 @@ except Exception:
     pass
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-SCRIPTS = os.path.join(os.path.dirname(HERE), "scripts")
+SCRIPTS = os.path.join(os.path.dirname(HERE), "skills", "parti", "scripts")
 
 # ─────────────────────────────────────────────────────────── fixtures
 

@@ -14,7 +14,7 @@ import sys
 import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-CAPTURE = os.path.join(os.path.dirname(HERE), "scripts", "capture.py")
+CAPTURE = os.path.join(os.path.dirname(HERE), "skills", "parti", "scripts", "capture.py")
 
 PAGE = """<!doctype html><html><head><style>
 section{height:120vh;transition:opacity 300ms cubic-bezier(0.16,1,0.3,1)}

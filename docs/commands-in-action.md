@@ -4,7 +4,7 @@
 real output each one produced when it was run — on this repo's own site and on
 five production sites that were never written for it.**
 
-Companion to [`references/commands.md`](../references/commands.md) (the spec) and
+Companion to [`skills/parti/references/commands.md`](../skills/parti/references/commands.md) (the spec) and
 [`docs/reference-capture-capability.md`](./reference-capture-capability.md) (the
 `reference`/`capture` deep-dive). This doc is the *evidence*: every transcript
 below is a literal run, dated, not a mock-up.
@@ -61,12 +61,12 @@ written method.
 
 | Script | Commands it serves | Emits |
 |---|---|---|
-| `scripts/audit.py` | `audit`, `evaluate` (measured half), `redesign` (step 0) | de-facto design system: colour census, type families, spacing base unit, radii/shadows, motion libs, tells |
-| `scripts/score.py` | `evaluate` | 6 measured dimensions scored 0–20/0–15 with a band, plus the "not measured — judge yourself" list |
-| `scripts/color.py` | `palette`, `tokens`, `build`/`a11y` verification | contrast ratios, OKLCH ramps, minimum-shift AA fixes, hex↔OKLCH |
-| `scripts/motion.py` | `motion`, `review` (`--motion`) | motion census + rule-id findings against `references/motion-rules.md` |
-| `scripts/lint.py` | `lint`, `deslop` (scripted half), `review` | build-time tells + token drift, by severity |
-| `scripts/capture.py` | `reference`, `capture` | 3-tier motion capture from a live URL |
+| `skills/parti/scripts/audit.py` | `audit`, `evaluate` (measured half), `redesign` (step 0) | de-facto design system: colour census, type families, spacing base unit, radii/shadows, motion libs, tells |
+| `skills/parti/scripts/score.py` | `evaluate` | 6 measured dimensions scored 0–20/0–15 with a band, plus the "not measured — judge yourself" list |
+| `skills/parti/scripts/color.py` | `palette`, `tokens`, `build`/`a11y` verification | contrast ratios, OKLCH ramps, minimum-shift AA fixes, hex↔OKLCH |
+| `skills/parti/scripts/motion.py` | `motion`, `review` (`--motion`) | motion census + rule-id findings against `skills/parti/references/motion-rules.md` |
+| `skills/parti/scripts/lint.py` | `lint`, `deslop` (scripted half), `review` | build-time tells + token drift, by severity |
+| `skills/parti/scripts/capture.py` | `reference`, `capture` | 3-tier motion capture from a live URL |
 
 Script eval suite at time of writing: **86/86 green** (`python evals/run_script_evals.py`).
 
@@ -79,8 +79,8 @@ Script eval suite at time of writing: **86/86 green** (`python evals/run_script_
 `▶ real run` · `2026-09-04`
 
 ```
-$ python scripts/audit.py site/src --json /tmp/audit.json
-$ python scripts/score.py /tmp/audit.json
+$ python skills/parti/scripts/audit.py site/src --json /tmp/audit.json
+$ python skills/parti/scripts/score.py /tmp/audit.json
 ```
 
 ```
@@ -162,7 +162,7 @@ new rather than correcting something existing.
 ## Direction B — <name>     …
 ## Direction C — <name>     …
 
-## Anti-slop pass   each direction checked against references/bans.md
+## Anti-slop pass   each direction checked against skills/parti/references/bans.md
 ## Recommendation   one direction, stated, with why — not "pick your favourite"
 ```
 
@@ -197,7 +197,7 @@ OKLCH authoring).
 `▶ real run` · `2026-09-04` · scripted half via `lint.py`.
 
 ```
-$ python scripts/lint.py site/src
+$ python skills/parti/scripts/lint.py site/src
 ```
 
 ```
@@ -257,14 +257,14 @@ so the command won't emit one.
 `▶ real run` · `2026-09-04` · every number below is `color.py` output, not asserted.
 
 ```
-$ python scripts/color.py contrast "#6366f1" "#edebe6"
+$ python skills/parti/scripts/color.py contrast "#6366f1" "#edebe6"
 #6366f1 on #edebe6   3.75:1   AA body ✗  AA large ✓  AAA ✗  UI/non-text ✓
 
-$ python scripts/color.py fix "#6366f1" --on "#edebe6" --target 4.5
+$ python skills/parti/scripts/color.py fix "#6366f1" --on "#edebe6" --target 4.5
 adjusted  #5757E1 on #edebe6 = 4.57:1   (L 58.5% → 54.0%, hue and chroma preserved)
           oklch(53.9% 0.204 277.1)
 
-$ python scripts/color.py ramp "#B23A2E" --steps 9
+$ python skills/parti/scripts/color.py ramp "#B23A2E" --steps 9
 step  hex       oklch                     on white  on black
 400   #E3695A   oklch(66.5% 0.155 29.0)      3.26      6.43
 500   #C1483B   oklch(56.4% 0.158 29.1)      4.93      4.26
@@ -283,7 +283,7 @@ untouched.
 `▶ real run` · `2026-09-04` · `motion.py` census over this repo's example builds.
 
 ```
-$ python scripts/motion.py site/src --census
+$ python skills/parti/scripts/motion.py site/src --census
 CENSUS
   distinct durations : 9  [0, 1, 100, 120, 140, 180, 200, 240, 900]
   distinct curves    : 2
@@ -304,7 +304,7 @@ names the single choreographed moment, and makes the library call — including
 `▶ real run` · `2026-09-04` · `motion.py` + `lint.py`, scripted half.
 
 ```
-$ python scripts/motion.py site/src/arms
+$ python skills/parti/scripts/motion.py site/src/arms
 FINDINGS
   agent-platform-landing/baseline.tsx  [physics-no-press-feedback]  pressable elements
      styled for :hover with no :active/whileTap — no acknowledgement that the interface
@@ -352,7 +352,7 @@ sites and this repo's own dev server. Full capability analysis:
 [`docs/reference-capture-capability.md`](./reference-capture-capability.md).
 
 ```
-$ python scripts/capture.py --url https://hyperswitch.io \
+$ python skills/parti/scripts/capture.py --url https://hyperswitch.io \
     --focus "the hero and the scroll reveals" --tier runtime \
     --json /tmp/cap.json --md captures/hyperswitch-io-2026-09-04.md
 ```
@@ -510,7 +510,7 @@ that survives production.
 `▶ real run` · `2026-09-04`
 
 ```
-$ python scripts/lint.py site/src --tokens tokens.json
+$ python skills/parti/scripts/lint.py site/src --tokens tokens.json
 {'P2': 19, 'P1': 2, 'P0': 5}  ->  FAIL (P0 present)
 ```
 
@@ -576,12 +576,12 @@ is already in play.
 
 `▷ output shape` · no script. Any change to colour / type / space / shape / motion
 / a rule gets written back with a dated changelog line. Silent overrides are how
-the file stops being trusted. See [`references/design-md.md`](../references/design-md.md).
+the file stops being trusted. See [`skills/parti/references/design-md.md`](../skills/parti/references/design-md.md).
 
 ### `plan` — one self-contained plan file
 
 `▷ output shape` · no script. Template at
-[`references/plan-template.md`](../references/plan-template.md). The requirement is
+[`skills/parti/references/plan-template.md`](../skills/parti/references/plan-template.md). The requirement is
 **self-contained**: the executing agent has none of the current conversation. A
 plan that says "as discussed" is not a plan.
 
@@ -602,17 +602,17 @@ fixed.
 
 ```bash
 # measured half — every transcript in §2–3 marked "real run"
-python scripts/audit.py site/src --json /tmp/audit.json && python scripts/score.py /tmp/audit.json
-python scripts/lint.py  site/src
-python scripts/motion.py site/src --census
-python scripts/motion.py site/src/arms
-python scripts/color.py contrast "#6366f1" "#edebe6"
-python scripts/color.py ramp "#B23A2E" --steps 9
-python scripts/color.py fix "#6366f1" --on "#edebe6" --target 4.5
+python skills/parti/scripts/audit.py site/src --json /tmp/audit.json && python skills/parti/scripts/score.py /tmp/audit.json
+python skills/parti/scripts/lint.py  site/src
+python skills/parti/scripts/motion.py site/src --census
+python skills/parti/scripts/motion.py site/src/arms
+python skills/parti/scripts/color.py contrast "#6366f1" "#edebe6"
+python skills/parti/scripts/color.py ramp "#B23A2E" --steps 9
+python skills/parti/scripts/color.py fix "#6366f1" --on "#edebe6" --target 4.5
 
 # capture — five live sites + this repo's dev server
 for u in hyperswitch.io vercel.com gsap.com linear.app stripe.com; do
-  python scripts/capture.py --url "https://$u" --focus "the hero and the scroll reveals" \
+  python skills/parti/scripts/capture.py --url "https://$u" --focus "the hero and the scroll reveals" \
     --tier runtime --json "/tmp/$u.json" --md "captures/$u-$(date +%F).md"
 done
 

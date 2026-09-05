@@ -7,7 +7,7 @@ Any single number claiming to score "is this design good" is a rubric wearing a 
 | Layer | Ground truth | Instrument | Objective? |
 |---|---|---|---|
 | 1. Trigger accuracy | 56 labeled prompts | `run_eval.py` (skill-creator) | Yes, binary |
-| 2. Script correctness | WCAG arithmetic + seeded fixtures | `run_script_evals.py` (50 checks) | Yes, deterministic |
+| 2. Script correctness | WCAG arithmetic + seeded fixtures | `run_script_evals.py` (86 checks) | Yes, deterministic |
 | 3. Process compliance | 18 binary items, 5 gates | `rubric.md` | Yes, per-item binary |
 | 4. Design quality | **none** | blind A/B against a baseline | **No** — preference only |
 
@@ -30,7 +30,7 @@ Does the skill fire when it should and stay quiet when it shouldn't? Fully binar
 ```bash
 cd /path/to/project          # needs a .claude/ dir and the Claude Code CLI
 python -m scripts.run_eval \
-  --skill-path ./parti \
+  --skill-path ./parti/skills/parti \
   --eval-set ./parti/evals/trigger_cases.json \
   --runs-per-query 3 --verbose
 ```
@@ -59,7 +59,7 @@ python evals/run_script_evals.py --verbose  # per-assertion output
 python evals/run_script_evals.py --keep     # leave fixtures on disk
 ```
 
-29 assertions across six groups. Self-contained: it generates its own fixtures, so there's nothing to install and nothing to keep in sync.
+86 assertions across six groups. Self-contained: it generates its own fixtures, so there's nothing to install and nothing to keep in sync.
 
 **Contrast math** is checked against six published WCAG reference values — `#767676` on white is the canonical 4.54:1 AA-body boundary, `#595959` is the 7.00:1 AAA boundary, `#949494` is the 3.03:1 large-text boundary. These are external ground truth, not self-consistency: the script would have to be right about arithmetic that was specified elsewhere. Tolerance is ±0.02.
 
@@ -73,7 +73,7 @@ Plus a **determinism** check — two runs must produce byte-identical output. A 
 
 **These fixtures are the regression suite.** Every time you add a tell detector, plant an instance in `slop/`, add its id to `SLOP_TELLS`, and plant a near-miss in `clean/` that must *not* fire. A detector added without a false-positive case is how an auditor becomes useless — it starts flagging everything and people stop reading it.
 
-**Current status: 29/29.** Both bugs this harness caught on first run were real: `icon_tile` required Tailwind classes in a fixed order when class order is arbitrary, and `base_unit` missed spacing defined as tokens, which silently under-scored exactly the well-tokenized systems it should have rewarded.
+**Current status: 86/86.** Both bugs this harness caught on first run were real: `icon_tile` required Tailwind classes in a fixed order when class order is arbitrary, and `base_unit` missed spacing defined as tokens, which silently under-scored exactly the well-tokenized systems it should have rewarded.
 
 ---
 
@@ -118,7 +118,7 @@ There is no automated instrument. What follows is the least-bad protocol.
 python evals/run_script_evals.py
 
 # Layer 1 — minutes, run after any description edit
-python -m scripts.run_eval --skill-path ./parti \
+python -m scripts.run_eval --skill-path ./parti/skills/parti \
   --eval-set ./parti/evals/trigger_cases.json --runs-per-query 3
 
 # Layer 3 — an hour, run after any process change to SKILL.md
@@ -128,4 +128,4 @@ python -m scripts.run_eval --skill-path ./parti \
 # 8 briefs × 2 conditions × 5 raters
 ```
 
-Layers 1–3 tell you the skill is **functioning**. Only layer 4 tells you it's **working**. Do not report the first as if it were the second — a suite of 29 green assertions says the contrast math is right, not that anyone wants to look at the result.
+Layers 1–3 tell you the skill is **functioning**. Only layer 4 tells you it's **working**. Do not report the first as if it were the second — a suite of 86 green assertions says the contrast math is right, not that anyone wants to look at the result.

@@ -11,7 +11,7 @@ After installing (see [README](../README.md#install)), confirm all three layers:
 | Check | Command | Expected |
 |---|---|---|
 | Files in place | `ls ~/.claude/skills/parti/SKILL.md` | the file exists |
-| Scripts run | `python evals/run_script_evals.py` | `TOTAL 50/50 passed` |
+| Scripts run | `python evals/run_script_evals.py` | `TOTAL 86/86 passed` |
 | Skill loaded | ask Claude Code to list its skills | `parti` appears with its description |
 
 The third is the one that matters — the first two can pass while Claude Code never loads the skill.
@@ -26,7 +26,7 @@ Work down in order; each step rules out the layer below it.
 
 Ask Claude Code to list available skills. If `parti` is absent, it's an installation problem, not a triggering problem.
 
-- **Wrong location.** It must be `<skills-dir>/parti/SKILL.md` — a directory named for the skill, with `SKILL.md` directly inside. A repo cloned to `~/.claude/skills/parti-main/` (GitHub's default zip name) will not load.
+- **Wrong location.** As a standalone skill it must be `<skills-dir>/parti/SKILL.md` — a directory named for the skill, with `SKILL.md` directly inside, so the link/clone target is this repo's `skills/parti/` subfolder, not its root. As a plugin, the whole repo (root, with `.claude-plugin/plugin.json`) goes under `<skills-dir>/` instead — either shape works, but don't mix them (e.g. root cloned to `~/.claude/skills/parti-main/`, GitHub's default zip name, will not load either way).
 - **Broken link.** If you linked instead of cloning, confirm the link resolves: `ls ~/.claude/skills/parti/SKILL.md`. On Windows a junction created against a since-renamed target silently resolves to nothing.
 - **Session started before install.** Skills are enumerated at session start. Restart the session.
 
@@ -38,7 +38,7 @@ Reproduce it against the eval set before changing anything:
 
 ```bash
 # from a project with .claude/ and the Claude Code CLI available
-python -m scripts.run_eval --skill-path ./parti \
+python -m scripts.run_eval --skill-path ./parti/skills/parti \
   --eval-set ./parti/evals/trigger_cases.json --runs-per-query 3 --verbose
 ```
 
@@ -67,7 +67,7 @@ The opposite failure, and the more expensive one — an over-broad description b
 ## Releasing a change
 
 ```bash
-python evals/run_script_evals.py          # must be 50/50
+python evals/run_script_evals.py          # must be 86/86
 git add -A
 git commit -m "type: description"
 git push origin main
@@ -77,8 +77,8 @@ git push origin main
 
 | Changed | Also required |
 |---|---|
-| A script | Layer 2 (50/50) + a false-positive guard for any new detector |
-| `SKILL.md` description | Layer 1 re-run, all 52 cases, `--runs-per-query 3`; frontmatter ≤ 1024 chars |
+| A script | Layer 2 (86/86) + a false-positive guard for any new detector |
+| `SKILL.md` description | Layer 1 re-run, all 56 cases, `--runs-per-query 3`; frontmatter ≤ 1024 chars |
 | `SKILL.md` process guidance | a transcript scored against `evals/rubric.md` — ≥ 16/18 with all 5 gates |
 | Script output format | re-capture the samples in `docs/scripts.md`; don't hand-edit them |
 
@@ -118,4 +118,4 @@ Restart the Claude Code session afterward; skills are read at session start.
 
 ## What has no runbook entry, and why
 
-No deployment procedure, health check, monitoring, alerting path, escalation, on-call rotation, backup, or restore. None of those have a referent in a repository of Markdown files and five stdlib scripts. If this ever grows a hosted component, that is when those sections earn their place — writing them now would be documenting a system that doesn't exist.
+No deployment procedure, health check, monitoring, alerting path, escalation, on-call rotation, backup, or restore. None of those have a referent in a repository of Markdown files and six stdlib scripts. If this ever grows a hosted component, that is when those sections earn their place — writing them now would be documenting a system that doesn't exist.

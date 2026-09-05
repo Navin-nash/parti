@@ -1,0 +1,16 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "parti",
+  "description": "Marketplace for the parti design skill — anti-slop design direction and build.",
+  "owner": {
+    "name": "Navin Raj Govindan"
+  },
+  "plugins": [
+    {
+      "name": "parti",
+      "description": "Anti-slop design, start to finish — evaluates and scores an existing design, derives three divergent directions from the actual subject rather than a style menu, and builds the verified, production-grade code for whichever wins.",
+      "source": "./",
+      "category": "design"
+    }
+  ]
+}

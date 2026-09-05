@@ -3,9 +3,9 @@
 **What an agent actually gets back when a user shares an inspiration URL, and which
 UI/UX design elements it can then replicate.**
 
-Scope of this doc: `scripts/capture.py` + the `reference` command as they stand on `main`
+Scope of this doc: `skills/parti/scripts/capture.py` + the `reference` command as they stand on `main`
 after issues [#2](https://github.com/Navin-nash/parti/issues/2) and the keyframe-body /
-focus-state follow-up. Companion to `references/motion-capture.md` (the how-to); this is the
+focus-state follow-up. Companion to `skills/parti/references/motion-capture.md` (the how-to); this is the
 honest "what it can and can't do".
 
 ---
@@ -30,7 +30,7 @@ borrowed element gets a dated record with a faithful-or-adapted verdict.
 |---|---|---|
 | **1 — static** (always, stdlib) | `urllib` fetches HTML + every linked stylesheet | every `@keyframes` **with its from/to values**, every `transition:` / `animation:` shorthand (property, duration, easing, iteration, stagger), `scroll-timeline` / `@starting-style` / `@view-transition` presence, animation-library fingerprint, `data-scroll` / `data-aos` / `data-speed` trigger hints, reduced-motion status |
 | **2 — Playwright runtime** (`--tier auto`/`runtime`) | headless Chromium; scrolls top→bottom in 14 steps | everything from Tier 1 **plus**: `document.getAnimations()` at load *and* re-read at each scroll step → reveals tagged `trigger: in-view / scroll` with measured duration + easing + keyframe stops; `ScrollTrigger.getAll()` → every GSAP trigger's `start`/`end`/`scrub`/`pin`/`vars`; the focus element's DOM, computed box, `transition`, and `:hover` / `:focus` computed-style deltas; a scroll→transform/opacity curve for the focus elements; the resolved focus selector when `--focus` was plain English |
-| **3 — agent-driven** (harness has an MCP browser, no Playwright) | agent pastes the `references/motion-capture.md` §4 snippets into its browser tool | the same three dumps, non-deterministically; stamped `tier 3 (agent-captured)` |
+| **3 — agent-driven** (harness has an MCP browser, no Playwright) | agent pastes the `skills/parti/references/motion-capture.md` §4 snippets into its browser tool | the same three dumps, non-deterministically; stamped `tier 3 (agent-captured)` |
 
 Tier 2 runs even when Tier 1 got a 403 (many sites block non-browser requests). A site that
 also bot-walls headless Chrome stays on Tier 1 and the report says so.
@@ -180,11 +180,11 @@ Script eval suite: **86/86**, green with Playwright present and import-masked.
 
 ```bash
 # fast, no dependencies — values only
-python scripts/capture.py --url https://siteX.com --focus ".hero-section" --tier static \
+python skills/parti/scripts/capture.py --url https://siteX.com --focus ".hero-section" --tier static \
   --json /tmp/cap.json --md captures/sitex-com-2026-09-04.md
 
 # full — adds triggers, scroll curve, ScrollTrigger config, focus states
-python scripts/capture.py --url https://siteX.com --focus ".hero-section" --tier runtime \
+python skills/parti/scripts/capture.py --url https://siteX.com --focus ".hero-section" --tier runtime \
   --json /tmp/cap.json --md captures/sitex-com-2026-09-04.md
 ```
 

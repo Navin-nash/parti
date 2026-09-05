@@ -70,7 +70,7 @@ export const COMMANDS: Command[] = [
     relatedExamples: ["finance-research-platform", "campaign-analytics"],
     run: {
       kind: "executed",
-      cmd: "python scripts/audit.py site/src --json a.json && python scripts/score.py a.json",
+      cmd: "python skills/parti/scripts/audit.py site/src --json a.json && python skills/parti/scripts/score.py a.json",
       out: `Scanned 95 files under site/src
 
 Color Discipline    12.0/20  ████████████········
@@ -95,7 +95,7 @@ NOT MEASURED — judge these yourself, with evidence, separately:
     example: "audit . deep",
     run: {
       kind: "executed",
-      cmd: "python scripts/audit.py site/src",
+      cmd: "python skills/parti/scripts/audit.py site/src",
       out: `COLOR    213 unique · 27 chromatic · oklch:0 hsl:0
          ⚠ 3 sampled pairs below 4.5:1 (worst #6366f1 on #edebe6 = 3.75:1)
 TYPE     3 families: Geist, Geist Mono, Plus Jakarta Sans
@@ -164,7 +164,7 @@ TELLS    2 detected
     relatedComponents: ["hero", "feature-grid", "testimonial"],
     run: {
       kind: "executed",
-      cmd: "python scripts/lint.py site/src",
+      cmd: "python skills/parti/scripts/lint.py site/src",
       out: `P1  Emoji standing in for a UI icon            arms/components/marketing/parti.tsx
 P1  Emoji standing in for a UI icon            arms/product-page/parti.tsx
 P2  \`rounded-2xl\` reached for indiscriminately  app/page.tsx  (+13 files)
@@ -229,7 +229,7 @@ P2  Default shadow utility reused 11x, no override  arms/components/marketing/ba
     relatedExamples: ["finance-research-platform"],
     run: {
       kind: "executed",
-      cmd: 'python scripts/color.py contrast "#6366f1" "#edebe6"  /  fix  /  ramp',
+      cmd: 'python skills/parti/scripts/color.py contrast "#6366f1" "#edebe6"  /  fix  /  ramp',
       out: `contrast  #6366f1 on #edebe6   3.75:1   AA body ✗  AA large ✓
 
 fix       #6366f1 → #5757E1 on #edebe6 = 4.57:1
@@ -254,7 +254,7 @@ ramp "#B23A2E" --steps 9
     example: "motion - the comparison viewer",
     run: {
       kind: "executed",
-      cmd: "python scripts/motion.py site/src --census",
+      cmd: "python skills/parti/scripts/motion.py site/src --census",
       out: `CENSUS
   distinct durations : 9  [0, 1, 100, 120, 140, 180, 200, 240, 900]
   distinct curves    : 2
@@ -275,7 +275,7 @@ ramp "#B23A2E" --steps 9
     example: "review src/ --motion",
     run: {
       kind: "executed",
-      cmd: "python scripts/motion.py site/src/arms",
+      cmd: "python skills/parti/scripts/motion.py site/src/arms",
       out: `FINDINGS
   agent-platform-landing/baseline.tsx  [physics-no-press-feedback]
      pressable elements styled for :hover with no :active/whileTap
@@ -322,7 +322,7 @@ ramp "#B23A2E" --steps 9
     relatedExamples: ["agent-platform-landing", "product-page"],
     run: {
       kind: "executed",
-      cmd: 'python scripts/capture.py --url https://hyperswitch.io --focus "the hero and the scroll reveals" --tier runtime',
+      cmd: 'python skills/parti/scripts/capture.py --url https://hyperswitch.io --focus "the hero and the scroll reveals" --tier runtime',
       out: `site           build              tier      findings   note
 hyperswitch.io Astro + hand CSS   runtime   37         3 scroll reveals @ 1s cubic-bezier(.4,0,.2,1)
 vercel.com     Next.js            runtime   129        ran past a 403; @starting-style flagged
@@ -508,7 +508,7 @@ motion   — durations, easings, what never animates
     example: "lint src --tokens tokens.json",
     run: {
       kind: "executed",
-      cmd: "python scripts/lint.py site/src --tokens tokens.json",
+      cmd: "python skills/parti/scripts/lint.py site/src --tokens tokens.json",
       out: `{'P2': 19, 'P1': 2, 'P0': 5}  ->  FAIL (P0 present)
 
 token-drift check (from the eval suite):
