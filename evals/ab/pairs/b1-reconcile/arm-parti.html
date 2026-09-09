@@ -1,0 +1,223 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>Reconcile · Operating ****4471</title>
+<style>
+  /* Archetype: data tool. Density high, motion for state change only, one family,
+     weight carries hierarchy, colour encodes and nothing else. Palette derived from
+     ledger paper and stamped-ink corrections, not from a category default. */
+  :root {
+    --paper: #F4F2EC;
+    --surface: #FBFAF6;
+    --rule: #D9D4C6;
+    --rule-strong: #B9B2A0;
+    --ink: #1F1D18;
+    --ink-muted: #5C574B;
+    --stamp: #7A2E22;          /* correction red, the one accent */
+    --stamp-tint: #7A2E2214;
+    --focus: #1B4D8F;
+    --row: 34px;
+    --row-loose: 44px;
+    --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s6: 24px;
+    --dur: 120ms;
+    --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    font: 14px/1.45 ui-sans-serif, system-ui, sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+  }
+  .app { display: grid; grid-template-columns: minmax(0, 1fr) 380px; height: 100dvh; }
+
+  /* --- work list ---------------------------------------------------------- */
+  .work { display: flex; flex-direction: column; min-width: 0; border-right: 1px solid var(--rule); }
+  .bar {
+    display: flex; align-items: baseline; gap: var(--s4);
+    padding: var(--s3) var(--s4);
+    border-bottom: 1px solid var(--rule);
+    background: var(--surface);
+  }
+  .bar h1 { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+  .bar .count { color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+  .bar .count b { color: var(--ink); font-weight: 600; }
+  .bar .spacer { margin-left: auto; }
+  .bar kbd {
+    font: 500 11px/1 ui-monospace, Menlo, monospace;
+    border: 1px solid var(--rule-strong); border-radius: 3px;
+    padding: 3px 5px; color: var(--ink-muted);
+  }
+
+  .scroll { overflow: auto; flex: 1; }
+  table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+  thead th {
+    position: sticky; top: 0; z-index: 1;
+    background: var(--surface);
+    box-shadow: inset 0 -1px 0 var(--rule);
+    font-weight: 500; font-size: 12px; color: var(--ink-muted);
+    text-align: left; height: 30px; padding: 0 var(--s3);
+    white-space: nowrap;
+  }
+  th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  tbody td {
+    height: var(--row); padding: 0 var(--s3);
+    border-bottom: 1px solid var(--rule);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  [data-density="loose"] tbody td { height: var(--row-loose); }
+  tbody tr[aria-selected="true"] { background: var(--stamp-tint); }
+  tbody tr[aria-selected="true"] td:first-child { box-shadow: inset 2px 0 0 var(--stamp); }
+  @media (hover: hover) { tbody tr:hover { background: #00000008; } }
+  tbody tr:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+
+  .ref { font-family: ui-monospace, Menlo, monospace; font-size: 12px; color: var(--ink-muted); }
+  .flag { color: var(--stamp); font-weight: 600; }
+  .flag::before { content: "⚑ "; }
+
+  /* --- detail -------------------------------------------------------------- */
+  .detail { display: flex; flex-direction: column; background: var(--surface); min-width: 0; }
+  .detail header { padding: var(--s4); border-bottom: 1px solid var(--rule); }
+  .detail .amount {
+    font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+  .detail .who { color: var(--ink-muted); margin-top: var(--s1); }
+  dl { padding: var(--s4); display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: var(--s2) var(--s3); }
+  dt { color: var(--ink-muted); }
+  dd { margin: 0; }
+
+  .match {
+    margin: 0 var(--s4); padding: var(--s3);
+    border: 1px solid var(--rule-strong); border-radius: 4px;
+  }
+  .match .head { font-size: 12px; color: var(--ink-muted); margin-bottom: var(--s2); }
+  .match .line { display: flex; justify-content: space-between; font-variant-numeric: tabular-nums; }
+  .match .delta { color: var(--ink-muted); font-size: 12px; margin-top: var(--s1); }
+
+  .acts { margin-top: auto; padding: var(--s4); border-top: 1px solid var(--rule); display: grid; gap: var(--s2); }
+  .acts .row { display: flex; gap: var(--s2); }
+  button {
+    font: inherit; cursor: pointer; border-radius: 4px;
+    border: 1px solid var(--rule-strong); background: transparent; color: var(--ink);
+    padding: var(--s2) var(--s3); min-height: 32px;
+    transition: background var(--dur) var(--ease);
+  }
+  button.primary { background: var(--stamp); border-color: var(--stamp); color: #FBFAF6; font-weight: 600; flex: 1; }
+  @media (hover: hover) {
+    button:hover { background: #00000008; }
+    button.primary:hover { background: #692519; }
+  }
+  button:active { background: #00000014; }
+  button.primary:active { background: #5C2016; }
+  button:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+  button .k { color: inherit; opacity: .6; font-size: 11px; margin-left: var(--s1); }
+
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+</style>
+<body>
+  <div class="app">
+    <section class="work" aria-label="Unmatched transactions">
+      <div class="bar">
+        <h1>Reconcile</h1>
+        <span class="count"><b>4,182</b> unmatched · 318 cleared today</span>
+        <span class="spacer"></span>
+        <span class="count">Operating ****4471</span>
+        <kbd>J</kbd><kbd>K</kbd> <span class="count">move</span>
+        <kbd>M</kbd> <span class="count">match</span>
+      </div>
+
+      <div class="scroll">
+        <table>
+          <colgroup>
+            <col style="width: 84px" /><col /><col style="width: 108px" />
+            <col style="width: 128px" /><col style="width: 96px" />
+          </colgroup>
+          <thead>
+            <tr>
+              <th scope="col">Date</th>
+              <th scope="col">Description</th>
+              <th scope="col">Reference</th>
+              <th scope="col" class="num">Amount</th>
+              <th scope="col">Age</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr aria-selected="true" tabindex="0">
+              <td>12 Sep</td>
+              <td title="Meridian Freight Holdings">Meridian Freight Holdings</td>
+              <td class="ref">TRX-88213</td>
+              <td class="num">14,280.00</td>
+              <td>2d</td>
+            </tr>
+            <tr tabindex="-1">
+              <td>12 Sep</td>
+              <td title="Northwind Supplies Ltd">Northwind Supplies Ltd</td>
+              <td class="ref">TRX-88214</td>
+              <td class="num">942.10</td>
+              <td>2d</td>
+            </tr>
+            <tr tabindex="-1">
+              <td>11 Sep</td>
+              <td title="Copperline Studios">Copperline Studios</td>
+              <td class="ref">TRX-88198</td>
+              <td class="num">1,105.55</td>
+              <td class="flag">3d</td>
+            </tr>
+            <tr tabindex="-1">
+              <td>11 Sep</td>
+              <td title="Atlas Provisioning">Atlas Provisioning</td>
+              <td class="ref">TRX-88190</td>
+              <td class="num">78.00</td>
+              <td>3d</td>
+            </tr>
+            <tr tabindex="-1">
+              <td>10 Sep</td>
+              <td title="Beckett &amp; Rowe Clay Supply">Beckett &amp; Rowe Clay Supply</td>
+              <td class="ref">TRX-88155</td>
+              <td class="num">6,400.00</td>
+              <td>4d</td>
+            </tr>
+            <tr tabindex="-1">
+              <td>10 Sep</td>
+              <td title="Harbourline Logistics">Harbourline Logistics</td>
+              <td class="ref">TRX-88149</td>
+              <td class="num">312.75</td>
+              <td>4d</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <aside class="detail" aria-label="Selected transaction">
+      <header>
+        <div class="amount">14,280.00 <span style="font-size:14px;color:var(--ink-muted)">USD</span></div>
+        <div class="who">Meridian Freight Holdings</div>
+      </header>
+
+      <dl>
+        <dt>Date</dt><dd>12 Sep 2026</dd>
+        <dt>Reference</dt><dd class="ref">TRX-88213</dd>
+        <dt>Account</dt><dd>Operating ****4471</dd>
+        <dt>Entered by</dt><dd>Bank feed</dd>
+      </dl>
+
+      <div class="match">
+        <div class="head">Closest open invoice</div>
+        <div class="line"><span>INV-2032 · Meridian Freight</span> <span>14,280.00</span></div>
+        <div class="delta">Exact amount. Reference does not appear on the invoice.</div>
+      </div>
+
+      <div class="acts">
+        <div class="row">
+          <button class="primary">Match to INV-2032 <span class="k">M</span></button>
+        </div>
+        <div class="row">
+          <button style="flex:1">Split across invoices <span class="k">S</span></button>
+          <button style="flex:1">Flag for review <span class="k">F</span></button>
+        </div>
+      </div>
+    </aside>
+  </div>
+</body>
+</html>

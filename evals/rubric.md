@@ -39,6 +39,24 @@ Gates are marked **[G]**. A gate failure means the skill didn't run, regardless 
 
 ---
 
+18 binary items remain the original suite. **On `explore` / `redesign` / `build` briefs, also score the studio floor (5 items). Pass: original ≥16/18 with all five gates, and 5/5 studio floor.** Narrow commands (`typeset`, `motion`, `lint`) skip the studio floor.
+
+## Studio floor (explore / redesign / build)
+
+19. **[G]** Register is named in writing (`brand` or `product`) before any style name. (`references/register.md`)
+20. A physical **scene sentence** is stated (who, where, light, mood) and used to force light vs dark — not category habit.
+21. **Color strategy** (restrained / committed / full / drenched) is named before any hex.
+22. **Ship-floor** is claimed: the output says the mechanical boxes were checked (or names which failed). "It's just a mockup" does not skip this.
+23. **Grayscale** (and squint) were run and said so; **second-order lane** is named (the category+anti-reference aesthetic that was refused).
+
+## Baseline failures this upgrade addresses (2026-09-07 RED)
+
+Unskilled runs, verbatim patterns:
+
+1. **Tax SaaS landing** — warm paper `#F6F1E8`, Fraunces + IBM Plex, 01–03 equal columns, "warm ledger not a dashboard." First-order cream; second-order editorial-ledger.
+2. **Settings (daily tool)** — Inter as the unnamed default; no register/scene/strategy named even when density was otherwise sane.
+3. **"Make it look premium"** with no subject — "Editorial dark luxury," Playfair + Inter, bento, glass nav, Ken Burns, grain, stagger fade-up. Vibe menu. Style selected, not derived.
+
 ## Scoring the five test briefs
 
 Run each and record the score:

@@ -210,5 +210,9 @@
   { "query": "build this hero the way linear.app/method does it", "should_trigger": true },
   { "query": "I want the scroll animations from https://stripe.com/payments on our page", "should_trigger": true },
   { "query": "capture the nav collapse from vercel.com and use it in our dashboard", "should_trigger": true },
-  { "query": "just download the raw HTML of example.com for me", "should_trigger": false }
+  { "query": "just download the raw HTML of example.com for me", "should_trigger": false },
+  { "query": "the dashboard looks like a landing page", "should_trigger": true },
+  { "query": "make it look premium", "should_trigger": true },
+  { "query": "the hero overflows on a laptop", "should_trigger": true },
+  { "query": "motion plays on every scroll and it feels cheap", "should_trigger": true }
 ]

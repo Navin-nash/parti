@@ -13,7 +13,8 @@ python scripts/motion.py <path> --json /tmp/motion.json
 
 Deterministic. Catches:
 - Build-time tells (`references/bans.md`) — untouched defaults, ghost cards, missing alt text, focus killed with no replacement, placeholder copy left in.
-- **Token drift** — any hex color in the shipped code that isn't in `tokens.json`. This is the check unique to the build phase: a build can pass a visual review and still have three unspec'd colors nobody chose. Deterministic detection catches it every time; a human scan catches it when they happen to notice.
+- **Token drift** — any hex color in the shipped code that isn't in `tokens.json`.
+- **Ship-floor source tells** — `h-screen`, `transition: all`, em dashes, Inter/Geist-only, eyebrow clustering, three equal feature cards. Regression only; not a beauty score.
 - **Motion rule violations** (`references/motion-rules.md`) — `ease-in` on UI, `transition: all`, `scale(0)` entrances, durations over budget, animated layout properties, keyframes on rapidly-triggered components, missing `prefers-reduced-motion`, ungated hover, easing and duration sprawl. Each at `file:line` with its rule id, so a finding can be fixed without re-deriving it. What it *can't* see — whether an animation has a purpose, and how often its surface is actually used — is the half that decides most motion findings, and it stays with you.
 
 Exit code is 1 if any P0 finding exists — wire it into CI if the project has one; treat it as a regression guard the same way `score.py` is one, not as the whole quality bar. A lint pass means "nothing on the known list is wrong." It doesn't mean the build is good — that's checks 2 and 3.
@@ -42,7 +43,24 @@ Render what actually shipped — not a mockup, the built component in the built 
 
 A build that fails checks here that a rough mockup would also have failed is a regression relative to the plan it was built from, not progress toward it — flag it as a deviation (see the report format below), don't quietly ship it and hope no one looks closely.
 
+Then run `references/ship-floor.md` (countable) and `references/composition.md` (squint, grayscale, one signature). Product register: `references/interaction.md` states and press/origin rules. Do not treat a lint PASS as a passed ship-floor. Do not cite `score.py` as proof the build looks better.
+
 ---
+
+## What to do with what comes back
+
+The checks above produce findings. **`references/remediation.md` defines what happens
+next, and it is not optional** — a findings list that gets patched line by line at the
+place it was reported leaves the cause intact and the same class of defect returns.
+
+In short: triage each finding as a code defect, a spec defect, a documented exception, or
+an instrument defect; fix at the token or component level rather than the instance
+wherever the same finding could appear elsewhere; group by rule id rather than walking the
+list in file order; re-run **everything**, not the file you touched; and close the loop
+only when every finding is fixed, excepted in writing, recorded as a false positive, or
+handed over by name.
+
+Read that file before editing anything in response to a finding.
 
 ## Build report format
 
@@ -65,6 +83,8 @@ Emit this after all three checks pass (or after they fail, so the failure is vis
 **States covered:** [empty / loading / partial / ideal / error / overflow / offline / no-permission — mark each present/absent]
 
 **A11y floor:** focus visible [Y/N] · keyboard path complete [Y/N] · 44px targets [Y/N] · reduced-motion honored [Y/N]
+
+**Register:** brand | product · **Ship-floor:** PASS/FAIL (name any failed box) · **Composition:** squint/grayscale/signature claimed [Y/N]
 
 **Deviations from spec:** [none, or each one named with its reason — never silent]
 

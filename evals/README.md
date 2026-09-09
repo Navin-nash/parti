@@ -4,12 +4,27 @@
 
 Any single number claiming to score "is this design good" is a rubric wearing a lab coat. But the skill decomposes into layers with genuinely different epistemic status, and most of them have real ground truth. Test them separately and never average them together — averaging is how a measured 4.54:1 contrast ratio and a subjective 7/10 for "hierarchy" become one meaningless 8.2.
 
-| Layer | Ground truth | Instrument | Objective? |
-|---|---|---|---|
-| 1. Trigger accuracy | 56 labeled prompts | `run_eval.py` (skill-creator) | Yes, binary |
-| 2. Script correctness | WCAG arithmetic + seeded fixtures | `run_script_evals.py` (86 checks) | Yes, deterministic |
-| 3. Process compliance | 18 binary items, 5 gates | `rubric.md` | Yes, per-item binary |
-| 4. Design quality | **none** | blind A/B against a baseline | **No** — preference only |
+| Layer | Ground truth | Instrument | Objective? | Who acts on it |
+|---|---|---|---|---|
+| 1. Trigger accuracy | 56 labeled prompts | `run_eval.py` (skill-creator) | Yes, binary | maintainer — fix the description |
+| 2. Script correctness | WCAG arithmetic + seeded fixtures | `run_script_evals.py` (102 checks) | Yes, deterministic | maintainer — fix the detector |
+| 2b. Skill material | the no-markup rule, required parts, real rule ids | `check_surfaces.py` | Yes, deterministic | maintainer — fix the reference |
+| 3. Process compliance | 18 binary items, 5 gates | `rubric.md` | Yes, per-item binary | maintainer — fix the instructions |
+| 4. Design quality | **none** | blind A/B, `ab/run_ab.py` | **No** — preference only | maintainer — keep, cut, or rethink |
+
+**None of those four change a user's UI.** They test the skill. The instruments that
+change a UI are `audit.py`, `lint.py`, `motion.py` and `color.py`, run *inside* a design
+session against the user's own code — and what the agent does with their output is
+defined in [`skills/parti/references/remediation.md`](../skills/parti/references/remediation.md),
+not here. The two are constantly confused, so:
+
+| | Skill evals (this directory) | Session checks (`skills/parti/scripts/`) |
+|---|---|---|
+| Subject | the skill | the user's interface |
+| Run by | whoever maintains parti | the agent, during `build`, `polish`, `evaluate`, `live` |
+| Frequency | on change to the skill | every build |
+| Output goes to | a maintainer decision | `remediation.md` → a change to the UI or the spec |
+| A failure means | the skill is broken | the interface has a defect |
 
 ---
 
@@ -59,7 +74,7 @@ python evals/run_script_evals.py --verbose  # per-assertion output
 python evals/run_script_evals.py --keep     # leave fixtures on disk
 ```
 
-86 assertions across six groups. Self-contained: it generates its own fixtures, so there's nothing to install and nothing to keep in sync.
+102 assertions across 21 test groups. Self-contained: it generates its own fixtures, so there's nothing to install and nothing to keep in sync.
 
 **Contrast math** is checked against six published WCAG reference values — `#767676` on white is the canonical 4.54:1 AA-body boundary, `#595959` is the 7.00:1 AAA boundary, `#949494` is the 3.03:1 large-text boundary. These are external ground truth, not self-consistency: the script would have to be right about arithmetic that was specified elsewhere. Tolerance is ±0.02.
 
@@ -73,15 +88,36 @@ Plus a **determinism** check — two runs must produce byte-identical output. A 
 
 **These fixtures are the regression suite.** Every time you add a tell detector, plant an instance in `slop/`, add its id to `SLOP_TELLS`, and plant a near-miss in `clean/` that must *not* fire. A detector added without a false-positive case is how an auditor becomes useless — it starts flagging everything and people stop reading it.
 
-**Current status: 86/86.** Both bugs this harness caught on first run were real: `icon_tile` required Tailwind classes in a fixed order when class order is arbitrary, and `base_unit` missed spacing defined as tokens, which silently under-scored exactly the well-tokenized systems it should have rewarded.
+**Current status: 102/102.** Includes ship-floor lint regression tells (`h-screen`, `transition: all`, em dashes, Inter-only, eyebrow clustering, three equal cards) — regression guards only, not a beauty score. See the circularity trap above.
 
 ---
+
+### Surface directions
+
+```bash
+python evals/check_surfaces.py              # exits 1 on any violation
+```
+
+`surfaces/` carries build direction and deliberately no markup. Three checks, each
+guarding a way this material has actually gone wrong:
+
+- **No code fences.** A reference implementation is a default with better manners. The
+  rule is enforced mechanically because "just show them the code" is precisely the
+  reflex being resisted, and prose asking nicely does not hold against it.
+- **Every required part present** — a direction missing its states or its failure list
+  is unfinished, and an unfinished direction reads as permission.
+- **Every cited rule id resolves** against `motion-rules.md`. Rule ids are the link
+  between direction and the scripts that check a build; an invented id breaks that link
+  silently. This check caught five invented ids on its first run.
+
+All three have negative controls: seeding a fence, a bogus rule id, or a renamed section
+each fails the run.
 
 ## Layer 3 — Process compliance
 
 Did the skill do what it says it does? Every item is binary and checkable by reading the transcript, which makes it objective even though the *subject* is a judgment task. See `rubric.md` for the 18-item checklist.
 
-**Threshold: ≥ 16/18, with all five gate items passing.** The gates are the ones where failure means the skill didn't actually run: DESIGN.md read or created, three directions genuinely divergent, every direction states its cost, contrast verified by tool rather than asserted, tokens emitted.
+**Threshold: ≥ 16/18 on the original items, with all five gates passing, plus 5/5 studio floor on explore/redesign/build briefs.**
 
 Score this on 5 representative briefs — one greenfield, one redesign of an existing codebase, one narrow command (`typeset` or `motion`), one screenshot-only input, one where the request conflicts with DESIGN.md.
 
@@ -105,7 +141,7 @@ There is no automated instrument. What follows is the least-bad protocol.
 
 **Why 5+ raters:** with 3 raters a single strong opinion swings the result. Design preference has high inter-rater variance and small samples produce numbers that look definitive and aren't.
 
-**What to watch for in the free text.** If people say "the second one is more interesting" or "more unusual", the skill has learned novelty rather than fit — the exact failure mode of an anti-slop objective. You want reasons like "I can tell what to do first", "the numbers line up", "it looks like it's for accountants". Novelty praise on a utility product is a warning, not a win.
+**What to watch for in the free text.** If people say "the second one is more interesting" or "more unusual", the skill has learned novelty rather than fit — the exact failure mode of an anti-slop objective, and the reason `convention.md` and `NG-NOVELTY-COST` exist. A rater who says "I wasn't sure what was clickable" has found a mechanics departure that should never have shipped; a rater who says "it looks like it's for accountants" has found the thing you were aiming at. You want reasons like "I can tell what to do first", "the numbers line up", "it looks like it's for accountants". Novelty praise on a utility product is a warning, not a win.
 
 **Longitudinal signal, if you can afford it.** Ship one direction and instrument the critical moment the brief named — completion rate on the key task, time-to-first-action, or support tickets about finding things. This is the only true outcome measure in the whole document, and it takes weeks. Everything above is a proxy for it.
 
@@ -128,4 +164,4 @@ python -m scripts.run_eval --skill-path ./parti/skills/parti \
 # 8 briefs × 2 conditions × 5 raters
 ```
 
-Layers 1–3 tell you the skill is **functioning**. Only layer 4 tells you it's **working**. Do not report the first as if it were the second — a suite of 86 green assertions says the contrast math is right, not that anyone wants to look at the result.
+Layers 1–3 tell you the skill is **functioning**. Only layer 4 tells you it's **working**. Do not report the first as if it were the second — a suite of 99 green assertions says the contrast math and lint regressions are right, not that anyone wants to look at the result.

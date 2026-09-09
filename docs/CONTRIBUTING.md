@@ -27,16 +27,21 @@ mklink /J "%USERPROFILE%\.claude\skills\parti" "C:\path\to\parti"        # Windo
 
 ## Commands
 
-<!-- AUTO-GENERATED: from argparse in skills/parti/scripts/*.py and evals/run_script_evals.py. Regenerate rather than hand-edit. -->
+<!-- AUTO-GENERATED: from argparse in skills/parti/scripts/*.py and evals/*.py, plus the Node checks under skills/parti/live/. Regenerate rather than hand-edit. -->
 
 | Command | Purpose |
 |---|---|
-| `python evals/run_script_evals.py [-h] [--verbose] [--keep]` | Run the 50-check script suite. Exits `1` on any failure. |
+| `python evals/run_script_evals.py [-h] [--verbose] [--keep]` | Run the 102-assertion script suite. Exits `1` on any failure. |
+| `python evals/check_surfaces.py` | Surface directions: no markup, all parts present, rule ids resolve. Exits `1` on any violation. |
+| `python evals/ab/run_ab.py [-h] [--seed SEED]` | Assemble the blind A/B and run the measured half. |
+| `node skills/parti/live/selftest.mjs` | Live protocol: events, annotations, abort semantics. |
+| `node skills/parti/live/wraptest.mjs` | Source surgery: nesting, CRLF, JSX, insert, undo. |
 | `python skills/parti/scripts/audit.py [-h] [--json OUT] [--quiet] path` | Extract the de-facto design system from a codebase. |
 | `python skills/parti/scripts/color.py [-h] {contrast,check,ramp,convert,fix} ...` | Palette math: contrast, ramps, minimal fixes. |
 | `python skills/parti/scripts/lint.py [-h] [--tokens TOKENS] [--json OUT] [--quiet] path` | Build-time tells + token drift. Exits `1` on any P0. |
 | `python skills/parti/scripts/motion.py [-h] [--json OUT] [--census] [--quiet] path` | Motion rule violations at `file:line`. Exits `1` on any P0. |
 | `python skills/parti/scripts/score.py [-h] [--json OUT] audit_json` | Measured score across six dimensions. |
+| `python skills/parti/scripts/capture.py [-h] --url URL [--focus SEL] [--tier TIER] [--json OUT]` | Capture one reference site's motion and one element's anatomy. |
 
 <!-- END AUTO-GENERATED -->
 
@@ -50,14 +55,18 @@ Full flag semantics, real output, and JSON schemas: [`scripts.md`](scripts.md).
 
 ## Testing
 
-The skill decomposes into four layers with genuinely different epistemic status. They are tested separately and **never averaged** — see [`../evals/README.md`](../evals/README.md) for why that matters more here than it sounds.
+The skill decomposes into layers with genuinely different epistemic status. They are tested separately and **never averaged** — see [`../evals/README.md`](../evals/README.md) for why that matters more here than it sounds.
+
+These test **the skill**. They are not the checks the agent runs against a user's interface during a session; that distinction, and where each output goes, is set out at the top of `evals/README.md`.
 
 | Layer | How to run it | Gate |
 |---|---|---|
 | 1. Trigger accuracy | `run_eval.py` from skill-creator, against `evals/trigger_cases.json` | recall ≥ 0.90, precision ≥ 0.95 |
-| 2. Script correctness | `python evals/run_script_evals.py` | 50/50 |
+| 2. Script correctness | `python evals/run_script_evals.py` | 102/102 |
+| 2b. Skill material | `python evals/check_surfaces.py` | no markup, all parts, rule ids resolve |
+| 2c. Live runtime | `node skills/parti/live/selftest.mjs` and `wraptest.mjs` | both pass |
 | 3. Process compliance | read a transcript against `evals/rubric.md` | ≥ 16/18 **with all 5 gates** |
-| 4. Design quality | blind A/B against a baseline | no threshold — preference only |
+| 4. Design quality | blind A/B, `python evals/ab/run_ab.py` | no threshold — preference only, 5+ human raters |
 
 ### Changing a script
 

@@ -55,11 +55,15 @@ Anyone can copy hex codes. The `Why` column is what stops a future contributor �
 [One or two sentences: what this design believes about its user, and the one job
 the interface does. Every rule below serves this.]
 
-## Audience & posture
+## Brief
+- **Register:** brand | product  — see `references/register.md`. One only.
+- **Scene:** [who, where, ambient light, mood — the sentence that forced light vs dark]
+- **Strategy:** restrained | committed | full | drenched
 - **Users:** [who, and what software they already use daily]
 - **Frequency:** [daily tool / occasional / one-shot] → [what that licenses]
 - **Priority order:** [e.g. intuitive > intentional > modern > interactive]
 - **Anti-references:** [products this must NOT resemble, and why]
+- **Second-order lane rejected:** [the category+anti-cliché aesthetic you refused]
 
 ## Color
 | Token | Value (OKLCH / hex) | Role | Contrast |
@@ -143,4 +147,4 @@ After running `scripts/audit.py` and `scripts/score.py`:
 
 ## Writing DESIGN.md for a greenfield project
 
-Write it from the token handoff of the chosen direction, plus the brief's audience and priority order. Fill Open questions with what the brief left undecided rather than guessing and recording the guess as fact.
+Write it from the token handoff of the chosen direction, plus the brief's audience, **register, scene sentence, and color strategy**. Fill Open questions with what the brief left undecided rather than guessing and recording the guess as fact. If register is missing, the file is incomplete — go back to `references/register.md` before tokens.

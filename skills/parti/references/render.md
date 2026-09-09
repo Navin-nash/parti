@@ -2,7 +2,7 @@
 
 A perfect token spec still produces a generic-looking mockup if the *construction* defaults to the same choices every model reaches for. Concept-level anti-slop work (a real thesis, a derived palette, a signature element) is invisible until it survives contact with actual markup — and that's usually where it dies: system-font fallbacks, copy-pasted shadow values, placeholder gray boxes, a card grid reached for out of habit. This step is where "considered direction" and "generated interface" either stay separate or collapse back into the same thing.
 
-Read this when doing Step 4 of `explore`, rendering a `variants` set, or producing any visual for `critique`.
+Read this when doing Step 4 of `explore`, rendering a `variants` / `live` set, or producing any visual for `critique`. Also load `references/composition.md`, `references/art-direction.md`, `references/type-craft.md`, and `references/ship-floor.md`. A render that fails the ship-floor is not shown. "It's just a mockup" is not an exemption.
 
 ---
 
@@ -48,7 +48,7 @@ Same content, same stated viewport (`1440×900 desktop` or `390×844 mobile` —
 
 ## 7. Re-run the floor on the render, not just the plan
 
-A direction can pass the concept-level anti-slop check in `references/critique.md` and still fail here — real thesis, real signature, and then a default shadow and a default nav underneath it. Before showing the three, walk the tell list in `references/critique.md` a second time against what you actually built, not what you planned to build.
+A direction can pass the concept-level anti-slop check in `references/critique.md` and still fail here — real thesis, real signature, and then a default shadow and a default nav underneath it. Before showing the three, walk the tell list in `references/critique.md` a second time against what you actually built, not what you planned to build. Then walk `references/ship-floor.md` and the grayscale/squint checks in `references/composition.md`. Claim each check in the writeup.
 
 ---
 

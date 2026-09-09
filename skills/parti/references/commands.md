@@ -26,6 +26,7 @@ Whatever the level, say what was **not** covered.
 | `deslop` | codebase or design | tell list + specific replacements | S |
 | `critique` | anything visual | evidence-based review, no changes | S |
 | `typeset` | existing type system | type scale + pairing spec | S |
+| `compose` | a screen | spatial/hierarchy correction | S |
 | `palette` | existing colors or a brief | color system, contrast-verified | S |
 | `motion` | existing motion or a brief | motion spec + library decision | M |
 | `review` | codebase or a diff | rule-id findings at `file:line` + summary table | S |
@@ -42,7 +43,8 @@ Whatever the level, say what was **not** covered.
 | Command | Input | Output | Cost |
 |---|---|---|---|
 | `build` | spec/brief | working code, all named states, verified | L |
-| `polish` | existing screen | craft pass, no new features or scope | M |
+| `polish` | existing screen | ship-floor + composition, no new features | M |
+| `live` | one component or screen | N HTML variants on one axis, compared in-browser | M |
 | `harden` | existing screen | every missing state + a11y completed | M |
 | `lint` | any built code | scripted anti-slop + drift report | XS |
 | `responsive` | one screen | breakpoint behavior, 320px up | S |
@@ -101,7 +103,7 @@ Extract what the design system actually is. Run `scripts/audit.py`, then write o
 
 ### explore
 
-The core loop. Full process in SKILL.md: brief → constraints → three divergent directions → render → critique → converge → tokens. If the brief includes an inspiration URL, run `reference` on it first (step 2); its findings are constraints and its Adapted column feeds steps 3–4. The one command that produces something new rather than correcting something existing. Render fidelity — the step where a good concept most often still comes out generic — has its own craft rules in `references/render.md`. If the user wants it shipped, continue straight into `build` afterward; the token spec `explore` emits is `build`'s required input.
+The core loop. Full process in SKILL.md: register + scene + strategy → constraints → three divergent directions → render (ship-floor) → critique (including second-order lane) → converge → tokens. If the brief includes an inspiration URL, run `reference` on it first (step 2); its findings are constraints and its Adapted column feeds steps 3–4. The one command that produces something new rather than correcting something existing. Render fidelity — the step where a good concept most often still comes out generic — has its own craft rules in `references/render.md` plus composition, art-direction, type-craft, and ship-floor. If the user wants it shipped, continue straight into `build` afterward; the token spec `explore` emits is `build`'s required input.
 
 ### redesign
 
@@ -135,11 +137,11 @@ Review without changing anything. Evidence, not adjectives. Sort findings into u
 
 ### typeset
 
-Typography only. Report current families, sizes, and derived step ratios from the audit. Then: pick a ratio (1.2 dense UI, 1.25–1.333 general, 1.414–1.618 editorial), rebuild the scale on it, assign families to display/body/utility roles, set measure (45–75ch), tracking (negative on large display, positive on small caps), and numeral behavior (tabular anywhere values align). Name the specific faces and their source; a pairing recommendation without named faces isn't actionable.
+Typography only. Read `references/type-craft.md`. Report current families, sizes, and derived step ratios from the audit. Then: voice words → reject the reflex list → named faces with tracking-per-size. Pick a ratio (1.2 dense/product UI, 1.25–1.333 general, 1.414–1.618 editorial), rebuild the scale on it, assign families to display/body/utility roles (product often uses one family), set measure (45–75ch), tracking (negative on large display, floor −0.04em, positive on small caps), and numeral behavior (tabular anywhere values align). Name the specific faces and their source; a pairing recommendation without named faces isn't actionable.
 
 ### palette
 
-Color only. Verify everything with `scripts/color.py`:
+Color only. Pick a **strategy** first (`references/register.md`: restrained / committed / full / drenched), then colors. Verify everything with `scripts/color.py`:
 
 ```bash
 python scripts/color.py check palette.json          # every pair, AA verdicts
@@ -218,7 +220,11 @@ Adopted row's build path. Full protocol: `references/motion-capture.md`.
 
 ### density
 
-Density is the most under-decided axis in generated design; everything defaults to a comfortable medium. Establish what the content demands (sparse / measured / dense), then correct: base unit, spacing scale, section rhythm, line height, row height, container width, and the ratio of content to whitespace. A daily-use tool and a marketing page cannot share a rhythm.
+Density is the most under-decided axis in generated design; everything defaults to a comfortable medium. Establish what the content demands (sparse / measured / dense), then correct: base unit, spacing scale, section rhythm, line height, row height, container width, and the ratio of content to whitespace. A daily-use tool and a marketing page cannot share a rhythm. Spatial grouping and optical alignment are `compose`, not this command.
+
+### compose
+
+Spatial and hierarchy only. Load `references/composition.md`. Squint, grayscale, one exceptional element, proximity before cards, optical alignment, scale ratios. No new features, no palette change, no copy rewrite. Output: what moved, what quieted, what the reading order is now.
 
 ### states
 
@@ -246,7 +252,21 @@ The core build loop. Full process in SKILL.md's Build mode: read the spec → pi
 
 ### polish
 
-Craft only, scope frozen. Tighten spacing rhythm, optical alignment, hover/focus/active states, transition timing against the spec's motion durations — no new components, no new states, no new copy. If the polish pass surfaces a missing state, that's a `harden` finding, not a `polish` deliverable; name it and stop.
+Craft only, scope frozen. Run `references/ship-floor.md` and `references/composition.md`: tighten spacing rhythm, optical alignment, hover/focus/active states, transition timing against the spec's motion durations — no new components, no new states, no new copy, and **no extra decoration**. If the polish pass surfaces a missing state, that's a `harden` finding, not a `polish` deliverable; name it and stop.
+
+### live
+
+Interactive session against the running page: the user picks an element in their own browser, names an action, and gets N variants written into source and hot-swapped. Solves the selection problem — no more guessing which "this bit" they meant.
+
+```bash
+node live/boot.mjs --page <entry.html>     # helper + overlay injection
+node live/poll.mjs --port P --token T      # park for the next event
+node live/boot.mjs --cleanup               # remove the injected tag
+```
+
+Variants are linted against the token spec **before** they are offered, and the overlay shows the drift count on the offending variant. Same one-axis discipline as `variants`. Full protocol, event table, and recovery: `references/live.md`.
+
+If no dev server or browser is available, fall back to `variants`: render side by side as HTML files and say the look-pass was file-based.
 
 ### harden
 
@@ -274,7 +294,7 @@ Animation cost (are transforms/opacity used instead of layout-triggering propert
 
 ### variants
 
-N alternatives of one component, differing on **one named axis** (weight, density, warmth, formality, motion intensity). Variants that differ on everything aren't variants — they're unrelated attempts and can't be compared. Render or build them — whichever fidelity the conversation is currently at — side by side with identical content, at the fidelity floor in `references/render.md`, and state which you'd pick and under what condition you'd switch.
+N alternatives of one component, differing on **one named axis** (weight, density, warmth, formality, motion intensity). Variants that differ on everything aren't variants — they're unrelated attempts and can't be compared. Render or build them — whichever fidelity the conversation is currently at — side by side with identical content, at the fidelity floor in `references/render.md` and the ship-floor, and state which you'd pick and under what condition you'd switch. Prefer `live` when a browser look-pass is available.
 
 ### sync
 
