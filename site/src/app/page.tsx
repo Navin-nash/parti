@@ -10,6 +10,7 @@ import { CommandBoard } from "@/components/home/command-board";
 import { ProcessRail } from "@/components/home/process-rail";
 import { HomeComparison } from "@/components/home/home-comparison";
 import { SquareLink } from "@/components/specimen/square-link";
+import { InstallCommand } from "@/components/site/install-command";
 import { entry } from "@/lib/registry";
 import { EXAMPLES } from "@/data/examples";
 import { ArrowRight } from "@/lib/icons";
@@ -47,11 +48,17 @@ export default function Home() {
               where a default would otherwise fill the gap.
             </Lede>
 
-            <div className="flex flex-wrap items-start gap-3 lg:justify-end">
-              <SquareLink href="/examples" variant="mark">
-                Explore the examples
-              </SquareLink>
-              <SquareLink href="/methodology">See how it works</SquareLink>
+            <div className="flex flex-col items-start gap-5 lg:items-end">
+              <div className="flex flex-wrap items-start gap-3 lg:justify-end">
+                <SquareLink href="/examples" variant="mark">
+                  Explore the examples
+                </SquareLink>
+                <SquareLink href="/methodology">See how it works</SquareLink>
+              </div>
+              <InstallCommand
+                className="lg:max-w-md"
+                hint="Clone it into .claude/skills/ and ask Claude Code for a design."
+              />
             </div>
           </div>
 
@@ -276,13 +283,16 @@ export default function Home() {
                 Give it something worth designing.
               </span>
             </p>
-            <div className="flex flex-wrap gap-3">
-              <SquareLink href="/examples" variant="mark" size="lg">
-                Explore the benchmark
-              </SquareLink>
-              <SquareLink href="/about" size="lg">
-                Read the philosophy
-              </SquareLink>
+            <div className="flex flex-col gap-5">
+              <div className="flex flex-wrap gap-3">
+                <SquareLink href="/examples" variant="mark" size="lg">
+                  Explore the benchmark
+                </SquareLink>
+                <SquareLink href="/about" size="lg">
+                  Read the philosophy
+                </SquareLink>
+              </div>
+              <InstallCommand hint="Requires Claude Code. No build step, no dependencies." />
             </div>
           </div>
 

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Menu, X, ArrowUpRight } from "@/lib/icons";
 import { NAV, GITHUB_URL } from "@/lib/nav";
+import { SearchTrigger } from "@/components/site/search-trigger";
 import { Wordmark } from "./wordmark";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { cn } from "@/lib/utils";
@@ -46,6 +47,7 @@ export function SiteHeader() {
         </nav>
 
         <div className="ml-auto flex items-center gap-2 sm:gap-3">
+          <SearchTrigger />
           <ThemeToggle />
           <a
             href={GITHUB_URL}
