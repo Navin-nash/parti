@@ -175,6 +175,63 @@ export function Card() {
 }
 
 
+# SHIP-FLOOR fixture: countable tells that are not quality scores.
+# Do not fold these into score.py. See evals/README.md circularity trap.
+SHIP_FILES = {
+    "Hero.tsx": """
+export function Hero() {
+  return (
+    <section className="h-screen">
+      <p>Ready — file today</p>
+      <div className="grid grid-cols-3 gap-4">
+        <div className="rounded-xl"><h3>A</h3></div>
+        <div className="rounded-xl"><h3>B</h3></div>
+        <div className="rounded-xl"><h3>C</h3></div>
+      </div>
+      <p className="text-[11px] uppercase tracking-[0.18em]">About</p>
+      <p className="text-[11px] uppercase tracking-[0.18em]">Process</p>
+      <p className="text-[11px] uppercase tracking-[0.18em]">Pricing</p>
+    </section>
+  );
+}
+""",
+    "src/app.css": """
+body { font-family: Inter, system-ui, sans-serif; }
+.card { transition: all 300ms ease; }
+.btn-primary { background: #6366F1; }
+""",
+}
+
+SHIP_CLEAN_NEAR = {
+    "Hero.tsx": """
+export function Hero() {
+  return (
+    <section className="min-h-[100dvh]">
+      <p>Ready - file today</p>
+      <div className="grid grid-cols-2 gap-4">
+        <div className="rounded-xl"><h3>A</h3></div>
+        <div><h3>B</h3></div>
+      </div>
+      <p className="text-[11px] uppercase tracking-[0.18em]">About</p>
+    </section>
+  );
+}
+""",
+    "src/app.css": """
+body { font-family: "Söhne", system-ui, sans-serif; }
+.card { transition: transform 200ms var(--ease-out); }
+/* a real blue accent and a violet-tinted near-black must both stay quiet */
+.btn-primary { background: #2563EB; }
+.surface { background: #1E1B4B; }
+""",
+}
+
+SHIP_EXEMPT = {
+    "DESIGN.md": "Display: Inter. Body: Inter. Declared identity.\n",
+    "src/app.css": "body { font-family: Inter, sans-serif; }\n",
+}
+
+
 def write_fixture(root, files):
     for rel, content in files.items():
         p = os.path.join(root, rel)
@@ -428,6 +485,43 @@ def test_lint_drift(R, tmp):
     rc2, r2 = lint(drift_dir, None)  # same code, no --tokens
     R.check("Lint — token drift", "without --tokens, drift isn't checked (no false claim)",
             not any(f["id"] == "token_drift" for f in r2["findings"]))
+
+
+def test_lint_ship_floor(R, tmp):
+    ship = write_fixture(os.path.join(tmp, "ship"), SHIP_FILES)
+    rc, r = lint(ship)
+    ids = {f["id"] for f in r["findings"]}
+    G = "Lint — ship-floor source tells"
+    R.check(G, "flags h-screen", "h_screen" in ids)
+    R.check(G, "flags transition: all", "transition_all" in ids)
+    R.check(G, "flags em dash", "emdash" in ids)
+    R.check(G, "flags eyebrow cluster (>=3)", "eyebrow_cluster" in ids)
+    R.check(G, "flags three equal cards", "three_equal_cards" in ids)
+    R.check(G, "flags Inter-only family", "inter_geist_only" in ids)
+    R.check(G, "flags the indigo/violet default accent", "default_violet" in ids)
+    R.check(G, "ship-floor tells are not P0 (do not Goodhart score.py)",
+            all(f["severity"] != "P0" for f in r["findings"] if f["id"] in ids),
+            str({f["id"]: f["severity"] for f in r["findings"]}))
+
+    near = write_fixture(os.path.join(tmp, "ship_near"), SHIP_CLEAN_NEAR)
+    rc2, r2 = lint(near)
+    ids2 = {f["id"] for f in r2["findings"]}
+    R.check(G, "near-miss: no h-screen on min-h-[100dvh]", "h_screen" not in ids2, str(ids2))
+    R.check(G, "near-miss: hyphen is not an em dash", "emdash" not in ids2, str(ids2))
+    R.check(G, "near-miss: one eyebrow is not a cluster", "eyebrow_cluster" not in ids2, str(ids2))
+    R.check(G, "near-miss: grid-cols-2 is not three equal cards", "three_equal_cards" not in ids2, str(ids2))
+    R.check(G, "near-miss: Söhne is not Inter-only", "inter_geist_only" not in ids2, str(ids2))
+    R.check(G, "near-miss: a real blue accent is not the violet default",
+            "default_violet" not in ids2, str(ids2))
+
+    exempt = write_fixture(os.path.join(tmp, "ship_exempt"), SHIP_EXEMPT)
+    _, r3 = lint(exempt)
+    R.check(G, "DESIGN.md exemption suppresses Inter-only",
+            not any(f["id"] == "inter_geist_only" for f in r3["findings"]),
+            str([f["id"] for f in r3["findings"]]))
+    R.check(G, "a declared indigo brand colour is not flagged as the default",
+            not any(f["id"] == "default_violet" for f in r3["findings"]),
+            str([f["id"] for f in r3["findings"]]))
 
 
 MOTION_BAD_FILES = {
@@ -794,6 +888,7 @@ def main():
     test_lint_slop(R, slop)
     test_lint_clean(R, clean)
     test_lint_drift(R, tmp)
+    test_lint_ship_floor(R, tmp)
 
     ok = R.summary()
     if args.keep:

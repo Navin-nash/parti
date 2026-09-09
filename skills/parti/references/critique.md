@@ -112,5 +112,8 @@ Apply to any direction before it leaves your hands:
 - **The grayscale test** — screenshot in grayscale. If the hierarchy collapses, it was carried entirely by color.
 - **The squint test** — blur it. The reading order should still be obvious from mass and position alone.
 - **The generic-prompt test** — would you have produced roughly this for a different subject in the same category? If yes, nothing here came from *this* brief.
+- **First-order slop** — could someone guess theme + palette from the category alone? If yes, restart from constraints (`references/register.md`).
+- **Second-order slop** — could they guess the aesthetic *family* from category plus the obvious anti-reference (tax that's not a dashboard → editorial ledger; AI tool that's not cream → dark terminal)? Name the lane. If it's the saturated counter-cliché, look further.
+- **Grayscale and squint** — required, not optional; protocol in `references/composition.md`. Say that you ran them.
 - **The two-hundredth-encounter test** — for anything delightful, imagine the two-hundredth time. Delight that survives repetition stays; delight that grates goes.
 - **The cost sentence** — you should be able to finish "this direction gives up ___." If you can't, you haven't made a choice; you've made a compromise.

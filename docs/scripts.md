@@ -1,6 +1,8 @@
 # Script reference
 
-Five stdlib-only Python scripts. They exist because measured findings survive disagreement and impressions don't — "the spacing feels inconsistent" loses an argument that `1 off-grid values: [17.0]` wins.
+Six stdlib-only Python scripts for analysis, and a zero-dependency Node runtime for the live browser session. They exist because measured findings survive disagreement and impressions don't — "the spacing feels inconsistent" loses an argument that `1 off-grid values: [17.0]` wins.
+
+**Two runtimes, one boundary.** Python for static analysis, Node for anything touching a browser or a dev server. The split is deliberate: the analysis scripts are agent-invoked and already covered by 102 assertions, while a frontend repo always has Node and rarely wants a Python setup step in the middle of a design session.
 
 All output shown below is **real output** from the fixtures in `evals/`, not illustrative.
 
@@ -9,12 +11,31 @@ All output shown below is **real output** from the fixtures in `evals/`, not ill
 | [`audit.py`](../skills/parti/scripts/audit.py) | a codebase | de-facto design system + tell list | always `0` |
 | [`score.py`](../skills/parti/scripts/score.py) | `audit.py` JSON | measured score, 6 dimensions | always `0` |
 | [`color.py`](../skills/parti/scripts/color.py) | hex values / palette JSON | contrast, ramps, fixes | always `0` |
-| [`lint.py`](../skills/parti/scripts/lint.py) | code you just built | build-time tells + token drift | `1` if any P0 |
+| [`lint.py`](../skills/parti/scripts/lint.py) | code you just built | build-time tells + token drift + countable ship-floor tells | `1` if any P0 |
 | [`motion.py`](../skills/parti/scripts/motion.py) | code | motion rule violations | `1` if any P0 |
+| [`capture.py`](../skills/parti/scripts/capture.py) | an inspiration URL | that page's motion, libraries, one focus element's anatomy | always `0` |
 
 **Only `lint.py` and `motion.py` gate.** The other three always exit `0` — they are instruments, not judges, and a CI job that fails on a low score is a CI job that will be disabled within a month. See [CI integration](#ci-integration).
 
-Requires Python 3.8+. No dependencies, no `requirements.txt`, no lockfile.
+Requires Python 3.8+. No dependencies, no `requirements.txt`, no lockfile. `capture.py --tier runtime` is the one exception: it needs Playwright, and says so rather than failing obscurely.
+
+## The live runtime (Node)
+
+Nine scripts under [`skills/parti/live/`](../skills/parti/live), no dependencies. The helper serves an overlay into the user's **own** browser — not a headless one — which is what makes element picking, in-page notes and manual edits possible at all, and what lets the session work on harnesses with no browser tool.
+
+| Script | Does |
+|---|---|
+| `boot.mjs` | starts the helper, injects the overlay into one entry file, `--cleanup` removes it exactly |
+| `server.mjs` | events between browser and agent over SSE and long-poll, with an append-only journal |
+| `overlay.js` | the in-page UI: picker, palette, variant rail, knobs, insert caret, notes |
+| `poll.mjs` | the agent's side: take an event, reply, check status |
+| `markup.mjs` | finds an element's exact extent in HTML, JSX, Vue or Svelte source |
+| `wrap.mjs` | one element → N marked variant siblings, or N empty ones beside it |
+| `accept.mjs` | collapse to the chosen variant, or restore from backup (`--discard`, `--undo`) |
+| `edit.mjs` | replay an in-page copy edit into source |
+| `selftest.mjs`, `wraptest.mjs` | runnable checks for the protocol and for source surgery |
+
+Everything that writes to source refuses rather than guesses: `not_source` (build output or a generated file), `anchor_not_unique`, `unbalanced_element`, `already_wrapped`, `text_not_found`. Discard and undo are byte-for-byte restores from backups, never reconstructions. Protocol and event table: [`references/live.md`](../skills/parti/references/live.md).
 
 ---
 
@@ -253,6 +274,17 @@ usage: lint.py [-h] [--tokens TOKENS] [--json OUT] [--quiet] path
 | `P1` | reported, does not gate. |
 | `P2` | reported, does not gate. |
 
+### The default-palette detector
+
+`default_violet` (P1) flags the indigo-violet band that generated interfaces default to —
+`#6366F1`, `#4F46E5`, `#8B5CF6` and their hand-nudged neighbours. It works on **hue,
+saturation and lightness**, not a hex allowlist, so shifting a value by a few points does
+not evade it. Violet-tinted near-blacks and pale tints stay quiet; the tell is violet used
+as the accent. Declaring the colour in `DESIGN.md` with a reason clears the finding.
+
+Covered by three eval assertions: it fires on the default, stays quiet on a real blue
+accent and a violet-tinted surface, and honours the exemption.
+
 ### Real output shape
 
 ```
@@ -332,6 +364,28 @@ Use this to see the motion vocabulary of a codebase before deciding whether it h
 
 ---
 
+## What happens to a finding
+
+These scripts produce findings, not changes. The loop from one to the other is defined in
+[`references/remediation.md`](../skills/parti/references/remediation.md), and it is the
+half that decides whether running a check was worth anything:
+
+1. **Triage** — every finding is a code defect, a spec defect, a written exception, or an
+   instrument defect. Four different actions, and picking the wrong one is the usual cause
+   of bad remediation.
+2. **Level** — fix at the token, the component, or the instance. If fixing it here would
+   leave the same finding possible elsewhere, this is the wrong level.
+3. **Order** — group by rule id, then level, then severity. Never walk the list in file
+   order; that is the order the script emitted, which correlates with nothing.
+4. **Re-run everything**, not the file you touched, and account for what cleared,
+   persisted, and newly appeared.
+5. **Close** only when every finding is fixed, excepted in writing, recorded as a false
+   positive, or handed over by name.
+
+That file also lists the forbidden repairs — nudging a value to evade a detector, adding a
+no-op media query, deleting the content that exposed the problem. Each makes the report
+better and the interface no different.
+
 ## CI integration
 
 Two scripts gate. Wire those two:
@@ -361,3 +415,13 @@ Run the other three for reporting, not gating:
 Goodhart's law applies here with unusual force because the metric is so cheap to satisfy. Track the score across commits if you like. Never let it block one, and never report a rise in it as evidence the design improved.
 
 See [`evals/README.md`](../evals/README.md) for the full argument and the four-layer testing model.
+
+### Checking the skill's own material
+
+```bash
+python evals/check_surfaces.py      # surface directions: no markup, all parts, real rule ids
+node skills/parti/live/selftest.mjs # live protocol, annotations, abort semantics
+node skills/parti/live/wraptest.mjs # source surgery: nesting, CRLF, JSX, insert, undo
+```
+
+The first one exists because `surfaces/` deliberately ships **no implementations**, and that rule needs enforcing mechanically rather than by good intentions — "just show them the code" is exactly the reflex being resisted.

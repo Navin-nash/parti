@@ -13,6 +13,11 @@ Two things this checks that a visual review can't, reliably:
    spec it was handed. A direction can pass every visual check and still have
    quietly invented three colors nobody chose. No visual review catches this
    reliably; this script checks it deterministically.
+3. Countable ship-floor tells — h-screen, transition:all, em dashes, Inter/Geist
+   as the only family (unless DESIGN.md declared them), eyebrow clustering,
+   cloned three-column feature cards. These are regression guards, not a design
+   quality score. Do not use this output (or score.py) to pick the "better"
+   direction.
 
 Usage:
     python lint.py <path>                              # tell scan only
@@ -46,6 +51,26 @@ RE_FOCUS_RING = re.compile(r":focus\b|focus:|focus-visible", re.I)
 RE_LOREM = re.compile(r"lorem ipsum|feature one|feature two|\bfoo\s+bar\b", re.I)
 RE_GET_STARTED = re.compile(r"\bget started\b", re.I)
 RE_LEARN_MORE = re.compile(r"\blearn more\b", re.I)
+RE_HSCREEN = re.compile(r"\bh-screen\b|(?<!min-)height\s*:\s*100vh\b", re.I)
+RE_TRANS_ALL = re.compile(r"transition\s*:\s*all\b|\btransition-all\b", re.I)
+RE_EMDASH = re.compile(r"—|&mdash;|&#8212;")
+RE_EYEBROW = re.compile(
+    r"uppercase[^\"'`\n]{0,100}tracking-(?:\[|[a-z])|tracking-(?:\[|[a-z0-9]+)[^\"'`\n]{0,100}uppercase",
+    re.I,
+)
+RE_GRID_COLS_3 = re.compile(r"\bgrid-cols-3\b")
+RE_FEATURE_CARD = re.compile(
+    r"rounded-(?:lg|xl|2xl)[^>\"'`]{0,60}[\"'`][^>]*>\s*<h[23]\b",
+    re.I,
+)
+RE_FONT_FAMILY = re.compile(r"font-family\s*:\s*([^;{}]+)", re.I)
+GENERIC_FACE = re.compile(
+    r"^(?:sans-serif|serif|monospace|system-ui|ui-sans-serif|ui-serif|"
+    r"ui-monospace|emoji|math|fangsong|inherit|initial|unset|-apple-system|"
+    r"blinkmacsystemfont|segoe ui|helvetica neue|helvetica|arial|georgia)$",
+    re.I,
+)
+DESIGN_MD_CANDIDATES = ("DESIGN.md", "docs/DESIGN.md", ".design/DESIGN.md", "design/DESIGN.md")
 
 # (id, severity, label, regex) — build-construction tells, not concept tells.
 # Concept-level tells (palette, layout, copy voice) live in audit.py; these
@@ -128,6 +153,88 @@ def load_tokens(path):
     return allowed
 
 
+# The saturated default of generated interfaces. Every model reaches for the same
+# indigo-violet band when nothing in the brief points anywhere: Tailwind's indigo-500/600
+# and violet-500/600 are the literal values, and the band around them is where the
+# hand-picked near-misses land. Detected by hue rather than by hex list so that nudging
+# #6366F1 to #6165EE does not evade it - evading a tell is not choosing a colour.
+DEFAULT_HUE_LO, DEFAULT_HUE_HI = 234.0, 295.0
+
+
+def hex_to_hsl(h):
+    # norm_hex takes the digits without a leading '#', so strip it before handing
+    # over and after: callers here hold either form.
+    h = norm_hex(h.lstrip("#")).lstrip("#")
+    if len(h) != 6 or any(c not in "0123456789abcdef" for c in h):
+        return None
+    r, g, b = (int(h[i:i + 2], 16) / 255 for i in (0, 2, 4))
+    mx, mn = max(r, g, b), min(r, g, b)
+    light = (mx + mn) / 2
+    if mx == mn:
+        return 0.0, 0.0, light
+    d = mx - mn
+    sat = d / (2 - mx - mn) if light > 0.5 else d / (mx + mn)
+    if mx == r:
+        hue = ((g - b) / d) % 6
+    elif mx == g:
+        hue = (b - r) / d + 2
+    else:
+        hue = (r - g) / d + 4
+    return hue * 60, sat, light
+
+
+def is_default_violet(hexv):
+    hsl = hex_to_hsl(hexv)
+    if not hsl:
+        return False
+    hue, sat, light = hsl
+    # Saturated and mid-toned: a near-black with a violet cast is a tinted neutral,
+    # which is a legitimate and common choice. The tell is violet used as the accent.
+    return DEFAULT_HUE_LO <= hue <= DEFAULT_HUE_HI and sat >= 0.45 and 0.35 <= light <= 0.80
+
+
+def design_md_declares_violet(root):
+    for name in ("DESIGN.md", "design.md", os.path.join("docs", "DESIGN.md")):
+        p = os.path.join(root, name)
+        if os.path.exists(p):
+            txt = read(p).lower()
+            if any(w in txt for w in ("indigo", "violet", "purple")):
+                return True
+    return False
+
+
+def design_md_declares_inter_or_geist(root):
+    for rel in DESIGN_MD_CANDIDATES:
+        p = os.path.join(root, rel)
+        if os.path.isfile(p) and re.search(r"\b(Inter|Geist)\b", read(p)):
+            return True
+    return False
+
+
+def font_families(txt):
+    faces = []
+    for m in RE_FONT_FAMILY.finditer(txt):
+        for part in m.group(1).split(","):
+            raw = part.strip().strip("\"'")
+            if raw:
+                faces.append(raw)
+    return faces
+
+
+def is_inter_geist_only(families):
+    named = []
+    saw_inter_geist = False
+    for f in families:
+        if GENERIC_FACE.match(f):
+            continue
+        named.append(f)
+        if re.search(r"^(Inter|Geist)(\s|$)", f, re.I):
+            saw_inter_geist = True
+    if not saw_inter_geist or not named:
+        return False
+    return all(re.search(r"^(Inter|Geist)(\s|$)", f, re.I) for f in named)
+
+
 def lint(root, tokens_path=None):
     res = {"root": os.path.abspath(root), "files_scanned": 0,
            "findings": [], "counts": defaultdict(int)}
@@ -135,6 +242,10 @@ def lint(root, tokens_path=None):
     allowed = load_tokens(tokens_path) if tokens_path else None
     drift = defaultdict(list)
     shadow_hits = defaultdict(int)
+    exempt_inter = design_md_declares_inter_or_geist(root)
+    exempt_violet = design_md_declares_violet(root)
+    violet_hits = defaultdict(list)
+    all_families = []
 
     for path in iter_files(root):
         txt = read(path)
@@ -143,11 +254,12 @@ def lint(root, tokens_path=None):
         res["files_scanned"] += 1
         rel = os.path.relpath(path, root)
 
-        if allowed is not None:
-            for m in RE_HEX.finditer(txt):
-                h = norm_hex(m.group(1))
-                if h not in allowed:
-                    drift[h].append(rel)
+        for m in RE_HEX.finditer(txt):
+            h = norm_hex(m.group(1))
+            if allowed is not None and h not in allowed:
+                drift[h].append(rel)
+            if not exempt_violet and is_default_violet(h):
+                violet_hits[h].append(rel)
 
         for m in RE_IMG_NO_ALT.finditer(txt):
             res["findings"].append({"id": "missing_alt", "severity": "P0",
@@ -165,6 +277,26 @@ def lint(root, tokens_path=None):
             res["findings"].append({"id": "generic_cta_pair", "severity": "P1",
                                      "label": "'Get Started' + 'Learn More' - the default CTA pair", "file": rel})
 
+        all_families.extend(font_families(txt))
+
+        if RE_HSCREEN.search(txt):
+            res["findings"].append({"id": "h_screen", "severity": "P1",
+                                     "label": "h-screen or height:100vh — use min-height: 100dvh", "file": rel})
+        if RE_TRANS_ALL.search(txt):
+            res["findings"].append({"id": "transition_all", "severity": "P1",
+                                     "label": "transition: all / transition-all", "file": rel})
+        if RE_EMDASH.search(txt):
+            res["findings"].append({"id": "emdash", "severity": "P2",
+                                     "label": "Em dash in copy or markup", "file": rel})
+        brow = RE_EYEBROW.findall(txt)
+        if len(brow) >= 3:
+            res["findings"].append({"id": "eyebrow_cluster", "severity": "P1",
+                                     "label": f"{len(brow)} uppercase+tracking eyebrows in one file (max ~1 per 3 sections)",
+                                     "file": rel})
+        if RE_GRID_COLS_3.search(txt) and len(RE_FEATURE_CARD.findall(txt)) >= 3:
+            res["findings"].append({"id": "three_equal_cards", "severity": "P2",
+                                     "label": "grid-cols-3 with three rounded heading cards", "file": rel})
+
         for tid, sev, label, rx in TELLS:
             hits = rx.findall(txt)
             if not hits:
@@ -178,6 +310,21 @@ def lint(root, tokens_path=None):
         if n >= 5:
             res["findings"].append({"id": "shadow_default", "severity": "P2",
                                      "label": f"Default shadow utility reused {n}x with no override", "file": rel})
+
+    if violet_hits:
+        shown = ", ".join(sorted(violet_hits)[:4])
+        res["findings"].append({
+            "id": "default_violet", "severity": "P1",
+            "label": (f"{shown} - the indigo/violet default of generated UI. "
+                      "If this is a real brand colour, declare it in DESIGN.md; "
+                      "otherwise derive one from the subject."),
+            "file": ", ".join(sorted({f for files in violet_hits.values() for f in files})[:4]),
+        })
+
+    if not exempt_inter and is_inter_geist_only(all_families):
+        res["findings"].append({"id": "inter_geist_only", "severity": "P1",
+                                 "label": "Inter or Geist is the only named family (no DESIGN.md exemption)",
+                                 "file": "."})
 
     for hexv, files in drift.items():
         res["findings"].append({"id": "token_drift", "severity": "P0",

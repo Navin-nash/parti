@@ -1,6 +1,6 @@
 ---
 name: parti
-description: Anti-slop design, start to finish — evaluates and scores an existing design, derives three divergent directions from the actual subject rather than a style menu, and builds the verified, production-grade code for whichever wins, all as one flow. Maintains DESIGN.md as binding memory throughout. Scripts audit a codebase, score it, verify contrast, lint shipped code for token drift, and check motion against a rule catalog with fail/pass examples. Use whenever the user wants design ideas, a visual direction, a redesign, a UI/UX critique, a design score, a style exploration, animation or transition design, or wants a direction built or shipped, or says "make this look better", "this looks AI-generated", "build this", "ship it", "redesign my landing page", "review my animations", "the motion feels off", "audit this UI", "write me a plan for it", or asks about design movements (minimalism, brutalism, glassmorphism, editorial, maximalism). Not for backend/data/auth/deployment or non-visual architecture.
+description: Use when the user wants design ideas, a visual direction, a redesign, a UI/UX critique, a design score, style exploration, animation or transition design, or a direction built or shipped; when a product UI looks like a marketing page, a dashboard feels bland, a hero overflows, motion plays on every scroll, or they say "make this look better", "make it look premium", "this looks AI-generated", "build this", "ship it", "redesign my landing page", "review my animations", "the motion feels off", "audit this UI", or "write me a plan for it"; or when they ask about design movements. Not for backend, data, auth, deployment, or non-visual architecture.
 ---
 
 # Parti
@@ -25,6 +25,12 @@ You are the studio that a client hires when their product works and still looks 
 
 ---
 
+## The gate
+
+Nothing leaves without a verdict from `references/go-no-go.md` — a direction, a render, a build, an accepted live variant, all of it. **Lead with the verdict**, one line, before describing the work: `Go` with the findings, or `No-go` with the rule id. A no-go reported as a "known issue" is the same sentence written dishonestly. A no-go can be waived once, in writing, dated in `DESIGN.md` with its reason; a waiver nobody wrote down is the rule being ignored.
+
+The gate refuses defects, not taste. Unconventional, sparse, loud and quiet are never no-gos, and a low slop-index score is a regression guard rather than a blocker.
+
 ## Step 0 — DESIGN.md, always
 
 Before anything else, look for `DESIGN.md` (also `docs/`, `.design/`, `design/`, and `PRODUCT.md` if `impeccable` has been used here).
@@ -34,6 +40,19 @@ Before anything else, look for `DESIGN.md` (also `docs/`, `.design/`, `design/`,
 - **On the way out** → sync it. Any change to color, type, space, shape, motion, or a rule gets written back with a dated Changelog line, and say in one line what changed — whether that change came from a direction pass or a build pass. A borrowed element from a `reference` capture gets a dated Changelog line naming the source URL and whether it was taken faithfully or adapted; the capture itself lives in `captures/`.
 
 Protocol and full template: `references/design-md.md`.
+
+## Starting from nothing
+
+**A blank repo is the strongest case for this skill, not the weakest.** With nothing built there is nothing anchoring the work, so the default is what fills the gap — the same warm cream, the same indigo accent, the same stack of identical sections. The process is the same arc with the first step substituted:
+
+1. **No audit — interrogate the subject instead.** What does this thing actually do, for whom, where, under what light, how often, and against what alternative? The direction is derived from those answers. If you cannot answer them, ask; a brief that only says "a landing page for a SaaS" has named a category, and a category chooses the defaults for you.
+2. **Name the register and the archetype.** `references/register.md` then `references/use-case.md`. With no code to audit this is the only thing constraining the work, so it carries more weight here than anywhere else.
+3. **Structure before surface.** `references/foundations.md` §1: the structural sentence, the role of every block, the order a person needs things in. This happens before a single visual decision and it is where generated work most often has nothing at all.
+4. **Three divergent directions**, as usual, and the axis gate applies with more force here because nothing constrains you. Directions that differ only in palette are not directions.
+5. **Emit the token spec first, build second.** With no existing system to extract, the spec *is* the system — write it down before any component, or the build invents values and calls them decisions.
+6. **`DESIGN.md` at the end of the direction pass**, not the end of the project.
+
+Everything after that is Build mode unchanged. The foundations floor, the ship gate, and the scripts apply identically — they check the work, not its provenance.
 
 ## Commands
 
@@ -48,7 +67,7 @@ Invoke by name, or infer from intent — fresh brief → `explore`; existing thi
 | `deslop` | find and replace the tells | `critique` | evidence-based review, no changes |
 | `typeset` | type scale and pairing | `palette` | color system, contrast-verified |
 | `motion` | animation spec + library call | `density` | rhythm and information density |
-| `reference` | capture an inspiration URL → per-element faithful/adapted spec | `capture` | alias for `reference` |
+| `compose` | spatial/hierarchy pass only | `reference` | capture inspiration URL (alias `capture`) |
 | `review` | rule-id findings at `file:line` | `animate` | build one animation, gated |
 | `states` | empty/loading/error/overflow | `signature` | the one memorable element |
 | `variants` | N alternatives on one axis | `copy` | microcopy pass |
@@ -59,7 +78,8 @@ Invoke by name, or infer from intent — fresh brief → `explore`; existing thi
 | | | |
 |---|---|---|
 | `build` | spec/brief → working, verified code | `harden` | complete every missing state + a11y |
-| `polish` | craft pass, no new features | `lint` | scripted anti-slop + drift report |
+| `polish` | ship-floor + composition, no new features | `lint` | scripted anti-slop + drift report |
+| `live` | interactive browser session: pick, variant, accept | | |
 | `responsive` | breakpoint behavior pass | `a11y` | WCAG floor verification |
 | `perf` | animation/bundle cost pass | `sync` | update DESIGN.md |
 
@@ -87,6 +107,11 @@ python scripts/color.py ramp "#B23A2E" --steps 9              # gamut-fit OKLCH 
 python scripts/lint.py <built-path> --tokens tokens.json      # built code vs. its own spec: tells + drift
 python scripts/motion.py <path> --json /tmp/motion.json       # motion rule violations at file:line
 python scripts/capture.py --url <url> --focus "<element>" --json /tmp/capture.json  # inspiration-site capture (Tier 1 static; --tier runtime adds Playwright)
+node live/boot.mjs --page <entry.html>                        # live session: helper + overlay injection
+node live/poll.mjs --port <p> --token <t>                      # park for the next browser event
+node live/wrap.mjs --file <f> --anchor '<tag ...' --variants A,B,C   # element -> marked variant siblings
+node live/accept.mjs --session <dir> --variant B              # collapse to one, or --discard / --undo
+node live/edit.mjs --file <f> --before <text> --after <text>   # replay an in-page copy edit into source
 ```
 
 `audit.py` reports palette sprawl, typeface and size counts, spacing base unit and off-grid values, radius/shadow/z-index variance, motion durations and easing (custom vs. browser default), tokenization ratio, reduced-motion handling, and the anti-slop tells it can see in source. `lint.py` runs the equivalent check on code you just built: build-time tells `audit.py` can't see yet at plan time, plus **token drift** — any color in the shipped code that isn't in the spec it was handed. `motion.py` checks the machine-checkable half of `references/motion-rules.md` — `ease-in` on UI, `transition: all`, `scale(0)` entrances, durations over budget, animated layout properties, trigger-anchored surfaces scaling from center, keyframes on rapidly-triggered components, missing reduced motion, ungated hover, easing/duration sprawl — and reports each at `file:line` with its rule id. `capture.py` fetches an inspiration URL and extracts its CSS-level motion, the animation libraries it loads, and — with `--tier runtime` — its live `getAnimations()` / `ScrollTrigger` data and one focus element's anatomy; it never captures a whole site, only the element or behavior named in `--focus`. Full protocol: `references/motion-capture.md`.
@@ -99,7 +124,7 @@ python scripts/capture.py --url <url> --focus "<element>" --json /tmp/capture.js
 
 ### 1. Establish the brief
 
-Five things. Ask only for what's genuinely missing — one round, not an interrogation.
+Five things, then register. Ask only for what's genuinely missing — one round, not an interrogation.
 
 - **Subject** — what it is, concretely
 - **Audience** — who uses it, and what they already use daily (that's their baseline for "normal")
@@ -107,7 +132,9 @@ Five things. Ask only for what's genuinely missing — one round, not an interro
 - **Content** — what actually goes on screen, in what volume, at what density
 - **Constraints** — DESIGN.md, existing brand, platform, accessibility floor, taste vetoes
 
-If the brief stays thin, **pin it yourself and say so.** "I'm assuming solo-founder audience, mobile-first, dense data" beats a direction hedged to fit everyone. Check memory and conversation history first.
+If the brief stays thin, **pin it yourself and say so.** "I'm assuming solo-founder audience, mobile-first, dense data" beats a direction hedged to fit everyone. Check memory and conversation history first. "Make it look premium" with no subject is not a brief — pin a subject or refuse a vibe menu.
+
+**Name the register** (`references/register.md`): **brand** (design is the product) or **product** (design serves the product). One only. Then a **scene sentence** (who, where, light, mood) that forces light vs dark, then a **color strategy** (restrained / committed / full / drenched) *before* any hex. A tax tool and a hotel site do not share a craft playbook.
 
 **Then force a priority ranking.** Modern, intuitive, interactive, and intentional conflict — every added interaction is another thing to learn; every trend-forward move costs legibility. State it:
 
@@ -138,16 +165,17 @@ For each: **Thesis** (one sentence about what it believes about the user) · **N
 
 Movement catalog with failure modes: `references/style-vocabulary.md`. Behavior, flow, and comprehension questions: `references/ux-methods.md`.
 
-**Gate before drafting further:** if swapping only the palette between two directions would leave everything else unchanged, that's one direction, not two. Each must land differently even in grayscale — check against the axis table, not just the thesis sentence.
+**Gate before drafting further:** if swapping only the palette between two directions would leave everything else unchanged, that's one direction, not two. Each must land differently even in grayscale — check against the axis table, not just the thesis sentence. Each must also survive the **second-order lane test** in `references/register.md` (not just "not the obvious category look," but not the obvious *anti*-category look either). Type choices follow `references/type-craft.md` — reflex-reject list first; Fraunces+Plex on a tax landing is a known miss.
 
 ### 4. Render them
 
 Show, don't describe — text descriptions let both of you imagine different things and agree anyway.
 
-Render each as a visual: inline visual/widget tool if available, otherwise a self-contained HTML file. A spec-perfect direction still reads as generic if the render defaults to system fonts, copy-pasted shadows, and a stock nav/card layout — **construction is where concept-level anti-slop work either survives or gets erased.** Full craft rules, component-by-component, and the fidelity floor to check before showing anything: `references/render.md`. Build mode holds the eventual real build to this exact same floor a second time — a mockup and a shipped build are held to one standard, not two.
+Render each as a visual: inline visual/widget tool if available, otherwise a self-contained HTML file. A spec-perfect direction still reads as generic if the render defaults to system fonts, copy-pasted shadows, and a stock nav/card layout — **construction is where concept-level anti-slop work either survives or gets erased.** Load together: `references/render.md`, `references/composition.md`, `references/art-direction.md`, `references/ship-floor.md`. Build mode holds the eventual real build to this exact same floor a second time — a mockup and a shipped build are held to one standard, not two. Skipping the ship-floor because this is "just a mockup" is a rationalization; don't.
 
 - **Real content.** Lorem ipsum and "Feature One" hide every hierarchy problem.
-- **One screen, the key one** — where the job gets done.
+- **Real type loaded, real images** (or explicit TODOs) — not Arial and gray boxes.
+- **One screen, the key one** — where the job gets done. Product register: that screen is the job UI, not a marketing hero.
 - **Faithful, not polished.** Type scale, spacing rhythm, and color relationships must be right; edge states needn't be.
 - **Comparable.** Same content, same stated viewport, same screen across all three.
 - Include the motion, at least the signature moment. A still image of a choreographed direction is a misrepresentation.
@@ -159,8 +187,9 @@ Run the anti-slop pass in `references/critique.md` against your own three. Then:
 - **Chanel's mirror** — remove one accessory from each. Name what you removed.
 - **Spend boldness once** — one signature element is memorable; two are noise.
 - **The generic-prompt test** — would you have produced roughly this for a different subject in the same category? If yes, nothing here came from *this* brief.
+- **Second-order lane** — name the aesthetic family; if it's the saturated counter-cliché for this category, replace it.
 
-Say what you changed and why. A direction that survives unchanged was probably too safe.
+Say what you changed and why. A direction that survives unchanged was probably too safe. Grayscale + squint: claim them.
 
 ### 6. Converge
 
@@ -204,6 +233,8 @@ Use the token spec Step 7 just emitted, or `DESIGN.md`, or an existing token fil
 
 ### B1. Pick the stack
 
+**If the project already has a design system — Material, Fluent, Carbon, Polaris, Primer, GOV.UK, Radix, shadcn — read `references/systems.md` before writing tokens.** The direction is derived *into* the system's own extension points, not layered over them. Every decision you override you own forever, accessibility included, so the question is which two or three the direction is genuinely in tension with.
+
 Detect before asking — `package.json`, an existing `components.json` (shadcn), an existing `.vue` tree — reuse whatever's already there rather than introducing a second pattern.
 
 | Signal | Stack |
@@ -218,19 +249,33 @@ Construction playbooks per stack, including how to actually override shadcn's de
 
 ### B2. Build the job, with every state
 
+**Name the archetype before the first visual decision.** `references/register.md` gives brand or product, which is one bit; `references/use-case.md` gives the layer underneath — a trading terminal and a meditation app are both "product" and want opposite designs. The archetype sets density, motion budget, type, colour strategy, and names the failure everyone makes in that category. It rules out what would be wrong; what is right still has to be derived from this subject.
+
+**Read `references/elements.md` for the material system** — icons, elevation, radius, borders, data display, ornament. One language per property, held across the whole screen. This is where "professional" is actually won: not in the palette, which everyone gets roughly right, but in whether the small decisions underneath agree with each other. Two elevation languages on one screen is the most reliable signal of assembled rather than designed work.
+
+**Be unconventional in expression, conventional in mechanics.** `references/convention.md`. This is the rule that makes the goal *unique and usable* rather than merely unique — an anti-slop objective rewards difference, and difference is cheap. Palette, type, composition, motion character and voice are free to be unlike anything; what is clickable, where nav lives, how scrolling behaves, and what Back does are learned across every other interface a person uses, and changing them spends their attention on operating the interface instead of doing their task. Every departure from a mechanic gets a written line naming what the user gains. Uniqueness is a by-product of deriving from the subject, never a target.
+
+**Read `references/foundations.md` before the first layout decision.** Structure, readability floors, and interaction minimums, as numbers. Section 1 in particular happens before anything visual: a page whose blocks have no named roles is the uniform stack that reads as generated no matter how it is styled.
+
+**Before building a surface `references/surfaces.md` covers, read its direction.** Tables, form fields, empty states: the surfaces that get built often and botched often. Each names the decisions that get skipped and why they go the way they do, and deliberately ships **no markup** — a reference implementation is a default with better manners, and pasting one is the same substitution this skill exists to prevent, one level deeper where it is harder to notice. Take the decisions, check your spec carries what they need, build every state, and depart where the content demands it — saying in one line what demanded it.
+
 Build the screen the spec's **job** names first. Design every state in the same pass, not as follow-up work: empty (first-run *and* cleared-by-user), loading, partial, ideal, error, overflow, offline, no-permission. A build that only ever implements the ideal state is the most common way production quietly diverges from what got approved. One component per file where the stack supports it; real content, same rule the renders were held to, with more force because this is what ships.
 
 ### B3. Don't reintroduce what the direction already removed
 
-Motion has its own catalog with a script behind it (`references/motion-rules.md`, `scripts/motion.py`) — run it, don't eyeball the durations. Construction has its own tell list — defaults invisible in a mockup because there was no code yet to have them: untouched shadcn variants, a copy-pasted shadow on every card, `outline-none` with no focus replacement, a purple-to-blue gradient that snuck in from a starter template, CSS selectors of different specificity silently canceling an intended rule. Full list: `references/bans.md`.
+Motion has its own catalog with a script behind it (`references/motion-rules.md`, `scripts/motion.py`) — run it, don't eyeball the durations. Product register: frequency-gate and haptic rules in `references/interaction.md` — no cinematic hero, no fade-up on every panel, no animation on 100+/day or keyboard actions. Construction has its own tell list — defaults invisible in a mockup because there was no code yet to have them: untouched shadcn variants, a copy-pasted shadow on every card, `outline-none` with no focus replacement, a purple-to-blue gradient that snuck in from a starter template, CSS selectors of different specificity silently canceling an intended rule. Full list: `references/bans.md`.
 
 ### B4. Verify before calling it done
 
 Three checks, every time — none alone catches what the other two catch.
 
-1. **Scripted lint** — `python scripts/lint.py <path> --tokens tokens.json` and `python scripts/motion.py <path>`. Deterministic: build-time tells, **token drift**, and the motion rules — the checks nothing else catches without a script.
+1. **Scripted lint** — `python scripts/lint.py <path> --tokens tokens.json` and `python scripts/motion.py <path>`. Deterministic: build-time tells, **token drift**, ship-floor source tells, and the motion rules. A clean run is not a quality score; never cite `score.py` as proof the UI got better.
 2. **Contrast** — every stated text/background pair, verified with `color.py`, not asserted.
-3. **Fidelity, on the real build** — render what actually shipped and re-check it against `references/render.md`'s floor: real font loaded, elevation from the `--e-` scale not a copy-pasted shadow, no placeholder left behind, the signature interaction actually shown, a full keyboard pass. A shipped build failing a floor the mockup already passed is a regression, not progress.
+3. **Fidelity + ship-floor, on the real build** — `references/render.md`, `references/ship-floor.md`, `references/composition.md`. Product register also `references/interaction.md`. Real font loaded, elevation from the `--e-` scale, no placeholder left behind, signature interaction shown, keyboard pass. A shipped build failing a floor the mockup already passed is a regression, not progress.
+
+4. **The gate** — `references/go-no-go.md`. Ten unconditional no-gos, eight conditions that must all be true, and the rule that a no-go is reported as a no-go rather than as a known issue. Findings and blocks are different things, and the gate is what keeps "I would have done it differently" from acquiring the authority of a rule.
+
+**Then act on the findings under `references/remediation.md`.** Running the checks is half the loop; the defined half is what a finding becomes. Triage it (code defect / spec defect / written exception / instrument defect), fix at the level that stops it recurring rather than the line it was reported on, group by rule id, re-run everything rather than the file you touched, and close only when every finding is fixed, excepted, recorded, or handed over. Never satisfy a detector without changing what a user experiences — that list of forbidden repairs is in the file.
 
 Full protocol and the build report template: `references/verify.md`.
 
@@ -251,6 +296,15 @@ Emit the build report: files touched, lint result by severity, contrast table, s
 - **Deviation is a finding, not a shrug.** If a build had to depart from the spec, name it in the report with a reason — the same discipline a critique finding gets.
 - **Reuse before you write.** A helper, variant, or pattern already in the codebase beats a new one that does roughly the same thing.
 - Do the messy exploration in thinking. Show work you have confidence in.
+- **Register is not optional.** Brand craft on a daily settings page, or product chrome on a campaign hero, is a miss even if the pixels are tidy.
+- **Don't pick a vibe because the user said premium.** Derive from subject. Cream, glass, bento, and Playfair-on-charcoal are menus, not answers.
+
+| Excuse | Reality |
+|---|---|
+| "Premium means cream / paper / serif." | Substrate isn't a synonym for quality. Warmth is accent + type + image. |
+| "Product UI can still have a cinematic hero." | Frequency of use forbids it. |
+| "Ship-floor is for production; this is a mockup." | Same floor twice. |
+| "Editorial is the smart alternative to SaaS-dashboard." | Second-order slop. |
 
 ## References
 
@@ -267,5 +321,20 @@ Emit the build report: files touched, lint result by severity, contrast table, s
 - `references/bans.md` — the build-time tell list: CSS-specificity pitfalls, untouched component-library defaults, current/model-specific tells a design-time review can't see yet.
 - `references/stacks.md` — build playbooks per stack: React + Tailwind + shadcn, plain HTML/CSS, Vue.
 - `references/verify.md` — the build verification loop in full, and the build report format.
+- `references/remediation.md` — finding → change: triage, the level to fix at, conflict precedence, re-verification, and the repairs that are forbidden.
+- `references/convention.md` — the usability counterweight: unconventional in expression, conventional in mechanics, and the departure ledger.
+- `references/use-case.md` — product archetype → density, motion budget, type, colour, and the category's signature failure.
+- `references/elements.md` — the material system: icons, depth, radius, borders, data display, ornament.
+- `references/foundations.md` — the floor: page structure, readability numbers, interaction and pull, and the saturated colour defaults to refuse.
+- `references/go-no-go.md` — the ship gate: unconditional no-gos, the conditions that must all hold, the exception protocol, and what is deliberately *not* a blocker.
+- `references/live.md` — the live-session protocol: boot, poll, event table, per-variant linting, recovery.
+- `references/surfaces.md` — what a surface direction contains and how to use one; indexes `surfaces/`.
+- `references/systems.md` — working inside someone else's design system: which layer the direction lands in, what it costs to own, and how the token spec maps.
 - `references/ux-methods.md` — UX laws, heuristics, IA, states, cognitive load, accessibility.
 - `references/tokens.md` — token spec format and a worked example.
+- `references/register.md` — brand vs product, scene sentence, color strategy, second-order slop.
+- `references/composition.md` — spatial craft; squint/grayscale required.
+- `references/type-craft.md` — optical type, pairing procedure, reflex-reject list.
+- `references/art-direction.md` — imagery as material.
+- `references/ship-floor.md` — mechanical pre-flight (countable fails).
+- `references/interaction.md` — product-register haptic and states; defers curves to motion-rules.

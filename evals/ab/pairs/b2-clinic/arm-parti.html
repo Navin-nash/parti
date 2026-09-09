@@ -1,0 +1,150 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>Choose a time · Riverside Community Clinic</title>
+<style>
+  /* Archetype: regulated. The person may be elderly, on a phone, anxious, and not here
+     by choice. Type is generously sized, availability is unmistakable and never carried
+     by colour alone, and the consequence of the choice is visible before confirming.
+     Palette from the clinic's own printed signage: ink on off-white, one civic blue. */
+  :root {
+    --bg: #FBFAF8;
+    --surface: #FFFFFF;
+    --ink: #16181C;
+    --ink-muted: #4E525A;
+    --rule: #CFCEC9;
+    --civic: #1B4D8F;
+    --civic-tint: #1B4D8F12;
+    --gone: #8A8880;
+    --s2: 8px; --s3: 12px; --s4: 16px; --s5: 20px; --s6: 28px; --s8: 40px;
+    --dur: 120ms;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    font: 17px/1.55 ui-sans-serif, system-ui, sans-serif;
+    background: var(--bg); color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 640px; margin: 0 auto; padding: var(--s6) var(--s4) var(--s8); }
+
+  .progress { font-size: 15px; color: var(--ink-muted); margin-bottom: var(--s5); }
+  .progress b { color: var(--ink); font-weight: 600; }
+
+  h1 { font-size: 30px; line-height: 1.15; letter-spacing: -0.015em; margin-bottom: var(--s3); }
+  .lede { font-size: 18px; color: var(--ink-muted); margin-bottom: var(--s6); max-width: 34em; }
+
+  .chosen {
+    border-left: 3px solid var(--civic); padding: var(--s3) var(--s4);
+    background: var(--civic-tint); margin-bottom: var(--s6);
+  }
+  .chosen dt { font-size: 15px; color: var(--ink-muted); }
+  .chosen dd { margin: 0 0 var(--s2); font-weight: 600; }
+  .chosen dd:last-child { margin-bottom: 0; }
+
+  h2 { font-size: 20px; margin: var(--s6) 0 var(--s3); }
+  .day { border-top: 1px solid var(--rule); padding-top: var(--s4); margin-bottom: var(--s5); }
+  .day h3 { font-size: 17px; margin-bottom: var(--s2); }
+  .day .avail { font-size: 15px; color: var(--ink-muted); margin-bottom: var(--s3); }
+
+  .times { display: flex; flex-wrap: wrap; gap: var(--s2); }
+  .times button, .times span {
+    font: inherit; font-size: 17px;
+    min-height: 48px; min-width: 92px;
+    padding: var(--s2) var(--s4);
+    border: 1.5px solid var(--ink); border-radius: 4px;
+    background: var(--surface); color: var(--ink);
+    cursor: pointer;
+    transition: background var(--dur) ease-out;
+  }
+  @media (hover: hover) { .times button:hover { background: var(--civic-tint); } }
+  .times button:active { background: #1B4D8F22; }
+  .times button:focus-visible { outline: 3px solid var(--civic); outline-offset: 2px; }
+  .times button[aria-pressed="true"] {
+    background: var(--civic); border-color: var(--civic); color: #fff; font-weight: 600;
+  }
+  /* Taken slots are not shown as greyed buttons a person can try to press. They are
+     struck through, labelled, and not focusable - the constraint is stated, not implied. */
+  .times span.taken {
+    color: var(--gone); border-color: var(--rule); border-style: dashed;
+    text-decoration: line-through; display: inline-flex; align-items: center;
+    justify-content: center; cursor: default;
+  }
+
+  .legend { font-size: 15px; color: var(--ink-muted); margin-top: var(--s3); }
+  .legend s { color: var(--gone); }
+
+  .consequence {
+    margin-top: var(--s6); padding: var(--s4);
+    border: 1px solid var(--rule); background: var(--surface);
+  }
+  .consequence h3 { font-size: 17px; margin-bottom: var(--s2); }
+  .consequence p { color: var(--ink-muted); font-size: 16px; }
+
+  .go {
+    margin-top: var(--s5); width: 100%;
+    font: inherit; font-size: 18px; font-weight: 600;
+    min-height: 56px; padding: var(--s3) var(--s5);
+    background: var(--civic); color: #fff; border: 0; border-radius: 4px; cursor: pointer;
+    transition: background var(--dur) ease-out;
+  }
+  @media (hover: hover) { .go:hover { background: #163F76; } }
+  .go:active { background: #123563; }
+  .go:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+  .back { display: inline-block; margin-top: var(--s4); color: var(--civic); font-size: 17px; }
+</style>
+<body>
+  <main class="wrap">
+    <p class="progress">Step <b>3</b> of 4 · Choose a time</p>
+
+    <h1>When can you come in?</h1>
+    <p class="lede">
+      A blood test takes about 10 minutes. Please arrive 5 minutes early and bring your
+      appointment letter if you have one.
+    </p>
+
+    <dl class="chosen">
+      <dt>Clinic</dt><dd>Riverside Community Clinic, 2 Mill Lane</dd>
+      <dt>Service</dt><dd>Blood test</dd>
+    </dl>
+
+    <h2>Next available times</h2>
+
+    <section class="day">
+      <h3>Tuesday 16 September</h3>
+      <p class="avail">3 times left</p>
+      <div class="times">
+        <span class="taken" aria-label="9:00 am, already taken">9:00 am</span>
+        <button aria-pressed="true">9:20 am</button>
+        <span class="taken" aria-label="9:40 am, already taken">9:40 am</span>
+        <button aria-pressed="false">2:00 pm</button>
+        <button aria-pressed="false">2:20 pm</button>
+      </div>
+    </section>
+
+    <section class="day">
+      <h3>Wednesday 17 September</h3>
+      <p class="avail">6 times left</p>
+      <div class="times">
+        <button aria-pressed="false">8:40 am</button>
+        <button aria-pressed="false">9:00 am</button>
+        <span class="taken" aria-label="11:00 am, already taken">11:00 am</span>
+        <button aria-pressed="false">11:20 am</button>
+      </div>
+    </section>
+
+    <p class="legend">
+      Times shown <s>struck through</s> have already been taken by someone else.
+    </p>
+
+    <div class="consequence">
+      <h3>You are booking 9:20 am on Tuesday 16 September</h3>
+      <p>
+        Nothing is booked until you press the button below. You can change or cancel this
+        appointment up to 2 hours beforehand, by phone on 0800 121 4433 or on this website.
+      </p>
+    </div>
+
+    <button class="go">Book this appointment</button>
+    <a class="back" href="#">Go back to choose a different service</a>
+  </main>
+</body>
+</html>

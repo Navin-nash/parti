@@ -338,6 +338,16 @@ one real finding (hyperswitch JSON):
     },
   },
   {
+    name: "compose", group: "Direction", cost: "S",
+    purpose: "Spatial and hierarchy pass only",
+    input: "a screen",
+    output: "what moved, what quieted, the reading order",
+    detail:
+      "Squint, grayscale, one exceptional element, proximity before cards, optical alignment. No palette change and no new features. Density is a different command.",
+    example: "compose the results screen — hierarchy is inverted",
+    relatedComponents: ["hero", "data-table"],
+  },
+  {
     name: "density", group: "Direction", cost: "S",
     purpose: "Rhythm and information density",
     input: "a screen",
@@ -462,21 +472,31 @@ motion   — durations, easings, what never animates
   },
   {
     name: "polish", group: "Build", cost: "M",
-    purpose: "Craft pass, no new features",
+    purpose: "Ship-floor and composition, no new features",
     input: "an existing screen",
     output: "the same screen, better made",
     detail:
-      "No new scope. Padding math, optical alignment, transition timing, and the difference between reaching for a card and reaching for a divider.",
+      "No new scope and no extra decoration. Padding math, optical alignment, transition timing, ship-floor boxes, and the difference between reaching for a card and reaching for a divider.",
     example: "polish this component",
     run: {
       kind: "artifact",
-      out: `## Padding math        every box re-checked against the scale
+      out: `## Ship-floor         every countable box in ship-floor.md
+## Padding math        every box re-checked against the scale
 ## Optical alignment   where mathematical centre reads as off
 ## Transition timing   durations and curves against the token set
 ## Card vs divider     the difference between reaching for each
 
 # no new scope — that's the whole discipline`,
     },
+  },
+  {
+    name: "live", group: "Build", cost: "M",
+    purpose: "Design against the running page, in your own browser",
+    input: "a running dev server",
+    output: "variants written into source, then collapsed to the one you pick",
+    detail:
+      "A helper serves an overlay into your own browser, not a headless one. Pick an element and get N variants written into source and hot-swapped; each variant is linted against the token spec first, so an off-spec option shows its drift count while you are choosing rather than after you commit. Insert mode adds something new at a gap. Knobs let you tune a variant without another round trip, and the values you land on are written to source. Notes anchor to elements, so marking a row sends the agent the selectors it crossed. Accept collapses to your pick with no residue; discard and undo restore from backups.",
+    example: "live - the pricing page is running on 5173",
   },
   {
     name: "harden", group: "Build", cost: "M",

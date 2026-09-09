@@ -106,6 +106,7 @@ You can also name a command. Full definitions, inputs, and outputs: [`skills/par
 | `deslop` | codebase or design | tell list + specific replacements | S |
 | `critique` | anything visual | evidence-based review, no changes | S |
 | `typeset` | existing type system | type scale + pairing spec | S |
+| `compose` | a screen | spatial/hierarchy correction | S |
 | `palette` | existing colors or a brief | color system, contrast-verified | S |
 | `motion` | existing motion or a brief | motion spec + library decision | M |
 | `review` | codebase or a diff | rule-id findings at `file:line` | S |
@@ -121,7 +122,8 @@ You can also name a command. Full definitions, inputs, and outputs: [`skills/par
 | Command | Input | Output | Cost |
 |---|---|---|---|
 | `build` | spec/brief | working code, all named states, verified | L |
-| `polish` | existing screen | craft pass, no new features or scope | M |
+| `polish` | existing screen | ship-floor + composition, no new features | M |
+| `live` | one component or screen | N HTML variants on one axis, in the browser | M |
 | `harden` | existing screen | every missing state + a11y completed | M |
 | `lint` | any built code | scripted anti-slop + drift report | XS |
 | `responsive` | one screen | breakpoint behavior, 320px up | S |
@@ -201,6 +203,76 @@ A shipped build failing a floor the mockup already passed is a regression, not p
 
 ---
 
+## The live session
+
+Design against the page while it is running, in **your own browser** — not a headless one.
+
+```bash
+node skills/parti/live/boot.mjs --page src/index.html
+```
+
+Press `p` and click an element; the overlay reports its size, its padding box, its
+ancestry, and its **measured contrast** — the same WCAG math `color.py` uses, run on the
+pixels the browser actually painted, so an overlay or a gradient behind text cannot hide
+a failure the way a source-level check does. Then pick an action and get variants written
+into source and hot-swapped.
+
+The part no other tool does: **every variant is linted against the token spec before it is
+offered**, and a variant that introduced an off-spec colour carries its drift count in the
+picker. You see that it is off-spec while you are choosing, not after you commit.
+
+`i` inserts something new at a gap. `n` drops notes that anchor to elements, so marking a
+row sends the agent the selectors it crossed rather than a rectangle. Knobs tune a variant
+without another round trip, and the values you settle on are written to source. Accept
+collapses to your pick with no residue; discard and undo are byte-for-byte restores.
+Nothing is written into build output or a generated file — that refusal is a hard stop,
+because a variant accepted there is erased by the next build with no error anywhere.
+
+## No templates, on purpose
+
+Every other design skill in this space hands you markup to paste. `parti` does not, and
+that is the point.
+
+`surfaces/` covers the surfaces that get built most and botched most — tables, form
+fields, empty states — and carries the decisions, what the token spec must define, every
+state that has to exist, and the specific ways each one goes wrong. **No implementations.**
+A reference implementation is a default with better manners: paste one and the surface
+stops answering to your direction and starts answering to whoever wrote the template,
+which is the same substitution this skill exists to prevent, arriving one level deeper
+where it is harder to notice.
+
+The rule is enforced mechanically — `check_surfaces.py` fails on any code fence — because
+"just show them the code" is exactly the reflex being resisted.
+
+## Not the indigo one
+
+Every model reaches for the same accent when nothing in the brief points anywhere:
+Tailwind's `indigo-500`/`600`, `violet-500`, and the purple-to-blue gradient. `lint.py`
+flags it as `default_violet` **by hue rather than by a list of hex values**, so nudging
+`#6366F1` to `#6165EE` does not evade it — evading a tell is not the same as choosing a
+colour. A real violet brand clears the finding by being declared in `DESIGN.md` with its
+reason, which is the whole exemption.
+
+The rest of the floor lives in
+[`foundations.md`](skills/parti/references/foundations.md) as numbers rather than
+adjectives: the structural sentence and a named role for every block, so a page is an
+argument instead of a stack of identical sections; measure at 45–75 characters, body at
+16px or more, a heading scale of at least 1.25, contrast measured rather than assumed;
+one primary action per view, press feedback inside 100ms, targets at 24px minimum and
+44px for anything primary on touch.
+
+## Go or no-go
+
+Nothing leaves without a verdict. Ten unconditional no-gos (measured contrast below the
+floor, focus removed, a state that can occur but was never built, values that do not trace
+to the spec, a claim that something was verified when it was not), eight conditions that
+must all hold, and an exception protocol that requires writing the waiver down with its
+reason.
+
+The gate refuses defects, not taste. Unconventional is never a no-go, sparse is never a
+no-go, and a low slop-index score is a regression guard rather than a blocker — see
+[`go-no-go.md`](skills/parti/references/go-no-go.md).
+
 ## `DESIGN.md` is binding memory
 
 Step 0 of every run, before anything else.
@@ -225,6 +297,14 @@ python skills/parti/scripts/score.py audit.json                    # measured sc
 python skills/parti/scripts/color.py check palette.json            # every pair, AA verdicts
 python skills/parti/scripts/lint.py <path> --tokens tokens.json    # built code vs. its spec: tells + drift
 python skills/parti/scripts/motion.py <path>                       # motion rule violations at file:line
+python skills/parti/scripts/capture.py --url <url> --focus "<el>"  # one element's motion from a reference site
+```
+
+And the live session, in Node, no dependencies:
+
+```bash
+node skills/parti/live/boot.mjs --page src/index.html   # helper + overlay into your own browser
+node skills/parti/live/poll.mjs --port P --token T      # the agent waits for what you do
 ```
 
 **Only `lint.py` and `motion.py` exit non-zero** (`1` on any P0). The other three always exit `0` — they're instruments, not judges.
@@ -247,9 +327,11 @@ Given a screenshot rather than a codebase, the skill says so and scores the judg
 .claude-plugin/       plugin.json + marketplace.json — the plugin manifest
 skills/parti/
   SKILL.md             the skill itself — frontmatter + full process
-  references/          16 files, loaded on demand rather than up front
+  references/          loaded on demand rather than up front
+  surfaces/            per-surface build direction — decisions, not markup
   scripts/             audit.py  capture.py  color.py  lint.py  motion.py  score.py  — stdlib only
-evals/                 run_script_evals.py  rubric.md  trigger_cases.json
+  live/                the live browser session — Node, no dependencies
+evals/                 run_script_evals.py  check_surfaces.py  rubric.md  trigger_cases.json
 docs/                  scripts.md  CONTRIBUTING.md  RUNBOOK.md
 ```
 
@@ -258,6 +340,10 @@ docs/                  scripts.md  CONTRIBUTING.md  RUNBOOK.md
 | [`docs/scripts.md`](docs/scripts.md) | every flag, real captured output, JSON schemas, exit codes, CI wiring |
 | [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) | setup, the four testing layers, what each kind of change requires, PR checklist |
 | [`docs/RUNBOOK.md`](docs/RUNBOOK.md) | install verification, diagnosing a skill that won't fire, script failures, release and rollback |
+| [`docs/anti-slop-comparison.md`](docs/anti-slop-comparison.md) | how every design skill implements anti-slop, by mechanism type, and where each one fails |
+| [`docs/competitive-analysis.md`](docs/competitive-analysis.md) | capability comparison against the other design skills, with what closed and what is still open |
+| [`docs/suite-roadmap.md`](docs/suite-roadmap.md) | the staged plan for the suite, and the constraints that govern it |
+| [`evals/ab-results.md`](evals/ab-results.md) | the blind A/B: measured results, and why the preference number is not yet collected |
 
 References are split out because SKILL.md loads on every match while a reference loads only when the run actually needs it.
 
@@ -276,15 +362,27 @@ References are split out because SKILL.md loads on every match while a reference
 | [`bans.md`](skills/parti/references/bans.md) | build-time tell list: CSS-specificity pitfalls, untouched library defaults |
 | [`stacks.md`](skills/parti/references/stacks.md) | build playbooks per stack |
 | [`verify.md`](skills/parti/references/verify.md) | the build verification loop and report format |
+| [`remediation.md`](skills/parti/references/remediation.md) | finding → change: triage, which level to fix at, conflict precedence, re-verification, forbidden repairs |
 | [`ux-methods.md`](skills/parti/references/ux-methods.md) | UX laws, heuristics, IA, states, cognitive load, accessibility |
 | [`tokens.md`](skills/parti/references/tokens.md) | token spec format and a worked example |
+| [`convention.md`](skills/parti/references/convention.md) | unconventional in expression, conventional in mechanics — the counterweight that keeps unique from costing usable |
+| [`use-case.md`](skills/parti/references/use-case.md) | ten product archetypes → density, motion budget, type, colour, and each category's signature failure |
+| [`elements.md`](skills/parti/references/elements.md) | the material system: icons, elevation, radius, borders, data display, ornament |
+| [`foundations.md`](skills/parti/references/foundations.md) | the floor in numbers: page structure, readability, interaction, the colour defaults to refuse |
+| [`go-no-go.md`](skills/parti/references/go-no-go.md) | the ship gate: unconditional no-gos, conditions that must all hold, the exception protocol |
+| [`live.md`](skills/parti/references/live.md) | the live-session protocol: events, variants, knobs, annotations, recovery |
+| [`surfaces.md`](skills/parti/references/surfaces.md) | what a surface direction contains, and why it ships no markup |
+| [`systems.md`](skills/parti/references/systems.md) | working inside Material, Carbon, Fluent, Polaris, Primer, GOV.UK or Radix |
 
 ---
 
 ## Testing
 
 ```bash
-python evals/run_script_evals.py            # exits 1 on any failure
+python evals/run_script_evals.py            # 99 script assertions, exits 1 on any failure
+python evals/check_surfaces.py              # surface directions: no markup, all parts, real rule ids
+node skills/parti/live/selftest.mjs         # live protocol, annotations, abort semantics
+node skills/parti/live/wraptest.mjs         # source surgery: nesting, CRLF, JSX, insert, undo
 python evals/run_script_evals.py --verbose  # per-assertion output
 python evals/run_script_evals.py --keep     # leave fixtures on disk to inspect
 ```
