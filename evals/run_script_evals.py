@@ -528,6 +528,43 @@ def test_lint_nested_tokens(R, tmp):
     R.check(G, "exit code matches the flat spec's", rc == 1, f"rc={rc}")
 
 
+def test_lint_colour_bearing(R, tmp):
+    """A hex in visible copy is the page talking about a colour, not using one.
+
+    The dangerous direction here is over-stripping: if the helper ever drops a
+    <style> block or a tagless .css file, drift silently stops being checked and
+    every other drift test still passes. Cases 2-4 exist for that, not for the
+    false positive in case 1.
+    """
+    G = "Lint - colour-bearing scan"
+    tokens_path = os.path.join(tmp, "tokens-cb.json")
+    with open(tokens_path, "w") as f:
+        json.dump({"--bg": "#FAF9F6"}, f)
+
+    root = write_fixture(os.path.join(tmp, "cb"), {
+        # 1. prose quoting a colour it argues against - must NOT be drift
+        "copy.html": "<p>Warm cream, #B23A2E, arrives regardless of subject</p>",
+        # 2. the same value inside a style block - MUST be drift
+        "styled.html": "<style>.a{color:#123456}</style><p>nothing quoted here</p>",
+        # 3. inside an attribute - MUST be drift
+        "attr.html": '<div style="background:#654321">text</div>',
+        # 4. a tagless stylesheet - MUST behave exactly as before
+        "sheet.css": ".b{border-color:#ABCDEF}",
+    })
+
+    _rc, r = lint(root, tokens_path)
+    hits = {}
+    for f in r["findings"]:
+        if f["id"] == "token_drift":
+            hits[f["label"].split()[0].lower()] = f.get("file", "")
+
+    R.check(G, "a hex in a text node is not reported as drift",
+            "#b23a2e" not in hits, f"reported: {sorted(hits)}")
+    R.check(G, "a hex inside <style> is still drift", "#123456" in hits, f"reported: {sorted(hits)}")
+    R.check(G, "a hex in an attribute is still drift", "#654321" in hits, f"reported: {sorted(hits)}")
+    R.check(G, "a tagless .css file is scanned whole", "#abcdef" in hits, f"reported: {sorted(hits)}")
+
+
 def test_lint_ignore(R, tmp):
     """--ignore must silence a path entirely, and only the paths named."""
     G = "Lint — --ignore"
@@ -958,6 +995,7 @@ def main():
     test_lint_clean(R, clean)
     test_lint_drift(R, tmp)
     test_lint_nested_tokens(R, tmp)
+    test_lint_colour_bearing(R, tmp)
     test_lint_ignore(R, tmp)
     test_lint_ship_floor(R, tmp)
 

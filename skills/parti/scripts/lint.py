@@ -137,6 +137,31 @@ def read(p):
         return ""
 
 
+RE_STYLE_SCRIPT = re.compile(r"<(style|script)\b[^>]*>.*?</\1\s*>", re.I | re.S)
+RE_TEXT_NODE = re.compile(r">[^<]*<", re.S)
+
+
+def colour_bearing(txt):
+    """The part of a file where a hex can actually BE a colour.
+
+    A hex inside visible copy is the page talking *about* a colour, not using
+    one - "warm cream, #FAF9F6" in a paragraph arguing against warm cream is
+    the clearest case, and it was reported as drift until this existed. Markup
+    text nodes are therefore dropped before the hex scan.
+
+    Style and script blocks are text nodes too, and they are exactly where the
+    colours live, so they are lifted out and kept first. Files with no tags at
+    all (.css, .ts) pass through whole. Only the drift and default-violet scans
+    use this; em dashes, lorem and eyebrows are properties of the copy and are
+    still read from the full text.
+    """
+    kept = [m.group(0) for m in RE_STYLE_SCRIPT.finditer(txt)]
+    body = RE_STYLE_SCRIPT.sub(" ", txt)
+    if "<" not in body:
+        return txt
+    return RE_TEXT_NODE.sub("><", body) + " " + " ".join(kept)
+
+
 def load_tokens(path):
     with open(path, "r", encoding="utf-8") as f:
         raw = json.load(f)
@@ -286,7 +311,7 @@ def lint(root, tokens_path=None, ignore=()):
             continue
         res["files_scanned"] += 1
 
-        for m in RE_HEX.finditer(txt):
+        for m in RE_HEX.finditer(colour_bearing(txt)):
             h = norm_hex(m.group(1))
             if allowed is not None and h not in allowed:
                 drift[h].append(rel)

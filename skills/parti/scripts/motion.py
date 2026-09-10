@@ -54,9 +54,14 @@ PRESS_SCALE_MIN, PRESS_SCALE_MAX = 0.95, 1.05
 # one-per-session choreography). Motion budgets are for UI, not for a hero.
 RE_LONG_OK_PATH = re.compile(
     r"(marketing|landing|hero|onboard|welcome|splash|story|promo|banner)", re.I)
-# Lines where a long duration is legitimately allowed (continuous motion).
+# Lines where a long duration is legitimately allowed: continuous motion, and
+# a stroke being DRAWN. A path drawn via stroke-dashoffset is not a UI
+# transition - it is a mark being made, and the budget that keeps a dropdown
+# feeling instant makes a drawn line read as a glitch. The signal is the
+# dash property itself, so this cannot be claimed by an ordinary fade.
 RE_LONG_OK_LINE = re.compile(
-    r"infinite|repeat\s*:|marquee|spin|pulse|skeleton|shimmer|progress|scrub", re.I)
+    r"infinite|repeat\s*:|marquee|spin|pulse|skeleton|shimmer|progress|scrub"
+    r"|stroke-dashoffset|strokeDashoffset|pathLength", re.I)
 
 RE_TRIGGER_ANCHORED = re.compile(
     r"(popover|dropdown|menu|tooltip|select|combobox|popper|listbox)", re.I)
