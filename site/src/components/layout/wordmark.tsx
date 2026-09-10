@@ -11,7 +11,8 @@ export function Wordmark({ className }: { className?: string }) {
     <Link
       href="/"
       className={cn(
-        "group inline-flex items-baseline gap-2 outline-none",
+        "group inline-flex items-baseline gap-2 rounded-sm outline-none",
+        "focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:ring-offset-2 focus-visible:ring-offset-paper",
         className,
       )}
       aria-label="Parti - home"

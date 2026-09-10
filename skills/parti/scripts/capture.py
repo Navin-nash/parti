@@ -113,9 +113,12 @@ def slug(url):
 
 
 def fetch(url, timeout=15, cap=FETCH_CAP):
-    req = urllib.request.Request(url, headers={"User-Agent": UA})
+    # Scheme is pinned to http/https/file at the CLI boundary (see main), and
+    # cross-scheme inclusion is refused when resolving stylesheets, so a remote
+    # page cannot pull a local file in through a <link>.
+    req = urllib.request.Request(url, headers={"User-Agent": UA})  # noqa: S310
     try:
-        with urllib.request.urlopen(req, timeout=timeout) as r:  # noqa: S310 (http/https/file only)
+        with urllib.request.urlopen(req, timeout=timeout) as r:  # noqa: S310
             raw = r.read(cap)
             ctype = r.headers.get("Content-Type", "") if r.headers else ""
             final = r.geturl()

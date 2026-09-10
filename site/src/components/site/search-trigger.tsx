@@ -1,7 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { Search } from "@/lib/icons";
+
+/** The platform never changes while the page is open, so nothing to subscribe to. */
+const noSubscribe = () => () => {};
+const isMacClient = () =>
+  /Mac|iPhone|iPad/i.test(navigator.platform || navigator.userAgent);
+const isMacServer = (): boolean | null => null;
 
 /**
  * The visible half of the command palette.
@@ -15,11 +21,9 @@ import { Search } from "@/lib/icons";
  * broken.
  */
 export function SearchTrigger() {
-  const [mac, setMac] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    setMac(/Mac|iPhone|iPad/i.test(navigator.platform || navigator.userAgent));
-  }, []);
+  // Read during render rather than setting state in an effect: the effect form
+  // costs a second render pass on every mount and React flags it as cascading.
+  const mac = useSyncExternalStore(noSubscribe, isMacClient, isMacServer);
 
   const open = () =>
     document.dispatchEvent(

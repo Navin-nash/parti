@@ -22,7 +22,6 @@ raters and is NOT produced here. Running this script produces an empty tally on 
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import random
 import subprocess
@@ -82,7 +81,8 @@ def main() -> int:
     args = ap.parse_args()
 
     briefs = json.loads((HERE / "briefs.json").read_text(encoding="utf-8"))["briefs"]
-    rng = random.Random(args.seed)
+    # Presentation order, not a secret. Seeded on purpose so a run is reproducible.
+    rng = random.Random(args.seed)  # noqa: S311
 
     results, key, cards = [], {}, []
     start_side = rng.randint(0, 1)

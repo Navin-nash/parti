@@ -24,7 +24,7 @@ export function SquareLink({
   className?: string;
 }) {
   const cls = cn(
-    "inline-flex items-center gap-2 rounded-full font-medium transition-all duration-(--d-fast) ease-(--ease-specimen) active:scale-[0.98]",
+    "inline-flex items-center gap-2 rounded-full font-medium transition-[color,background-color,border-color,box-shadow,transform] duration-(--d-fast) ease-(--ease-specimen) active:scale-[0.98]",
     size === "lg" ? "px-6 py-3.5 text-[0.9375rem]" : "px-5 py-2.5 text-[0.875rem]",
     variant === "mark"
       ? "bg-mark text-on-mark hover:opacity-90"

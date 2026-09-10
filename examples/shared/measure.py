@@ -44,7 +44,8 @@ ARMS = ("baseline", "parti")
 
 def run(script, *args):
     cmd = [sys.executable, os.path.join(SCRIPTS, script)] + list(args)
-    p = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
+    p = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8",
+                       errors="replace", check=False)
     return p.returncode, (p.stdout or "") + (p.stderr or "")
 
 

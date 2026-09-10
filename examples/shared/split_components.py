@@ -19,7 +19,6 @@ Stdlib only. Idempotent.
 """
 
 import argparse
-import glob
 import os
 import re
 import sys

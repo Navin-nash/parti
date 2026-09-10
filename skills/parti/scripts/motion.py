@@ -225,7 +225,7 @@ def scan(root):
                 ms = to_ms(m.group(1), m.group(2))
                 durations[int(ms)] += 1
                 if ms > budget and not long_ok:
-                    add({"rule": "timing-over-300ms", "severity": "P0", "scope": "line", "scope": "line", "file": rel, "line": n,
+                    add({"rule": "timing-over-300ms", "severity": "P0", "scope": "line", "file": rel, "line": n,
                          "message": f"{int(ms)}ms; budget for this surface is under {budget}ms "
                                     f"(see motion-rules.md §12 for the per-element table)",
                          "code": line.strip()[:120]})
@@ -234,7 +234,7 @@ def scan(root):
                 ms = float(m.group(1)) * 1000.0
                 durations[int(ms)] += 1
                 if ms > budget and not long_ok:
-                    add({"rule": "timing-over-300ms", "severity": "P0", "scope": "line", "scope": "line", "file": rel, "line": n,
+                    add({"rule": "timing-over-300ms", "severity": "P0", "scope": "line", "file": rel, "line": n,
                          "message": f"{int(ms)}ms; budget for this surface is under {budget}ms",
                          "code": line.strip()[:120]})
 
@@ -243,7 +243,7 @@ def scan(root):
                 ms = int(m.group(1))
                 durations[ms] += 1
                 if ms > budget and not long_ok:
-                    add({"rule": "timing-over-300ms", "severity": "P0", "scope": "line", "scope": "line", "file": rel, "line": n,
+                    add({"rule": "timing-over-300ms", "severity": "P0", "scope": "line", "file": rel, "line": n,
                          "message": f"duration-{ms}; budget for this surface is under {budget}ms",
                          "code": line.strip()[:120]})
 
@@ -368,16 +368,16 @@ def summarize(r, census_only=False):
     a = L.append
     c = r["census"]
 
-    if census_only or True:
-        a(f"Scanned {r['files_scanned']} files under {r['root']}")
-        a("")
-        a("CENSUS")
-        a(f"  distinct durations : {c['distinct_durations']}  "
-          f"{sorted(c['durations_ms'])[:12]}{' ...' if c['distinct_durations'] > 12 else ''}")
-        a(f"  distinct curves    : {c['distinct_curves']}")
-        a(f"  reduced-motion     : {c['reduced_motion_sites']} site(s)")
-        a(f"  hover gated        : {'yes' if c['hover_gated'] else 'NO'}")
-        a("")
+    a(f"Scanned {r['files_scanned']} files under {r['root']}")
+    a("")
+    a("CENSUS")
+    a(f"  distinct durations : {c['distinct_durations']}  "
+      f"{sorted(c['durations_ms'])[:12]}{' ...' if c['distinct_durations'] > 12 else ''}")
+    a(f"  distinct curves    : {c['distinct_curves']}")
+    a(f"  reduced-motion     : {c['reduced_motion_sites']} site(s)")
+    a(f"  hover gated        : {'yes' if c['hover_gated'] else 'NO'}")
+    a("")
+    # The census always prints; --census means print ONLY the census.
     if census_only:
         return "\n".join(L)
 

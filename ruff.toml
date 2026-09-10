@@ -1,0 +1,31 @@
+# Pinned so `ruff check` means the same thing on every machine and in CI.
+# Without this the result depends on whatever global config the developer has,
+# which is how a lint gate stops being a gate.
+target-version = "py311"
+line-length = 110
+exclude = ["site", "examples/nextjs", ".ruff_cache", "__pycache__"]
+
+[lint]
+# Correctness rules only. This gate exists to catch defects — a duplicate dict
+# key, a name that does not exist, a lambda that captures a loop variable — not
+# to enforce a house style on scripts that are already consistent. Style rules
+# were considered and left out: 45 cosmetic findings would have buried the 12
+# real ones, and a noisy gate gets ignored.
+select = [
+  "F",       # pyflakes: undefined names, unused imports, duplicate dict keys
+  "E9",      # syntax and runtime errors
+  "B",       # bugbear: loop-variable capture, mutable defaults, zip length
+  "SIM222",  # `... or True` — a condition that cannot fail
+  "SIM223",  # `... and False` — a condition that cannot fire
+  "PLW1510", # subprocess.run without an explicit check=
+  "RUF100",  # noqa that suppresses nothing
+  "S310",    # urlopen on a scheme that is not pinned - capture.py takes a user URL
+  "S311",    # non-cryptographic random where a token is meant
+]
+
+# Deliberately NOT selected, with reasons, so the next person does not re-add them:
+#   S101 - assert IS the assertion mechanism in evals/; banning it has no meaning here.
+#   S110 - try/except/pass is how these scripts survive an unreadable file mid-walk;
+#          the alternative is a crawler that dies on one permission error.
+#   S603 - every subprocess call in this repo is a list of literals plus sys.executable.
+#          There is no shell and no user string on any of those command lines.

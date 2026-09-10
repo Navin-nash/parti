@@ -23,15 +23,18 @@ Usage:
     python lint.py <path>                              # tell scan only
     python lint.py <path> --tokens tokens.json          # + drift check
     python lint.py <path> --json out.json --quiet       # for CI
+    python lint.py <path> --ignore "arms/*/baseline.tsx" # skip a comparison arm
 
-tokens.json is flat: {"--bg": "#FAF9F6", "--accent": "#B23A2E", ...} — the
-same names references/tokens.md's spec format uses. Exit code is 1 if any
-P0 finding exists, so this can gate a build step.
+tokens.json may be flat ({"--bg": "#FAF9F6", ...}) or nested per theme
+({"light": {...}, "dark": {...}}) — the two-layer shape references/tokens.md
+prescribes. Hex values are collected from any depth; non-colour metadata is
+ignored. Exit code is 1 if any P0 finding exists, so this can gate a build step.
 
 Stdlib only. Never writes to the scanned project.
 """
 
 import argparse
+import fnmatch
 import json
 import os
 import re
@@ -143,13 +146,23 @@ def load_tokens(path):
     #   - RE_HEX needs the leading '#' to match, so validate the restored form;
     #   - norm_hex expects BARE digits (it is fed RE_HEX group(1) at the call
     #     site below), so normalize the stripped form, not the '#'-prefixed one.
+    # The walk is recursive because references/tokens.md prescribes a two-layer
+    # spec — semantic names resolving to primitives PER THEME — so a real token
+    # file nests ({"light": {...}, "dark": {...}}). A flat-only reader silently
+    # produced an empty allowed set on exactly the format this skill documents.
     allowed = set()
-    for v in raw.values():
-        if not isinstance(v, str):
-            continue
-        bare = v.lstrip("#")
-        if RE_HEX.fullmatch("#" + bare):
-            allowed.add(norm_hex(bare))
+
+    def walk(node):
+        values = node.values() if isinstance(node, dict) else node
+        for v in values:
+            if isinstance(v, (dict, list)):
+                walk(v)
+            elif isinstance(v, str):
+                bare = v.lstrip("#")
+                if RE_HEX.fullmatch("#" + bare):
+                    allowed.add(norm_hex(bare))
+
+    walk(raw)
     return allowed
 
 
@@ -235,9 +248,26 @@ def is_inter_geist_only(families):
     return all(re.search(r"^(Inter|Geist)(\s|$)", f, re.I) for f in named)
 
 
-def lint(root, tokens_path=None):
+def is_ignored(rel, patterns):
+    """True if a repo-relative path matches any --ignore glob.
+
+    Two things legitimately live in a scanned tree and are not the build:
+    a deliberately-bad comparison arm, and a data module whose STRINGS are
+    prose about slop rather than markup containing it. Both trip content
+    rules (lorem, focus-killed) on their own quoted text. An ignore list is
+    the ordinary linter answer; a rule that tries to guess prose from code
+    would be a worse one.
+    """
+    if not patterns:
+        return False
+    posix = rel.replace(os.sep, "/")
+    return any(fnmatch.fnmatch(posix, pat) for pat in patterns)
+
+
+def lint(root, tokens_path=None, ignore=()):
     res = {"root": os.path.abspath(root), "files_scanned": 0,
            "findings": [], "counts": defaultdict(int)}
+    ignore = tuple(ignore or ())
 
     allowed = load_tokens(tokens_path) if tokens_path else None
     drift = defaultdict(list)
@@ -248,11 +278,13 @@ def lint(root, tokens_path=None):
     all_families = []
 
     for path in iter_files(root):
+        rel = os.path.relpath(path, root)
+        if is_ignored(rel, ignore):
+            continue
         txt = read(path)
         if not txt:
             continue
         res["files_scanned"] += 1
-        rel = os.path.relpath(path, root)
 
         for m in RE_HEX.finditer(txt):
             h = norm_hex(m.group(1))
@@ -261,7 +293,7 @@ def lint(root, tokens_path=None):
             if not exempt_violet and is_default_violet(h):
                 violet_hits[h].append(rel)
 
-        for m in RE_IMG_NO_ALT.finditer(txt):
+        for _m in RE_IMG_NO_ALT.finditer(txt):
             res["findings"].append({"id": "missing_alt", "severity": "P0",
                                      "label": "<img> without alt text", "file": rel})
 
@@ -358,10 +390,12 @@ def main():
     ap.add_argument("--tokens", dest="tokens", help="tokens.json to check color drift against")
     ap.add_argument("--json", dest="out")
     ap.add_argument("--quiet", action="store_true")
+    ap.add_argument("--ignore", action="append", default=[], metavar="GLOB",
+                    help="skip paths matching this glob, relative to <path>; repeatable")
     args = ap.parse_args()
     if not os.path.isdir(args.path):
         sys.exit(f"not a directory: {args.path}")
-    r = lint(args.path, args.tokens)
+    r = lint(args.path, args.tokens, args.ignore)
     if args.out:
         with open(args.out, "w") as f:
             json.dump(r, f, indent=2)
