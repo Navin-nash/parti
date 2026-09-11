@@ -49,7 +49,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # package_json_file defaults to ./package.json at the repo root; this repo
+      # has no root package.json (the Next.js app lives under site/), so the
+      # action can't find the pinned pnpm version without being pointed at it.
       - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: site/package.json
 
       - uses: actions/setup-node@v4
         with:

@@ -308,7 +308,11 @@ changed and why. What's still genuinely open:
   adjacent lines instead of one; added a small line-window check for it. The one genuine outlier,
   `text-loop.tsx`'s 800ms phrase crossfade (used once, inside `Hero`, which the regex can't see
   from the vendored component's own path), was cheaper to just bring inside budget (280ms) than to
-  build a caller-context exemption for.
+  build a caller-context exemption for. One more, unrelated to any of the above: the `site` job's
+  `pnpm/action-setup@v4` step failed outright (`No pnpm version is specified`) because its
+  `package_json_file` input defaults to `./package.json` at the repo root, and this repo has no
+  root `package.json` - the pinned `packageManager` field lives in `site/package.json`. Pointed the
+  action at it explicitly.
 
 - 2026-09-11 — **Home page's live single-showcase preview replaced with a folder-gallery
   reveal; then corrected twice on direct request.** The "It ships real interfaces" section used
