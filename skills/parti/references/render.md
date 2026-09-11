@@ -8,16 +8,19 @@ Read this when doing Step 4 of `explore`, rendering a `variants` / `live` set, o
 
 ## 1. The fidelity floor
 
-Non-negotiable regardless of which direction you're rendering. A render that fails these reads as unbuilt or generic no matter how good the thinking behind it was.
+Non-negotiable regardless of which direction you're rendering. A render that fails these reads as unbuilt or generic no matter how good the thinking behind it was — each generic default read against what to do instead:
 
-| Skip this... | ...and it reads as |
-|---|---|
-| Loading the real display face | A wireframe in Arial, not a direction |
-| Gray placeholder rectangle for imagery | An unfinished mockup, not a faithful one |
-| The default `0 4px 6px rgba(0,0,0,.1)` shadow on every surface | The same elevation regardless of what your `--e-` scale says |
-| Lorem ipsum or "Feature One / Feature Two" | Every hierarchy problem hidden |
-| A static screenshot standing in for a "choreographed" posture | Claiming motion you never showed |
-| Browser-default focus ring and cursor | Unbuilt, not an aesthetic choice |
+| Generic default | Reads as | Do instead |
+|---|---|---|
+| System stack quietly substituting for the named face | A wireframe in Arial, not a direction | Load the real face; if you truly can't yet, pick a fallback that shares its character, never Arial |
+| Gray placeholder rectangle for imagery | An unfinished mockup, not a faithful one | Real content-appropriate image or texture, or omit the element entirely |
+| The default `0 4px 6px rgba(0,0,0,.1)` shadow on every surface | The same elevation regardless of what your `--e-` scale says | Elevation from the `--e-` scale, meaning something specific per level |
+| Lorem ipsum or "Feature One / Feature Two" | Every hierarchy problem hidden | Real content, at real volume |
+| A static screenshot standing in for a "choreographed" posture | Claiming motion you never showed | Two-frame before/after or a live widget, duration + easing captioned |
+| Browser-default focus ring and cursor | Unbuilt, not an aesthetic choice | A styled focus state from the spec |
+| 48px gradient rounded square, stock icon centered | The icon-tile tell | A drawn mark from the subject's own vocabulary, or nothing |
+| Logo-left / links-center / CTA-right, 64px header | Whatever density + structure actually demand, ignored | Derive nav from the direction's own density + structure axes |
+| 24px card padding, always, on every card everywhere | No relationship to the type scale | Padding derived from the type scale and spacing base in the token spec |
 
 ## 2. Load real type, not a description of type
 
@@ -49,17 +52,3 @@ Same content, same stated viewport (`1440×900 desktop` or `390×844 mobile` —
 ## 7. Re-run the floor on the render, not just the plan
 
 A direction can pass the concept-level anti-slop check in `references/critique.md` and still fail here — real thesis, real signature, and then a default shadow and a default nav underneath it. Before showing the three, walk the tell list in `references/critique.md` a second time against what you actually built, not what you planned to build. Then walk `references/ship-floor.md` and the grayscale/squint checks in `references/composition.md`. Claim each check in the writeup.
-
----
-
-## Quick reference
-
-| Element | Generic default | Do instead |
-|---|---|---|
-| Font | System stack quietly substituting for the named face | Load the real face; if you truly can't yet, pick a fallback that shares its character, never Arial |
-| Shadow | `0 4px 6px rgba(0,0,0,.1)` on everything elevated | Elevation from the `--e-` scale, meaning something specific per level |
-| Icon tile | 48px gradient rounded square, stock icon centered | A drawn mark from the subject's own vocabulary, or nothing |
-| Nav | Logo-left / links-center / CTA-right, 64px header | Whatever density + structure actually demand |
-| Card padding | 24px, always, on every card everywhere | Derived from the type scale and the spacing base in the token spec |
-| Empty image slot | Gray placeholder rectangle | Real content-appropriate image or texture, or omit the element entirely |
-| Motion proof | One static screenshot | Two-frame before/after or a live widget, duration + easing captioned |

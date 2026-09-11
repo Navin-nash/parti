@@ -121,7 +121,39 @@ Derive instead: a colour has to be traceable to something true about the subject
 materials, its environment, or its history. Then check every pair with `color.py` before
 committing.
 
-## 5. Applying this
+## 5. Responsive and internationalization floor
+
+Loaded by `responsive`, `build` B2, and `harden`. A layout that only exists at the
+viewport it was designed at is a mockup that happens to run in a browser.
+
+- **Breakpoints come from the content, not device presets.** Hold the expanded layout as
+  long as it genuinely fits and collapse late; test the smallest and largest supported
+  widths first, not the middle. Prefer container queries for component-level adaptation
+  over a page-level breakpoint reused everywhere.
+- **Logical properties for anything direction-dependent** — `padding-inline-start`,
+  `margin-inline-end`, `text-align: start`. Reserve physical `left`/`right` for genuinely
+  physical geometry (a map, a drag handle). Think leading/trailing, not left/right, and
+  mirror-check any product that ships RTL.
+- **No fixed width or height on a text container.** Translated strings grow — short ones
+  grow proportionally more, so a one-word button label is the riskiest string on the
+  screen. Let rows wrap; test with pseudo-localization or one representative long locale
+  rather than budgeting a percentage.
+- **Never park a critical action where resizing or scrolling clips it.** Keep it in
+  normal flow, or in stable chrome with safe-area padding (`env(safe-area-inset-*)`) —
+  not floating at a fixed offset that a notch or a keyboard can cover.
+- **Content bleeds, controls float.** Backgrounds and media may extend to the viewport
+  edge; text and controls stay inside the layout margins and safe areas. In content
+  layouts, inset full-width buttons from the edge (≈16px inline on mobile) rather than
+  running them flush, unless the product's established chrome does that deliberately.
+- **Breathing room between adjacent targets** — without an established density system,
+  start at 12px between bordered or filled controls and 24px around borderless
+  text/icon-only ones, and never let an extended hit area (§3) overlap a neighbor's.
+- **Hint at hidden content.** Progressive disclosure needs a visible affordance: the
+  product's own cue, or the next item peeking 16–32px past a scroll edge, or a disclosure
+  control. Content reachable only past an edge with no cue is `NG-HIDDEN-CUE`
+  (`go-no-go.md`).
+
+## 6. Applying this
 
 - **New work** — read this before the first layout decision. Section 1 is the part
   that has to happen before anything visual.

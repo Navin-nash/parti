@@ -126,15 +126,65 @@ Most products over-invest at the visceral level and under-invest at the behavior
 
 ## 8. Accessibility floor
 
-Non-negotiable, and built in silently rather than presented as a feature:
+Non-negotiable, and built in silently rather than presented as a feature. Most of it is
+free if the platform is used rather than rebuilt — a native element ships its keyboard
+support, its role, and its focus behavior; a hand-rolled `<div>` standing in for one has
+to earn all of that back by hand and usually doesn't.
 
-- **Contrast** — 4.5:1 for body text, 3:1 for large text (18.66px+ bold or 24px+) and for UI component boundaries and states. Check the worst case, not the average.
-- **Color independence** — every distinction carried by color also carried by shape, position, weight, or label. Test in grayscale.
-- **Keyboard** — full operability, logical tab order, visible focus (never `outline: none` without a replacement), no traps, skip-to-content.
-- **Targets** — 44×44px minimum on touch, with adequate spacing between adjacent targets.
-- **Motion** — honor `prefers-reduced-motion`; no vestibular triggers (large parallax, spin, zoom) without an off switch. No flashing above 3Hz.
-- **Semantics** — real headings in order, real buttons for actions and links for navigation, labels tied to inputs, alt text that conveys purpose rather than describing pixels.
-- **Text** — resizable to 200% without loss, line length 45–75 characters, never disable zoom.
+- **Native elements first.** `<button>` for actions, `<a href>` for navigation — never
+  `<div onClick>`. A real link supports Cmd/Ctrl/middle-click for free. No ARIA is better
+  than wrong ARIA: reach for it only where no native element covers the pattern.
+- **Contrast** — 4.5:1 for body text, 3:1 for large text (18.66px+ bold or 24px+) and for
+  UI component boundaries and states. Check the worst case, not the average.
+- **Color independence** — every distinction carried by color also carried by shape,
+  position, weight, or label. Test in grayscale. A semantic color used against its own
+  meaning — the danger hue on a non-destructive action, a status green on a disabled
+  control — is `NG-COLOR-MISUSE` (`go-no-go.md`), not a palette note.
+- **Keyboard** — full operability, tab order matching visual order, no traps. Composite
+  widgets (tabs, menus, toolbars) use roving `tabindex`: the active item is `0`, every
+  other is `-1`. Use `tabindex="0"` only to join the natural tab order and `tabindex="-1"`
+  only for programmatic focus; positive values break the order for everyone.
+- **Visible focus, always.** Style `:focus-visible`, not bare `:focus`, so a mouse click
+  doesn't leave a ring behind. Never `outline: none` with nothing put back — verify a
+  custom ring against every adjacent color it crosses, at ≥2px solid perimeter or an
+  equivalent visible area.
+- **Trap and restore focus in overlays.** A modal sets `inert` on the background, moves
+  focus inside on open, returns it to the trigger on close, and adds
+  `overscroll-behavior: contain` so the page behind it doesn't scroll.
+- **Targets** — 44×44px minimum on touch, 40×40px on desktop where density permits, with
+  adequate spacing between adjacent targets (§3, and `foundations.md` §5). Give decorative
+  layers `pointer-events: none` so a glow or halo never swallows a click meant for the
+  control underneath it.
+- **Forms.** Every input gets a real `<label for>` — a placeholder is never a label
+  (`copy.md`). Add `autocomplete` with a meaningful `name`, plus the `type`/`inputmode`
+  that summons the right keyboard, and never block paste — people paste passwords and
+  one-time codes. Use native `disabled` when a control is genuinely unavailable; reach for
+  `aria-disabled="true"` only when it must stay focusable, then block pointer, keyboard,
+  and submission in code, not style alone.
+- **Errors that announce.** Mark a failing field `aria-invalid="true"`, point
+  `aria-describedby` at its inline error text, and focus the first invalid field on
+  submit. An error naming no way to recover is `NG-ERROR-RECOVERY`.
+- **Dynamic content announces through the right channel.** A polite live region
+  (`role="status"`) for non-urgent updates not tied to a control — toasts, result counts
+  — rendered as a stable empty region before its text updates, never re-mounted per
+  message. `role="alert"` for urgent, untied errors only; nothing else escalates to it.
+- **Alt text by purpose.** Decorative images get `alt=""`. Informative images describe
+  the meaning. Functional images describe the action — a search-icon button is
+  `alt="Search"`, never `alt="magnifying glass"`.
+- **Motion** — honor `prefers-reduced-motion`; no vestibular triggers (large parallax,
+  spin, zoom) without an off switch, no flashing above 3Hz. A state change carried by
+  motion alone, with no color, icon, or label left behind when the animation doesn't run,
+  is `NG-MOTION-ONLY-STATE`.
+- **Semantics and structure.** One `<h1>` per page, headings that describe their section
+  and nest without skipping a level. One visible primary `<main>` landmark. When repeated
+  chrome precedes it, a "Skip to content" link is the first focusable element.
+- **Text and zoom** — resizable to 200% without loss, reflowing at 320px width with no
+  horizontal scroll, line length 45–75 characters, never disable zoom. Truncated content
+  needs a way to reach the full value — a tooltip, `title`, or an expanded view —
+  truncation with no recovery is `NG-TRUNCATED`.
+- **Destructive actions** — a confirmation that repeats the consequence, undo where it's
+  cheaper than confirmation fatigue, and a visual treatment distinct from a routine
+  action. No confirm, no undo, and no distinct treatment together is `NG-DESTRUCTIVE`.
 
 ---
 

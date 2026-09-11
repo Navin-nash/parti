@@ -53,38 +53,13 @@ Motion earns its place when it does one of these jobs. If it isn't doing one, cu
 
 ## 2. Durations and easing
 
-### Durations
+Values — the duration budget table and the canonical easing tokens — live in one place
+only: `references/motion-rules.md` §12. `references/tokens.md` emits them into a spec;
+nothing here restates them, so there is exactly one number to copy from and one to keep
+current. Never ship the browser defaults — `ease` and `ease-in-out` are the "Inter for
+everything" of motion: not wrong, just unauthored.
 
-| Element | Duration |
-|---|---|
-| Hover, focus, active, color change | 100–150ms |
-| Small entrances — tooltip, dropdown, popover | 150–200ms |
-| Modals | 200–300ms |
-| Sheets, drawers | 250–500ms — they travel further |
-| Full-screen or page-level transitions | 300–400ms |
-| Deliberate choreographed brand moments | 400–800ms, once |
-| Large elements | slower than small ones — a sheet the height of the screen at 150ms looks like a glitch |
-
-**Above 300ms, UI feels sluggish; above 400ms, users notice waiting.** Enter can be slightly slower than exit — people wait for things to appear but want them gone immediately.
-
-### Easing
-
-Never ship the browser defaults. `ease` and `ease-in-out` are the "Inter for everything" of motion: not wrong, just unauthored.
-
-```css
---ease-out:      cubic-bezier(0.16, 1, 0.3, 1);     /* entrances — fast start, soft settle */
---ease-out-soft: cubic-bezier(0.25, 1, 0.5, 1);     /* gentler entrance */
---ease-in-out:   cubic-bezier(0.65, 0, 0.35, 1);    /* movement between two on-screen states */
---ease-in:       cubic-bezier(0.55, 0, 1, 0.45);    /* exits only */
---ease-back:     cubic-bezier(0.34, 1.56, 0.64, 1); /* slight overshoot, playful directions */
---ease-drawer:   cubic-bezier(0.32, 0.72, 0, 1);    /* iOS-like drawer / sheet */
-```
-
-These are the canonical values for the whole skill — `references/tokens.md` emits them and
-`references/motion-rules.md` §12 restates them. One set, one source. A direction that wants a
-different curve changes it in the token spec; it never gets a second one typed next to it.
-
-Rules that hold across directions:
+The decision rules that don't reduce to a table:
 
 - **`ease-out` for anything entering.** It starts fast and settles — reads as responsive.
 - **Never `ease-in` on something the user is waiting for.** It starts slow, which reads as lag.
@@ -232,42 +207,27 @@ Much of what libraries get used for is now native. Don't add a dependency for th
 
 ## 9. Performance
 
-- **Animate `transform` and `opacity` only.** Everything else (width, height, top, left, margin, box-shadow, filter, background-position) triggers layout or paint per frame.
-- **Box-shadow is expensive to animate** — animate the opacity of a pseudo-element carrying the shadow instead.
-- **`will-change` sparingly**, applied just before the animation and removed after. Applied permanently to many elements, it exhausts GPU memory and makes things slower.
-- **Blur (`filter`, `backdrop-filter`) is the most expensive common effect.** Animating blur radius drops frames on mid-range mobile. Animate opacity of a pre-blurred layer instead.
-- **Budget one main animated layer.** Two independent 60fps animations on a page is usually one too many.
-- **Test on a mid-range Android**, not on the machine you built it on. Use Chrome DevTools 4× CPU throttle as a floor.
+The rule catalog's `perf-*` group (`references/motion-rules.md`) is the checked version of
+this — transform/opacity only, will-change discipline, animated-blur and shadow-animation
+fixes. Two things worth adding that aren't per-rule checkable:
+
+- **Budget one main animated layer.** Two independent 60fps animations on a page is
+  usually one too many.
+- **Test on a mid-range Android**, not the machine you built it on. Chrome DevTools 4×
+  CPU throttle is a floor, not a substitute.
 
 ---
 
 ## 10. Reduced motion
 
-`prefers-reduced-motion: reduce` is an accessibility contract, not a preference toggle. Some users get genuinely ill from parallax, large-scale movement, and spin.
+`prefers-reduced-motion: reduce` is an accessibility contract, not a preference toggle —
+some users get genuinely ill from parallax, large-scale movement, and spin. The
+per-element degradation table, the global-reset snippet, and why "reduced" isn't "zero"
+are the `a11y-*` group in `references/motion-rules.md` — read it there; it's the version
+`scripts/motion.py` checks against, so it's the version worth memorizing.
 
-**Reduced motion does not mean no motion.** Blanket-disabling all transitions removes the state-change feedback these users still need. The correct degradation:
-
-| Full | Reduced |
-|---|---|
-| Slide + fade entrance | Fade only, shorter |
-| Scale/zoom transition | Opacity crossfade |
-| Parallax, scroll-scrub | Static final state |
-| Auto-playing loops, marquees | Paused, or a static frame |
-| Spring physics on drag | Instant snap |
-
-```css
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
-}
-```
-That global reset is the safety net, not the design. Specify per-element degradation in the token spec; use the reset to catch what you missed.
-
-Also honor `prefers-reduced-transparency` where the direction leans on translucency, and never animate anything above 3Hz.
+Also honor `prefers-reduced-transparency` where the direction leans on translucency, and
+never animate anything above 3Hz.
 
 ---
 

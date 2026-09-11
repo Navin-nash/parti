@@ -38,9 +38,21 @@ tell that one of these is about to be waived.**
 | `NG-NOVELTY-COST` | A departure from a learned mechanic — what is clickable, where nav lives, scrolling, back, focus order, form behaviour — with no written gain to the user's task. Being distinctive is not a gain. `convention.md`. |
 | `NG-UNREADABLE` | A readability floor breached: body under 16px, measure outside 45–75ch, a flat heading scale, or centred prose past three lines. `foundations.md` §2. |
 
-The last three are where generated work fails most often and where a screenshot hides it
-best: a page can look plausible cropped and still be an unstructured stack in the default
-palette that nobody can comfortably read.
+`NG-NO-STRUCTURE`, `NG-NOVELTY-COST`, and `NG-UNREADABLE` are where generated work fails
+most often and where a screenshot hides it best: a page can look plausible cropped and
+still be an unstructured stack in the default palette that nobody can comfortably read.
+
+The next six are the escalation cases — narrow, concrete, and each one a finding that a
+softer severity would let ship as a "known issue":
+
+| id | Condition |
+|---|---|
+| `NG-DESTRUCTIVE` | A destructive action with no confirmation, no undo, and no visual treatment distinct from a routine action — all three missing, not one. |
+| `NG-TRUNCATED` | Content truncated with no way to reach the full value — no tooltip, `title`, or expanded view. |
+| `NG-HIDDEN-CUE` | Content or a control reachable only past a scroll edge or behind a disclosure with no visible cue that it's there. |
+| `NG-ERROR-RECOVERY` | An error that names no way to recover from it — what happened with no why, or why with no next step. |
+| `NG-COLOR-MISUSE` | A semantic colour used against its own meaning — the danger hue on a non-destructive action, a status colour repurposed as decoration. |
+| `NG-MOTION-ONLY-STATE` | A state change carried by motion alone, with no colour, icon, or label left behind when the animation doesn't run. |
 
 `NG-UNCHECKED-CLAIM` is the one that matters most, because it is the only one that
 corrupts every other row. A build with a contrast failure is a build with a bug. A
