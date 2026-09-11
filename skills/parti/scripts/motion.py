@@ -53,7 +53,7 @@ PRESS_SCALE_MIN, PRESS_SCALE_MAX = 0.95, 1.05
 # Files where a long duration is legitimately allowed (marketing, onboarding,
 # one-per-session choreography). Motion budgets are for UI, not for a hero.
 RE_LONG_OK_PATH = re.compile(
-    r"(marketing|landing|hero|onboard|welcome|splash|story|promo|banner)", re.I)
+    r"(marketing|landing|hero|showcase|onboard|welcome|splash|story|promo|banner)", re.I)
 # Lines where a long duration is legitimately allowed: continuous motion, and
 # a stroke being DRAWN. A path drawn via stroke-dashoffset is not a UI
 # transition - it is a mark being made, and the budget that keeps a dropdown
@@ -62,6 +62,15 @@ RE_LONG_OK_PATH = re.compile(
 RE_LONG_OK_LINE = re.compile(
     r"infinite|repeat\s*:|marquee|spin|pulse|skeleton|shimmer|progress|scrub"
     r"|stroke-dashoffset|strokeDashoffset|pathLength", re.I)
+# A scroll-triggered, fires-once entrance (Motion's whileInView + viewport
+# once:true) is the same "not a UI transition" case as a drawn stroke - it is
+# content arriving, not a control responding, so the 300ms snappiness budget
+# doesn't apply. Its props usually span a few adjacent lines rather than one,
+# so this is checked against a small window around the duration line instead
+# of the line itself.
+RE_ONCE_ENTRANCE = re.compile(
+    r"whileInView|viewport\s*=\s*\{\{[^}]*\bonce\s*:\s*true", re.I)
+ONCE_ENTRANCE_WINDOW = 4
 
 RE_TRIGGER_ANCHORED = re.compile(
     r"(popover|dropdown|menu|tooltip|select|combobox|popper|listbox)", re.I)
@@ -223,7 +232,9 @@ def scan(root):
             for m in re.finditer(r"\b(ease|ease-out|ease-in-out|linear)\b", line):
                 easings[m.group(1)] += 1
 
-            long_ok = RE_LONG_OK_PATH.search(rel) or RE_LONG_OK_LINE.search(line)
+            window = lines[max(0, n - 1 - ONCE_ENTRANCE_WINDOW):n + ONCE_ENTRANCE_WINDOW]
+            long_ok = (RE_LONG_OK_PATH.search(rel) or RE_LONG_OK_LINE.search(line)
+                       or RE_ONCE_ENTRANCE.search("\n".join(window)))
             budget = (SHEET_BUDGET_MS if (RE_SHEET.search(rel) or RE_SHEET.search(line)
                                           or RE_SHEET.search(selector)) else UI_BUDGET_MS)
             for m in RE_DUR.finditer(line):

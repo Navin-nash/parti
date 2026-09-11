@@ -82,18 +82,20 @@ jobs:
           python-version: "3.13"
 
       # Excluded, per site/DESIGN.md § Anti-rules:
-      #   src/arms/*            deliberately-generic comparison arms; the exhibit
-      #   src/data/*.ts         prose ABOUT the tells, not markup containing them
-      #   slop-wall,            the generated-default palette shown as subject matter
-      #   convergence-grid
+      #   src/showcases/*                          each showcase is its own brief, own tokens
+      #   src/data/*.ts                             captured tool output + showcase accent restated
+      #   src/components/proof/folder-gallery.tsx  exact chrome of the adapted component
+      #   src/components/proof/theme-hex.ts        JS restatement of this file's own tokens
+      #   src/components/ui/depth-flip-text.tsx    vendored defaults, always overridden at call site
       - name: Anti-slop and token drift
         run: |
           python skills/parti/scripts/lint.py site \
             --tokens site/tokens.json \
-            --ignore "src/arms/*" \
+            --ignore "src/showcases/*" \
             --ignore "src/data/*.ts" \
-            --ignore "src/components/home/slop-wall.tsx" \
-            --ignore "src/components/home/convergence-grid.tsx"
+            --ignore "src/components/proof/folder-gallery.tsx" \
+            --ignore "src/components/proof/theme-hex.ts" \
+            --ignore "src/components/ui/depth-flip-text.tsx"
 
       - name: Motion rules
         run: python skills/parti/scripts/motion.py site/src

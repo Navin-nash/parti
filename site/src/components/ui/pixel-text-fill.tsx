@@ -3,13 +3,27 @@
 
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 import gsap from "gsap";
 import ScrollTrigger from "gsap/ScrollTrigger";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
 }
+
+// Read via useSyncExternalStore rather than useState+useEffect: the query can
+// genuinely change while the page is open (the OS setting can flip), and this
+// form reads it on mount without an extra render pass, same convention as
+// search-trigger.tsx's platform check.
+function subscribeReducedMotion(onChange: () => void) {
+  const mediaQuery = window.matchMedia?.("(prefers-reduced-motion: reduce)");
+  if (!mediaQuery) return () => {};
+  mediaQuery.addEventListener?.("change", onChange);
+  return () => mediaQuery.removeEventListener?.("change", onChange);
+}
+const getReducedMotionClient = () =>
+  window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+const getReducedMotionServer = () => false;
 
 type FillDirection = "up" | "right";
 type TextAlign = "left" | "center" | "right";
@@ -145,24 +159,11 @@ export default function PixelTextFill({
   const wrapperRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLParagraphElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia?.("(prefers-reduced-motion: reduce)");
-    if (!mediaQuery) return;
-
-    setPrefersReducedMotion(mediaQuery.matches);
-
-    const onReduceMotionChange = (event: MediaQueryListEvent) => {
-      setPrefersReducedMotion(event.matches);
-    };
-
-    mediaQuery.addEventListener?.("change", onReduceMotionChange);
-
-    return () => {
-      mediaQuery.removeEventListener?.("change", onReduceMotionChange);
-    };
-  }, []);
+  const prefersReducedMotion = useSyncExternalStore(
+    subscribeReducedMotion,
+    getReducedMotionClient,
+    getReducedMotionServer,
+  );
 
   useEffect(() => {
     let frame: number | null = null;

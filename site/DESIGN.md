@@ -240,6 +240,25 @@ themes. Never animated.
 - **No lorem, no "Feature One".** Placeholder copy hides the hierarchy problems this site exists
   to show. Where those strings appear in `src/data/*.ts` they are prose *about* the tell, which is
   why that directory is excluded from the content rules rather than rewritten.
+- **`src/data/*.ts` is excluded from the token-drift check.** `commands.ts` reprints real, dated
+  `scripts/color.py`/`lint.py` terminal output as demo text (captured hex values in a ramp table,
+  not live styling); `showcases.ts` restates each showcase's own `accent` for gallery metadata,
+  the same color already excluded at the source in `src/showcases/*`.
+- **`src/showcases/*` is excluded from the token-drift check.** Each of the five showcases is its
+  own brief with its own derived palette, scoped via a local `[data-showcase]` CSS-variable block
+  — deliberately outside this file's Proof tokens (see Changelog, gallery rebuild). Checking them
+  against this site's own token spec would flag every one of them by design.
+- **`src/components/proof/folder-gallery.tsx` is excluded from the token-drift check**, for the
+  same reason it's excluded from radius `0` above: its colors are the exact chrome of the
+  component it was adapted from, not this site's palette.
+- **`src/components/proof/theme-hex.ts` is excluded from the token-drift check.** It's a literal
+  JS restatement of this file's own Color tokens, resolved per theme, for the three vendored
+  `src/components/ui/*` components that take hex strings instead of CSS custom properties — the
+  hex values there mirror the tokens, they don't drift from them.
+- **`src/components/ui/depth-flip-text.tsx` is excluded from the token-drift check.** Its
+  `backgroundColor`/`textColor` defaults are the vendored library's own fallback values; the one
+  call site (`subjects-flip.tsx`) always overrides them with resolved Proof hex, so the defaults
+  never render.
 
 ## Accessibility floor
 
@@ -263,6 +282,33 @@ changed and why. What's still genuinely open:
       home, commands, gallery, method — are unjudged. Next task.
 
 ## Changelog
+
+- 2026-09-11 — **First real run of the new CI gate against this tree surfaced a stale `lint.py`
+  ignore list, three pre-existing lint errors in vendored/core components, and two `motion.py`
+  instrument gaps.** `--ignore` in `.github/workflows/ci.yml` still pointed at the deleted
+  `src/arms/*` comparison system; replaced with the exclusions listed in Anti-rules above
+  (`src/showcases/*`, `src/data/*.ts`, `folder-gallery.tsx`, `theme-hex.ts`, `depth-flip-text.tsx`).
+  Separately, `eslint --max-warnings 0` caught real issues the newer Rules-of-React lints hadn't
+  been run against before (these files were untracked pre-session): `smooth-cursor.tsx` read
+  `Date.now()` at module-eval time for a ref default instead of on mount (`react-hooks/purity`);
+  `pixel-text-fill.tsx` and `smart-cursor.tsx` read `matchMedia` via `useState`+`useEffect`+
+  `setState` instead of `useSyncExternalStore` (`react-hooks/set-state-in-effect`, matching
+  `search-trigger.tsx`'s established pattern); `dia-text-reveal.tsx` mutated a ref during render
+  and reset state directly inside an effect (fixed via React's documented "adjust state during
+  render" pattern, with a `useEffect` re-syncing the ref post-commit since refs can't be written
+  during render either); `reveal.tsx` called `motion.create()` — which builds a new component
+  identity — inside the render body via `useMemo`, still flagged by `react-hooks/static-components`
+  despite memoization; precomputed the three tags `Reveal` is actually given (`div`/`li`/`section`)
+  once at module scope instead. Last, `skills/parti/scripts/motion.py` flagged 42 `timing-over-300ms`
+  P0s: 38 were `src/showcases/*`'s own hero-style entrance choreography — the file rename from
+  `src/arms/*` had outrun `RE_LONG_OK_PATH`'s keyword list, so added `showcase` to it; 3 were
+  `Reveal`/`Plate`/`BrowserFrame`'s scroll-triggered, fires-once crop-mark/rise entrance
+  (`whileInView` + `viewport={{ once: true }}`) — the same "content arriving, not a control
+  responding" case the tool already exempts for a drawn SVG stroke, just spread across a few
+  adjacent lines instead of one; added a small line-window check for it. The one genuine outlier,
+  `text-loop.tsx`'s 800ms phrase crossfade (used once, inside `Hero`, which the regex can't see
+  from the vendored component's own path), was cheaper to just bring inside budget (280ms) than to
+  build a caller-context exemption for.
 
 - 2026-09-11 — **Home page's live single-showcase preview replaced with a folder-gallery
   reveal; then corrected twice on direct request.** The "It ships real interfaces" section used

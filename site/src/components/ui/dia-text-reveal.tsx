@@ -179,41 +179,46 @@ export function DiaTextReveal({
 
   const playRef = useRef<() => void>(() => undefined);
 
-  playRef.current = () => {
-    clearCycle();
-    sweep.set(100);
-    textOpacity.set(0);
+  // Kept current via an effect (not assigned during render) so the closure
+  // always sees the latest props/motion values without tripping
+  // react-hooks/refs - runs after every commit since there's no deps array.
+  useEffect(() => {
+    playRef.current = () => {
+      clearCycle();
+      sweep.set(100);
+      textOpacity.set(0);
 
-    animate(sweep, 0, { duration, delay, ease });
-    animate(textOpacity, 1, {
-      duration,
-      delay,
-      ease,
-      onComplete() {
-        onComplete?.();
+      animate(sweep, 0, { duration, delay, ease });
+      animate(textOpacity, 1, {
+        duration,
+        delay,
+        ease,
+        onComplete() {
+          onComplete?.();
 
-        if (!repeat) {
-          return;
-        }
+          if (!repeat) {
+            return;
+          }
 
-        timerRef.current = setTimeout(() => {
-          animate(textOpacity, 0, {
-            duration: fadeDuration,
-            ease: fadeEase,
-            onComplete() {
-              indexRef.current = (indexRef.current + 1) % texts.length;
-              setActiveIndex(indexRef.current);
-              sweep.set(100);
+          timerRef.current = setTimeout(() => {
+            animate(textOpacity, 0, {
+              duration: fadeDuration,
+              ease: fadeEase,
+              onComplete() {
+                indexRef.current = (indexRef.current + 1) % texts.length;
+                setActiveIndex(indexRef.current);
+                sweep.set(100);
 
-              timerRef.current = setTimeout(() => {
-                playRef.current();
-              }, repeatDelay * 1000);
-            },
-          });
-        }, holdDuration * 1000);
-      },
-    });
-  };
+                timerRef.current = setTimeout(() => {
+                  playRef.current();
+                }, repeatDelay * 1000);
+              },
+            });
+          }, holdDuration * 1000);
+        },
+      });
+    };
+  });
 
   const replay = useCallback(() => {
     if (prefersReducedMotion) {
@@ -235,10 +240,22 @@ export function DiaTextReveal({
 
   useImperativeHandle(controlRef, () => ({ play, replay }), [play, replay]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: re-run only when visibility or text list changes
-  useEffect(() => {
-    indexRef.current = 0;
+  // Resetting activeIndex when canAnimate/texts changes during render (React's
+  // documented "adjusting state when a prop changes" pattern, using state
+  // rather than a ref so it's compiler-safe) avoids a setState-in-effect
+  // cascade. indexRef, which the cycle callbacks read/write, is resynced by
+  // the effect below rather than touched here (refs can't be written during render).
+  const [resetKey, setResetKey] = useState({ canAnimate, texts });
+  if (resetKey.canAnimate !== canAnimate || resetKey.texts !== texts) {
+    setResetKey({ canAnimate, texts });
     setActiveIndex(0);
+  }
+
+  useEffect(() => {
+    indexRef.current = activeIndex;
+  }, [activeIndex]);
+
+  useEffect(() => {
     clearCycle();
     sweep.set(100);
     textOpacity.set(0);
@@ -248,7 +265,7 @@ export function DiaTextReveal({
     }
 
     return clearCycle;
-  }, [canAnimate, texts]);
+  }, [canAnimate, texts, clearCycle, sweep, textOpacity]);
 
   const MotionComponent = useMemo(
     () =>

@@ -1,7 +1,21 @@
 "use client";
 
 import { motion, useReducedMotion, type HTMLMotionProps } from "motion/react";
-import { useMemo, type ElementType, type ReactNode } from "react";
+import type { ElementType, ReactNode } from "react";
+
+// Precomputed once at module scope, not per-render - motion.create() builds a
+// new component whose state resets on every call, so it can't be called from
+// inside the render body (react-hooks/static-components). These are the only
+// tags Reveal is asked for anywhere in the site. Typed as ElementType (same
+// erasure the old useMemo cast did) since RevealProps is fixed to div's prop
+// shape regardless of which tag is picked.
+const REVEAL_TAGS: Record<"div" | "li" | "section", ElementType> = {
+  div: motion.create("div"),
+  li: motion.create("li"),
+  section: motion.create("section"),
+};
+
+type RevealTag = keyof typeof REVEAL_TAGS;
 
 /**
  * The one scroll-reveal primitive. Every section and plate enters through this
@@ -17,12 +31,12 @@ export interface RevealProps extends Omit<HTMLMotionProps<"div">, "children"> {
   /** Stagger offset in seconds when several Reveals sit in a row. */
   delay?: number;
   /** Render as a different element (e.g. "li", "section"). */
-  as?: ElementType;
+  as?: RevealTag;
 }
 
-export function Reveal({ children, delay = 0, as, className, ...rest }: RevealProps) {
+export function Reveal({ children, delay = 0, as = "div", className, ...rest }: RevealProps) {
   const reduce = useReducedMotion();
-  const Comp = useMemo(() => motion.create((as ?? "div") as ElementType), [as]);
+  const Comp = REVEAL_TAGS[as];
 
   return (
     <Comp

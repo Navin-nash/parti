@@ -30,7 +30,7 @@ export default function TextLoop({
   rotatingTexts = ["Limitless", "Timeless", "Flawless"],
   className,
   interval = 3000,
-  transition = { duration: 0.8, ease: "easeInOut" },
+  transition = { duration: 0.28, ease: "easeInOut" },
   staticTextClassName,
   rotatingTextClassName,
   backgroundClassName,
