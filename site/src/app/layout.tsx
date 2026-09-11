@@ -22,10 +22,10 @@ export const metadata: Metadata = {
     template: "%s - Parti",
   },
   description:
-    "A Claude Code skill that derives a design direction from the subject instead of picking one off a style menu. A gallery of what it produced, the seven-stage method, and the full command set.",
+    "A design skill, for any coding agent, that derives a design direction from the subject instead of picking one off a style menu. A gallery of what it produced, the seven-stage method, and the full command set.",
   openGraph: {
     title: "Parti - design direction for AI-generated interfaces",
-    description: "A Claude Code skill that derives a design direction from the subject.",
+    description: "A design skill, for any coding agent, that derives a design direction from the subject.",
     type: "website",
   },
 };

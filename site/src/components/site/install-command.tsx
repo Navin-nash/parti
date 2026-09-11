@@ -7,24 +7,30 @@ import { cn } from "@/lib/utils";
 import { Check, Copy, Terminal } from "@/lib/icons";
 
 /**
- * How to actually install the skill. The site argued for it on six screens and
- * used to end with a bare `git clone`; this shows the three real paths -
- * skills.sh, the Claude Code plugin marketplace, and a manual clone - each a
- * real, copyable command.
+ * How to actually install the skill, per agent. `SKILL.md` is a shared,
+ * agent-neutral format - Claude Code and Antigravity both discover it
+ * natively, and anything that reads `AGENTS.md` (Codex, Copilot, Cursor,
+ * Gemini CLI) just needs one line pointing at it. Each tab is a real,
+ * copyable set of commands, not a translated one.
  */
 type Method = {
   id: string;
   label: string;
-  logo: { src: string; darkSrc?: string; alt: string } | "terminal";
+  logo: { src: string; darkSrc?: string; alt: string } | { Icon: typeof Terminal };
   blurb: string;
   steps: { cmd: string; note?: string }[];
+};
+
+const CLONE_STEP = {
+  cmd: "git clone https://github.com/Navin-nash/parti ~/.local/share/parti",
+  note: "clone once",
 };
 
 const METHODS: Method[] = [
   {
     id: "skills",
     label: "skills.sh",
-    logo: "terminal",
+    logo: { Icon: Terminal },
     blurb: "One command. Fetches the skill and drops it in ~/.claude/skills/.",
     steps: [{ cmd: "npx skills add Navin-nash/parti" }],
   },
@@ -36,6 +42,45 @@ const METHODS: Method[] = [
     steps: [
       { cmd: "/plugin marketplace add Navin-nash/parti", note: "add the marketplace" },
       { cmd: "/plugin install parti", note: "then install" },
+    ],
+  },
+  {
+    id: "antigravity",
+    label: "Antigravity",
+    logo: { src: "/logos/antigravity.svg", alt: "Antigravity" },
+    blurb: "Antigravity reads SKILL.md natively - clone once, symlink it in.",
+    steps: [
+      CLONE_STEP,
+      {
+        cmd: "ln -s ~/.local/share/parti/skills/parti .agents/skills/parti",
+        note: "per project, or ~/.gemini/antigravity/skills/parti for every project",
+      },
+    ],
+  },
+  {
+    id: "codex",
+    label: "Codex",
+    logo: { src: "/logos/openai.svg", darkSrc: "/logos/openai_dark.svg", alt: "Codex" },
+    blurb: "Codex, Cursor, Gemini CLI, and anything else reading a project's AGENTS.md.",
+    steps: [
+      CLONE_STEP,
+      {
+        cmd: 'echo "For any UI/visual design work, read and follow ~/.local/share/parti/skills/parti/SKILL.md in full." >> AGENTS.md',
+        note: "per project",
+      },
+    ],
+  },
+  {
+    id: "copilot",
+    label: "Copilot",
+    logo: { src: "/logos/copilot.svg", darkSrc: "/logos/copilot_dark.svg", alt: "GitHub Copilot" },
+    blurb: "Copilot Chat, Code Review, and the coding agent all read this file.",
+    steps: [
+      CLONE_STEP,
+      {
+        cmd: 'mkdir -p .github && echo "For any UI/visual design work, read and follow ~/.local/share/parti/skills/parti/SKILL.md in full." >> .github/copilot-instructions.md',
+        note: "per project",
+      },
     ],
   },
   {
@@ -107,8 +152,8 @@ export function InstallCommand({ className, hint }: { className?: string; hint?:
                 on ? "bg-plate text-ink" : "text-ink-muted hover:text-ink",
               )}
             >
-              {m.logo === "terminal" ? (
-                <Terminal className="size-3.5" aria-hidden />
+              {"Icon" in m.logo ? (
+                <m.logo.Icon className="size-3.5" aria-hidden />
               ) : (
                 <>
                   <Image

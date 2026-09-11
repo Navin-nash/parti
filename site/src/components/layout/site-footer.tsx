@@ -18,8 +18,9 @@ export function SiteFooter() {
           <div className="md:col-span-5">
             <Wordmark />
             <p className="mt-4 max-w-[42ch] text-[0.9375rem] leading-relaxed text-ink-muted">
-              A Claude Code skill that derives a design direction from the
-              subject instead of picking one off a style menu.
+              A design skill, for any coding agent, that derives a design
+              direction from the subject instead of picking one off a style
+              menu.
             </p>
           </div>
 

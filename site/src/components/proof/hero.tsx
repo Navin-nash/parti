@@ -70,7 +70,7 @@ export function Hero() {
 
           <InstallCommand
             className="mt-6"
-            hint="Requires Claude Code. No build step, no dependencies."
+            hint="Claude Code, Codex, Copilot, Antigravity, or anything else that reads SKILL.md or AGENTS.md."
           />
         </div>
       </div>

@@ -193,7 +193,7 @@ export default function Home() {
                   Read the method
                 </Button>
               </div>
-              <InstallCommand hint="Requires Claude Code. No build step, no dependencies." />
+              <InstallCommand hint="Claude Code, Codex, Copilot, Antigravity, or anything else that reads SKILL.md or AGENTS.md." />
             </Reveal>
           </div>
         </div>
