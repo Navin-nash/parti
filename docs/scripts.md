@@ -255,7 +255,7 @@ Hex → OKLCH, for putting a value into a token file in the space you're reasoni
 The build-stage counterpart to `audit.py`. It catches what `audit.py` structurally cannot: tells that only exist **once there is code**, plus drift from the spec the build was handed.
 
 ```
-usage: lint.py [-h] [--tokens TOKENS] [--json OUT] [--quiet] path
+usage: lint.py [-h] [--tokens TOKENS] [--json OUT] [--quiet] [--ignore GLOB] path
 ```
 
 | Flag | Effect |
@@ -263,8 +263,13 @@ usage: lint.py [-h] [--tokens TOKENS] [--json OUT] [--quiet] path
 | `--tokens TOKENS` | a `tokens.json` to check color drift against |
 | `--json OUT` | write findings as JSON |
 | `--quiet` | suppress the report |
+| `--ignore GLOB` | skip paths matching this glob, relative to `path`; repeatable |
 
 **Token drift is the reason this script exists.** Without `--tokens` it checks tells only and makes no drift claim — it will not pretend to have verified something it wasn't given the input for.
+
+The token file may be flat (`{"--bg": "#FAF9F6", ...}`) or nested per theme (`{"light": {...}, "dark": {...}}`) — the two-layer shape [`references/tokens.md`](../skills/parti/references/tokens.md) prescribes. Hex values are collected at any depth and non-colour metadata is ignored, so a real spec with a `_premise` string and per-theme blocks reads correctly.
+
+**On `--ignore`.** Two things legitimately sit inside a scanned tree and are not the build: a deliberately-generic comparison arm, and a data module whose *strings* are prose about a tell rather than markup containing one. Both trip the content rules on their own quoted text. Exclude them by path and **write down why, in `DESIGN.md`** — an exclusion nobody recorded is the rule being ignored quietly, which is the same failure as reporting a no-go as a known issue.
 
 ### Severities
 
@@ -396,6 +401,8 @@ Two scripts gate. Wire those two:
     python skills/parti/scripts/lint.py ./src --tokens ./tokens.json
     python skills/parti/scripts/motion.py ./src
 ```
+
+This repository runs exactly that against its own site in [`.github/workflows/ci.yml`](../.github/workflows/ci.yml), with the exclusions and their reasons recorded in [`site/DESIGN.md`](../site/DESIGN.md). A gate the author's own project cannot pass is not a gate.
 
 Both exit `1` on any P0, `0` otherwise. No install step — stdlib only.
 

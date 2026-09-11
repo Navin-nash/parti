@@ -1,7 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { Search } from "@/lib/icons";
+
+/** The platform never changes while the page is open, so nothing to subscribe to. */
+const noSubscribe = () => () => {};
+const isMacClient = () =>
+  /Mac|iPhone|iPad/i.test(navigator.platform || navigator.userAgent);
+const isMacServer = (): boolean | null => null;
 
 /**
  * The visible half of the command palette.
@@ -15,11 +21,9 @@ import { Search } from "@/lib/icons";
  * broken.
  */
 export function SearchTrigger() {
-  const [mac, setMac] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    setMac(/Mac|iPhone|iPad/i.test(navigator.platform || navigator.userAgent));
-  }, []);
+  // Read during render rather than setting state in an effect: the effect form
+  // costs a second render pass on every mount and React flags it as cascading.
+  const mac = useSyncExternalStore(noSubscribe, isMacClient, isMacServer);
 
   const open = () =>
     document.dispatchEvent(
@@ -32,7 +36,7 @@ export function SearchTrigger() {
       onClick={open}
       aria-label="Search sections, capabilities and examples"
       aria-keyshortcuts="Meta+K Control+K"
-      className="hidden items-center gap-2 rounded-full border border-rule bg-plate py-2 pl-3.5 pr-2 text-[0.8125rem] text-ink-muted transition-colors duration-(--d-fast) ease-(--ease-specimen) hover:border-rule-strong hover:text-ink sm:inline-flex"
+      className="hidden items-center gap-2 border border-rule bg-plate py-2 pl-3.5 pr-2 text-[0.8125rem] text-ink-muted transition-colors duration-(--d-fast) ease-(--ease-specimen) hover:border-rule-strong hover:text-ink sm:inline-flex"
     >
       <Search className="size-3.5" aria-hidden />
       <span>Search</span>

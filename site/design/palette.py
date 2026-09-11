@@ -1,43 +1,50 @@
-"""Specimen direction — palette authored in OKLCH, round-tripped through the
-repo's own color math so the hex in tokens.json is exact, never eyeballed."""
+"""Proof direction (open-sky revision) — palette authored in OKLCH, round-tripped
+through the repo's own color math so the hex in tokens.json is exact, never
+eyeballed. OKLCH triples below were derived from the hex in DESIGN.md via
+hex_to_oklch, then this script re-derives the hex from OKLCH and verifies every
+declared pair against its floor — the same round-trip DESIGN.md's header promises."""
 import sys, json, pathlib
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2] / "scripts"))
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2] / "skills" / "parti" / "scripts"))
 from color import oklch_to_hex, contrast, verdict  # noqa: E402
 
-# (L%, C, H)
+# (L%, C, H) — near-pure paper/ink, one sky-blue accent, same system in both themes.
 LIGHT = {
-    "paper":       (96.20, 0.0022, 250),   # the bench
-    "plate":       (99.30, 0.0010, 250),   # a specimen sits lighter than the bench
-    "plate-2":     (93.60, 0.0035, 250),   # recessed: gutters, code wells, table heads
-    "rule":        (88.50, 0.0045, 250),
-    "rule-strong": (63.20, 0.0070, 250),
-    "ink":         (18.50, 0.0060, 250),
-    "ink-muted":   (46.50, 0.0075, 250),
-    "ink-dim":     (51.80, 0.0080, 250),
-    "mark":        (52.00, 0.1750, 27),    # proofing red — annotation only
-    "mark-tint":   (95.00, 0.0180, 27),
-    "on-mark":     (99.00, 0.0000, 0),
+    "paper":       (99.13, 0.0013, 286),
+    "plate":       (100.00, 0.0000, 90),
+    "plate-2":     (96.77, 0.0027, 286),
+    "rule":        (91.97, 0.0040, 286),
+    "rule-strong": (63.50, 0.0074, 286),
+    "ink":         (18.70, 0.0063, 271),
+    "ink-muted":   (45.27, 0.0070, 264),
+    "ink-dim":     (50.67, 0.0083, 268),
+    "mark":        (81.48, 0.0819, 226),   # the sky — a light tint, fill-only, never text
+    "mark-text":   (53.50, 0.0890, 228),   # the accent's deep form — links, small text
+    "mark-tint":   (95.99, 0.0151, 229),
+    "on-mark":     (18.67, 0.0171, 217),
 }
 DARK = {
-    "paper":       (15.80, 0.0045, 250),
-    "plate":       (19.60, 0.0055, 250),
-    "plate-2":     (13.20, 0.0040, 250),
-    "rule":        (28.50, 0.0080, 250),
-    "rule-strong": (50.20, 0.0100, 250),
-    "ink":         (94.50, 0.0040, 250),
-    "ink-muted":   (72.00, 0.0080, 250),
-    "ink-dim":     (60.50, 0.0090, 250),
-    "mark":        (70.00, 0.1600, 29),
-    "mark-tint":   (26.00, 0.0420, 29),
-    "on-mark":     (16.00, 0.0060, 29),
+    "paper":       (11.56, 0.0032, 286),
+    "plate":       (16.47, 0.0042, 286),
+    "plate-2":     (8.60, 0.0056, 285),
+    "rule":        (26.05, 0.0058, 271),
+    "rule-strong": (49.00, 0.0080, 277),
+    "ink":         (94.29, 0.0029, 265),
+    "ink-muted":   (71.18, 0.0062, 265),
+    "ink-dim":     (59.64, 0.0079, 269),
+    "mark":        (81.48, 0.0819, 226),   # same hex both themes — one sky, one system
+    "mark-text":   (81.48, 0.0819, 226),   # already light enough to read as text on dark
+    "mark-tint":   (26.80, 0.0374, 222),
+    "on-mark":     (18.67, 0.0171, 217),
 }
 
-# text token -> the grounds it is allowed to sit on
+# text token -> the grounds it is allowed to sit on. `mark` itself is deliberately
+# absent: DESIGN.md declares it fill-only, never text, so it is not held to a text
+# floor — mark-text is the token that carries the accent at text size.
 PAIRS = [
     ("ink", "paper"), ("ink", "plate"), ("ink", "plate-2"),
     ("ink-muted", "paper"), ("ink-muted", "plate"), ("ink-muted", "plate-2"),
     ("ink-dim", "paper"), ("ink-dim", "plate"), ("ink-dim", "plate-2"),
-    ("mark", "paper"), ("mark", "plate"), ("mark", "plate-2"), ("mark", "mark-tint"),
+    ("mark-text", "paper"), ("mark-text", "plate"), ("mark-text", "plate-2"),
     ("on-mark", "mark"),
     ("rule-strong", "paper"), ("rule-strong", "plate"),   # control boundaries: 3:1 floor
 ]
@@ -67,7 +74,7 @@ def report(name, spec):
 
 if __name__ == "__main__":
     lh, lf = report("LIGHT — paper", LIGHT)
-    dh, df = report("DARK — graphite", DARK)
+    dh, df = report("DARK — night sky", DARK)
     print("\n" + "=" * 66)
     if lf or df:
         for fg, bg, r, floor in lf + df:

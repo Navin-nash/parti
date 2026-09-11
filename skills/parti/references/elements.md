@@ -105,6 +105,34 @@ carrying its own weight.
 The exception is the **signature** — the one element the design is remembered by, named
 in the direction, drawn from the subject. One. Two competing signatures cancel.
 
+## Fine detail
+
+The values below are exact, not ranges to approximate — the difference between a screen
+that reads as tuned and one that reads as close-enough usually lives here.
+
+- **Concentric radius.** Outer radius = inner radius + the padding between them. A 12px
+  card padding around a 6px button radius wants an 18px card radius, not a round number
+  that happens to be nearby — mismatched nested radii is one of the most common things
+  that makes an interface feel subtly off even to someone who can't say why.
+- **Image outlines.** A 1px outline at low opacity gives an image consistent depth
+  against any background: pure black in light mode (`oklch(0 0 0 / 0.1)`), pure white in
+  dark (`oklch(1 0 0 / 0.1)`) — never a tinted neutral, which picks up whatever surface
+  sits under the image and reads as dirt on the edge.
+- **One SVG per icon, recolored by state.** Icons take hover, selected, and disabled
+  states from `currentColor` and CSS opacity, never from separate icon assets per state.
+  Outline is the default variant; a filled version marks the active state where the set
+  has one.
+- **Suppress transitions on a theme switch.** A light/dark toggle changes color,
+  background, border, and shadow on nearly every element at once; if each has its own
+  transition they all fire together and the switch smears instead of snapping. Inject
+  `*,*::before,*::after{transition:none!important}` for one frame, force a reflow, then
+  remove it — the same discipline as `motion-rules.md`'s `interrupt-*` rules, applied to
+  a change that touches the whole screen instead of one component.
+- **`will-change` only for what the GPU composites** — `transform`, `opacity`, `filter` —
+  and only just before the animation runs, removed after. Applied permanently across many
+  elements it exhausts GPU memory and makes everything slower; `motion.py`'s
+  `perf-will-change-permanent` catches the on-source version of this.
+
 ## Making them agree
 
 Before a build is done, check across the whole screen rather than per component:

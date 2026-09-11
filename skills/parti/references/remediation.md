@@ -11,8 +11,8 @@ nothing else.
 **The loop, once:**
 
 ```
-run the checks  →  triage every finding  →  choose the level  →  change it
-      ↑                                                              ↓
+run the checks → triage every finding → pick the cheapest repair that works
+      ↑                                        → choose the level → change it
       └──────────────  re-run everything  ←──────────────────────────┘
                               ↓
                     report, sync DESIGN.md
@@ -39,7 +39,28 @@ person reads once.
 **Three exceptions for the same rule is not three exceptions.** It is a spec that is
 wrong. Fix the spec.
 
-## 2. Choose the level: token, component, instance
+## 2. Prefer the cheaper repair
+
+Once a finding is triaged as a code defect, more than one fix usually works. Take the
+earliest one on this list that does — each step down commits more surface to maintain:
+
+1. **Delete.** A separator that space would carry, an animation on a high-frequency
+   interaction, an ARIA attribute a native element already makes redundant, a ramp
+   nothing imports.
+2. **Use the platform.** The native element or native control in place of a custom
+   rebuild — a `<button>` instead of a styled `<div>`, the browser's own focus ring
+   instead of a hand-tuned one, `<dialog>` instead of a hand-rolled modal.
+3. **Reuse what the project already has.** An existing token, spacing step, or motion
+   curve before any new value — this is `cohesion-token-sprawl`'s fix, generalized.
+4. **Correct the value.** The wrong easing, radius, gap, or contrast pair, using the
+   exact value the owning reference gives — never a nearby-looking substitute.
+5. **Add.** A new token, a wrapper, a media query — reached for only when the platform
+   and the existing system genuinely have no answer.
+
+A fix written at step 5 where step 1 was available is a finding of its own: report the
+deletion instead of the addition it grew into.
+
+## 3. Choose the level: token, component, instance
 
 A finding is reported at a line. That is where it was *detected*, not necessarily where it
 should be *fixed*.
@@ -57,7 +78,7 @@ codebase? If yes, this is the wrong level.
 colour is one decision, not fourteen. Patch them individually and you have made fourteen
 edits, learned nothing, and left the reason intact.
 
-## 3. Order
+## 4. Order
 
 1. **Group by rule id first, not by file.** One rule across ten files is one fix.
 2. **Then by level**: token fixes, then component, then instance. Token fixes often clear
@@ -67,7 +88,7 @@ edits, learned nothing, and left the reason intact.
 Do not walk the findings list top to bottom. That is the order the script emitted, which
 is file order, which correlates with nothing.
 
-## 4. When findings conflict
+## 5. When findings conflict
 
 Two findings sometimes pull opposite ways — raising contrast breaks the brand colour,
 tightening density breaks a touch target. Precedence, highest first:
@@ -84,7 +105,7 @@ tightening density breaks a touch target. Precedence, highest first:
 If a conflict is not resolved by this list, it is a design decision, not a remediation
 decision — say so, state the trade, and let the user choose.
 
-## 5. Re-verify
+## 6. Re-verify
 
 **Re-run the full check, not the file you touched.** A token change reaches everything
 that reads the token, and the whole point of fixing at the token level is that it changes
@@ -102,7 +123,7 @@ Then compare against the previous run, and account for three things:
 **Never report a check you did not re-run.** `NG-UNCHECKED-CLAIM` applies here more than
 anywhere, because the temptation is highest at the end of a long fix pass.
 
-## 6. When the loop ends
+## 7. When the loop ends
 
 Not at zero findings. It ends when **every finding is in one of four terminal states**:
 
@@ -114,7 +135,7 @@ Not at zero findings. It ends when **every finding is in one of four terminal st
 A finding that is none of these is an open loop, and the build is not done regardless of
 how the report reads.
 
-## 7. Repairs that are forbidden
+## 8. Repairs that are forbidden
 
 Each of these makes the report better and the interface no different. They are the
 Goodhart failure in its concrete forms.
@@ -134,7 +155,7 @@ Goodhart failure in its concrete forms.
   belonged is a larger diff, not a smaller one.
 - **Reporting a lower severity than the rule assigns** because the fix is inconvenient.
 
-## 8. What gets written back
+## 9. What gets written back
 
 - **`DESIGN.md`** — every spec amendment and every exception, dated, with the rule id and
   the reason. This is the record that makes the next pass cheaper, and it is the only
@@ -180,7 +201,7 @@ before-and-after counts with each amendment named.
 ## Judged findings enter the same loop
 
 Findings from squint, grayscale, hierarchy, copy, and concept have no rule id and no line
-number, and they go through exactly the same eight steps. The difference is that their
+number, and they go through exactly the same nine steps. The difference is that their
 severity is *argued* rather than computed, so the argument is written next to them.
 
 A judged finding may not be reported as a measured one, and no judged finding gets a

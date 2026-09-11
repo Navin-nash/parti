@@ -38,7 +38,8 @@ def main():
     out = os.path.join(tmp, "o.json")
     url = "file:///" + page.replace(os.sep, "/")
     rc = subprocess.run([sys.executable, CAPTURE, "--url", url, "--focus", "section",
-                         "--tier", "runtime", "--json", out, "--quiet"]).returncode
+                         "--tier", "runtime", "--json", out, "--quiet"],
+                        check=False).returncode
     data = json.load(open(out, encoding="utf-8"))
     ok = (rc == 0 and data["tier"] == "runtime"
           and any(f["timing"].get("durations_ms") for f in data["motion_findings"])

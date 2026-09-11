@@ -1,6 +1,8 @@
 # parti
 
-**A Claude Code skill for design work that doesn't look generated.**
+**A design skill, for any coding agent, that doesn't look generated.**
+
+Written once as plain Markdown (`SKILL.md` + reference files), so it works anywhere that format is understood: natively in Claude Code and Antigravity, and via one `AGENTS.md` line in Codex, GitHub Copilot, Cursor, Gemini CLI, or anything else that reads that file.
 
 *Parti*, from the French *prendre parti* — "to take a position." In architecture it names the single organizing idea a design commits to, the one every later decision has to answer to. That is the whole thesis here.
 
@@ -33,9 +35,13 @@ Restated for code: **tokens are law, craft is where you're free.** Every color, 
 
 ## Install
 
+The skill itself is `skills/parti/SKILL.md` plus its `references/` — plain Markdown, nothing agent-specific in it. How you point an agent at it depends on whether that agent discovers `SKILL.md` files on its own (Claude Code, Antigravity) or reads a project-level `AGENTS.md` for instructions (Codex, GitHub Copilot, Cursor, Gemini CLI, and most others).
+
+### Claude Code
+
 `parti` follows Claude Code's plugin layout: a `.claude-plugin/plugin.json` manifest at the repo root, with the actual skill at `skills/parti/SKILL.md`. Two ways to install it, both official.
 
-### As a plugin (recommended)
+#### As a plugin (recommended)
 
 Add this repo as a marketplace, then install from it:
 
@@ -50,7 +56,7 @@ Or drop the whole repo under a skills directory — any folder there containing 
 git clone https://github.com/Navin-nash/parti.git ~/.claude/skills/parti
 ```
 
-### As a standalone skill
+#### As a standalone skill
 
 Only want the skill, without the plugin machinery? Point a skills directory straight at the nested `skills/parti/` folder instead of the repo root:
 
@@ -70,6 +76,27 @@ From Git Bash the flag needs doubling — `cmd //c "mklink /J ..."` — because 
 **Project-scoped instead of global?** Use `<your-project>/.claude/skills/parti` (pointing at `skills/parti/`, same as above). A project-scoped copy wins over a global one of the same name.
 
 **Verify it loaded** by asking Claude Code to list its skills; `parti` should appear with its description.
+
+### Antigravity
+
+Antigravity discovers `SKILL.md` files the same way Claude Code does, from a `.agents/skills/` folder (legacy `.agent/skills/` still works). Clone once, then symlink the nested skill folder in — same pattern as the standalone Claude Code install above, different target directory:
+
+```bash
+git clone https://github.com/Navin-nash/parti.git /path/to/parti
+ln -s /path/to/parti/skills/parti .agents/skills/parti              # this project only
+ln -s /path/to/parti/skills/parti ~/.gemini/antigravity/skills/parti  # every project
+```
+
+### Codex, GitHub Copilot, Cursor, Gemini CLI — anything that reads `AGENTS.md`
+
+These agents don't have a `SKILL.md`-discovery mechanism, but nearly all of them now read a project's `AGENTS.md` for standing instructions (Copilot also reads `.github/copilot-instructions.md`). Clone the skill somewhere stable, then point your project's `AGENTS.md` at it:
+
+```bash
+git clone https://github.com/Navin-nash/parti.git ~/.local/share/parti
+echo "For any UI/visual design work, read and follow ~/.local/share/parti/skills/parti/SKILL.md in full before starting." >> AGENTS.md
+```
+
+The agent loads `SKILL.md` and its `references/*.md` on demand from there, exactly as Claude Code would.
 
 ### Requirements
 

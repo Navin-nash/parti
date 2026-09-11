@@ -164,6 +164,16 @@ SPARSE_FILES = {
 # DRIFT fixture: one component using an accent that's a near-miss for the
 # spec'd one (0xB23A2E vs 0xB23A2F) plus one clearly unspec'd color.
 DRIFT_TOKENS = {"--bg": "#FAF9F6", "--text": "#2B2620", "--accent": "#B23A2E"}
+
+# The SAME palette in the two-layer, per-theme shape references/tokens.md
+# prescribes, plus the string metadata a real spec carries. A flat-only reader
+# collects nothing here and reports every colour in the build as drift.
+NESTED_TOKENS = {
+    "_premise": "prose, not a colour",
+    "light": {"--bg": "#FAF9F6", "--text": "#2B2620"},
+    "dark": {"--bg": "#101014", "--text": "#EDEDF0"},
+    "accent": {"base": "#B23A2E", "_why": "derived from the subject"},
+}
 DRIFT_FILES = {
     "Card.tsx": """
 export function Card() {
@@ -276,7 +286,8 @@ class Results:
 def run(cmd):
     # Child scripts force UTF-8 stdout (see their own reconfigure guard); decode
     # the same way here so a Windows parent locale doesn't mangle it back.
-    r = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
+    r = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8",
+                       errors="replace", check=False)
     return r.returncode, r.stdout, r.stderr
 
 
@@ -304,11 +315,13 @@ def motion(path):
         return rc, json.load(f)
 
 
-def lint(path, tokens_path=None):
+def lint(path, tokens_path=None, ignore=()):
     out = os.path.join(tempfile.gettempdir(), f"lint_{os.path.basename(path)}.json")
     cmd = [sys.executable, os.path.join(SCRIPTS, "lint.py"), path, "--json", out, "--quiet"]
     if tokens_path:
         cmd += ["--tokens", tokens_path]
+    for pat in ignore:
+        cmd += ["--ignore", pat]
     rc, so, se = run(cmd)
     with open(out) as f:
         return rc, json.load(f)
@@ -360,7 +373,7 @@ def test_ramp(R):
     R.check("Ramp", "produces the requested number of steps", len(ls) >= 7,
             f"{len(ls)} steps")
     R.check("Ramp", "lightness is monotonically decreasing",
-            all(a > b for a, b in zip(ls, ls[1:])) if len(ls) > 1 else False,
+            all(a > b for a, b in zip(ls, ls[1:], strict=False)) if len(ls) > 1 else False,
             f"L values {[round(x) for x in ls]}")
 
 
@@ -371,7 +384,7 @@ def test_slop_fixture(R, path):
     hits = found & expected
     recall = len(hits) / len(expected)
     R.check("Slop fixture (11 planted tells)",
-            f"detection recall >= 0.80", recall >= 0.80,
+            "detection recall >= 0.80", recall >= 0.80,
             f"{len(hits)}/{len(expected)} = {recall:.0%}; missed {sorted(expected - found)}")
     R.check("Slop fixture (11 planted tells)", "every tell cites a file path",
             all(t.get("files") for t in a["tells"]),
@@ -429,7 +442,7 @@ def test_sparse_fixture(R, path):
     try:
         a = audit(path)
         ok = True
-    except Exception as e:
+    except Exception:
         a, ok = {}, False
     R.check("Sparse fixture (graceful degradation)", "does not crash on a thin repo", ok)
     if ok:
@@ -485,6 +498,99 @@ def test_lint_drift(R, tmp):
     rc2, r2 = lint(drift_dir, None)  # same code, no --tokens
     R.check("Lint — token drift", "without --tokens, drift isn't checked (no false claim)",
             not any(f["id"] == "token_drift" for f in r2["findings"]))
+
+
+def test_lint_nested_tokens(R, tmp):
+    """A nested token spec must behave exactly like the flat one.
+
+    Regression guard for a real defect: load_tokens walked only the top level,
+    so the documented per-theme shape yielded an empty allowed set and every
+    colour in the build — the spec'd ones included — was reported as drift.
+    The flat fixture above cannot catch it; only a nested spec can.
+    """
+    G = "Lint — nested token spec"
+    tokens_path = os.path.join(tmp, "tokens-nested.json")
+    with open(tokens_path, "w") as f:
+        json.dump(NESTED_TOKENS, f)
+    drift_dir = write_fixture(os.path.join(tmp, "nested"), DRIFT_FILES)
+
+    rc, r = lint(drift_dir, tokens_path)
+    drift = [f for f in r["findings"] if f["id"] == "token_drift"]
+    labels = " ".join(f["label"].lower() for f in drift)
+
+    R.check(G, "still flags the unspec'd gray", "#8a8f98" in labels, f"labels: {labels}")
+    R.check(G, "spec'd colours nested under a theme are not drift",
+            "#faf9f6" not in labels and "#2b2620" not in labels, f"labels: {labels}")
+    R.check(G, "a colour nested two levels deep counts as spec'd",
+            "#b23a2e" not in labels, f"labels: {labels}")
+    R.check(G, "string metadata in the spec is ignored, not parsed as colour",
+            len(drift) == 1, f"{len(drift)} drift findings, expected 1")
+    R.check(G, "exit code matches the flat spec's", rc == 1, f"rc={rc}")
+
+
+def test_lint_colour_bearing(R, tmp):
+    """A hex in visible copy is the page talking about a colour, not using one.
+
+    The dangerous direction here is over-stripping: if the helper ever drops a
+    <style> block or a tagless .css file, drift silently stops being checked and
+    every other drift test still passes. Cases 2-4 exist for that, not for the
+    false positive in case 1.
+    """
+    G = "Lint - colour-bearing scan"
+    tokens_path = os.path.join(tmp, "tokens-cb.json")
+    with open(tokens_path, "w") as f:
+        json.dump({"--bg": "#FAF9F6"}, f)
+
+    root = write_fixture(os.path.join(tmp, "cb"), {
+        # 1. prose quoting a colour it argues against - must NOT be drift
+        "copy.html": "<p>Warm cream, #B23A2E, arrives regardless of subject</p>",
+        # 2. the same value inside a style block - MUST be drift
+        "styled.html": "<style>.a{color:#123456}</style><p>nothing quoted here</p>",
+        # 3. inside an attribute - MUST be drift
+        "attr.html": '<div style="background:#654321">text</div>',
+        # 4. a tagless stylesheet - MUST behave exactly as before
+        "sheet.css": ".b{border-color:#ABCDEF}",
+    })
+
+    _rc, r = lint(root, tokens_path)
+    hits = {}
+    for f in r["findings"]:
+        if f["id"] == "token_drift":
+            hits[f["label"].split()[0].lower()] = f.get("file", "")
+
+    R.check(G, "a hex in a text node is not reported as drift",
+            "#b23a2e" not in hits, f"reported: {sorted(hits)}")
+    R.check(G, "a hex inside <style> is still drift", "#123456" in hits, f"reported: {sorted(hits)}")
+    R.check(G, "a hex in an attribute is still drift", "#654321" in hits, f"reported: {sorted(hits)}")
+    R.check(G, "a tagless .css file is scanned whole", "#abcdef" in hits, f"reported: {sorted(hits)}")
+
+
+def test_lint_ignore(R, tmp):
+    """--ignore must silence a path entirely, and only the paths named."""
+    G = "Lint — --ignore"
+    tokens_path = os.path.join(tmp, "tokens-ig.json")
+    with open(tokens_path, "w") as f:
+        json.dump(DRIFT_TOKENS, f)
+    root = write_fixture(os.path.join(tmp, "ig"), {
+        "arms/baseline.tsx": DRIFT_FILES["Card.tsx"],
+        "Card.tsx": DRIFT_FILES["Card.tsx"],
+    })
+
+    rc, r = lint(root, tokens_path)
+    R.check(G, "both files are scanned without --ignore", r["files_scanned"] == 2,
+            f"scanned {r['files_scanned']}")
+
+    rc2, r2 = lint(root, tokens_path, ignore=["arms/*"])
+    files = " ".join(f.get("file", "") for f in r2["findings"]).replace("\\", "/")
+    R.check(G, "the ignored path is not scanned", r2["files_scanned"] == 1,
+            f"scanned {r2['files_scanned']}")
+    R.check(G, "no finding is reported against the ignored path", "arms/" not in files, files)
+    R.check(G, "the un-ignored file still reports its drift",
+            any(f["id"] == "token_drift" for f in r2["findings"]))
+
+    rc3, r3 = lint(root, tokens_path, ignore=["nothing/*"])
+    R.check(G, "a glob matching nothing changes nothing", r3["files_scanned"] == 2,
+            f"scanned {r3['files_scanned']}")
 
 
 def test_lint_ship_floor(R, tmp):
@@ -888,6 +994,9 @@ def main():
     test_lint_slop(R, slop)
     test_lint_clean(R, clean)
     test_lint_drift(R, tmp)
+    test_lint_nested_tokens(R, tmp)
+    test_lint_colour_bearing(R, tmp)
+    test_lint_ignore(R, tmp)
     test_lint_ship_floor(R, tmp)
 
     ok = R.summary()

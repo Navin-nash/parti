@@ -75,7 +75,9 @@ def main():
 
             block = f"{MARKER}\n<style>\n{css}\n</style>\n"
             # lambda, not a string: CSS escapes like 4 read as regex backrefs
-            out = LINK_RE.sub(lambda _m: block, html, count=1)
+            # default-bind block: the lambda is consumed on this line, but binding
+            # it keeps the closure correct if this ever moves out of the loop
+            out = LINK_RE.sub(lambda _m, b=block: b, html, count=1)
             with open(page, "w", encoding="utf-8", newline="\n") as f:
                 f.write(out)
             changed += 1

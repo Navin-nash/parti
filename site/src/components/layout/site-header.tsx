@@ -10,6 +10,10 @@ import { Wordmark } from "./wordmark";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { cn } from "@/lib/utils";
 
+/**
+ * A thin bar, one hairline underneath, hard corners. The nav sits on a single
+ * line at desktop and collapses to a sheet below `lg`.
+ */
 export function SiteHeader() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -18,8 +22,8 @@ export function SiteHeader() {
     pathname === href || pathname.startsWith(`${href}/`);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-rule/70 bg-paper/90 backdrop-blur-md">
-      <div className="mx-auto flex h-16 max-w-[1400px] items-center gap-6 px-4 sm:px-6">
+    <header className="sticky top-0 z-40 border-b border-rule bg-paper">
+      <div className="mx-auto flex h-16 max-w-[1400px] items-center gap-6 px-4 sm:px-6 lg:px-8">
         <Wordmark />
 
         <nav aria-label="Primary" className="hidden lg:block">
@@ -32,13 +36,17 @@ export function SiteHeader() {
                     href={item.href}
                     aria-current={active ? "page" : undefined}
                     className={cn(
-                      "rounded-full px-3.5 py-2 text-[0.875rem] transition-colors duration-(--d-fast) ease-(--ease-specimen)",
-                      active
-                        ? "bg-plate-2 text-ink"
-                        : "text-ink-muted hover:bg-plate-2 hover:text-ink",
+                      "relative px-3 py-2 text-[0.875rem] transition-colors duration-(--d-fast)",
+                      active ? "text-ink" : "text-ink-muted hover:text-ink",
                     )}
                   >
                     {item.label}
+                    {active ? (
+                      <span
+                        aria-hidden
+                        className="absolute inset-x-3 -bottom-[1px] h-[2px] bg-mark"
+                      />
+                    ) : null}
                   </Link>
                 </li>
               );
@@ -53,7 +61,7 @@ export function SiteHeader() {
             href={GITHUB_URL}
             target="_blank"
             rel="noreferrer noopener"
-            className="hidden items-center gap-1.5 rounded-full border border-rule bg-plate px-3.5 py-2 text-[0.8125rem] text-ink-muted transition-colors duration-(--d-fast) ease-(--ease-specimen) hover:border-rule-strong hover:text-ink sm:inline-flex"
+            className="hidden items-center gap-1.5 border border-rule bg-plate px-3 py-2 text-[0.8125rem] text-ink-muted transition-colors duration-(--d-fast) hover:border-rule-strong hover:text-ink sm:inline-flex"
           >
             GitHub
             <ArrowUpRight className="size-3.5" aria-hidden />
@@ -64,7 +72,7 @@ export function SiteHeader() {
             aria-expanded={open}
             aria-controls="mobile-nav"
             aria-label={open ? "Close menu" : "Open menu"}
-            className="inline-flex size-9 items-center justify-center rounded-full border border-rule bg-plate text-ink-muted transition-colors duration-(--d-fast) hover:text-ink lg:hidden"
+            className="inline-flex size-9 items-center justify-center border border-rule bg-plate text-ink-muted transition-colors duration-(--d-fast) hover:text-ink lg:hidden"
           >
             {open ? <X className="size-4" aria-hidden /> : <Menu className="size-4" aria-hidden />}
           </button>
@@ -75,20 +83,20 @@ export function SiteHeader() {
         <nav
           id="mobile-nav"
           aria-label="Primary, mobile"
-          className="border-t border-rule/70 bg-plate lg:hidden"
+          className="border-t border-rule bg-plate lg:hidden"
         >
           <ul className="mx-auto max-w-[1400px] px-4 py-2 sm:px-6">
             {NAV.map((item) => {
               const active = isActive(item.href);
               return (
-                <li key={item.href} className="border-b border-rule/50 last:border-0">
+                <li key={item.href} className="border-b border-rule last:border-0">
                   <Link
                     href={item.href}
                     onClick={() => setOpen(false)}
                     aria-current={active ? "page" : undefined}
                     className={cn(
                       "block py-3 text-[0.9375rem]",
-                      active ? "text-mark" : "text-ink",
+                      active ? "text-mark-text" : "text-ink",
                     )}
                   >
                     {item.label}

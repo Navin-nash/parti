@@ -41,6 +41,38 @@ Using IBM Plex Mono for **figures only** in a product UI is allowed. Using Fraun
 
 **Brand:** a distinctive display + a refined text face is the usual pair. Emphasis inside a headline uses italic or weight of the *same* family — don't inject a random serif word into a sans headline.
 
+## Implementation
+
+Where the spec meets CSS. Naming the right face and shipping it wrong is the same
+failure as naming the wrong face.
+
+- **Properties over raw feature tags.** `font-weight: 650` instead of
+  `font-variation-settings: "wght" 650`; `font-optical-sizing: auto` instead of `"opsz"`;
+  `font-variant-numeric: tabular-nums` instead of `font-feature-settings: "tnum" 1`.
+  Properties keep working when a non-variable fallback renders; reserve raw tags for
+  custom axes (`"GRAD" 80`) and niche features with no property of their own.
+- **Load the weights and styles the design uses.** A browser synthesizes a missing bold
+  or italic, distorting the real face. `font-synthesis: none` turns that off — but it
+  erases the emphasis rather than reporting it, so set it only after checking every
+  required bold, italic, and small-cap form stays distinct across the fallback stack.
+- **Underlines from the font, not the browser's guess.** Pull position and thickness from
+  the font's own metrics: `text-underline-position: from-font`,
+  `text-decoration-thickness: from-font`, tuned by hand with `text-underline-offset` and
+  `text-decoration-skip-ink: auto` so descenders don't get cut.
+- **Inputs at 16px on mobile.** iOS Safari zooms the whole page when an input's text
+  renders under 16px. Either size the input up on mobile (`text-base sm:text-sm`, which
+  changes how it looks at small widths) or hold `font-size: 16px` and render the intended
+  size with `transform: scale()`, compensating width and line-height — identical at every
+  viewport, more code to maintain. Pick one; don't mix them across a form.
+- **Font smoothing on the root, once.** macOS renders text heavier than intended.
+  `-webkit-font-smoothing: antialiased` and `-moz-osx-font-smoothing: grayscale` on the
+  root layout — never per component, which is how a design ends up with two smoothing
+  regimes on one screen.
+- **`lang` and `dir` for mixed-direction content.** Set `lang` so assistive tech picks the
+  right pronunciation and hyphenation; set `dir` at the document or the boundary where
+  direction changes; isolate a mixed-direction value (an English product name inside
+  Arabic prose) with `<bdi>` so digit and punctuation order survives.
+
 ## Typeset command
 
 Report current families and ratios first. Then rebuild. A pairing without named faces, sources, and tracking-per-size is not a typeset pass.

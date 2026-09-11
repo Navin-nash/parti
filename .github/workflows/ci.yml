@@ -1,0 +1,113 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # The skill itself: the scripts that back every measured claim it makes.
+  skill:
+    name: skill scripts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Lint (ruff, config pinned in ruff.toml)
+        uses: astral-sh/ruff-action@v3
+        with:
+          args: check --output-format github
+
+      # 112 subprocess-level checks over audit / score / color / lint / motion /
+      # capture, including the near-miss guards that stop a rule from passing by
+      # flagging everything. This is the suite; there is no separate unit layer.
+      - name: Script evals
+        run: python evals/run_script_evals.py
+
+      - name: Surface directions
+        run: python evals/check_surfaces.py
+
+  # The site, held to the same gate the skill applies to anyone else's build.
+  site:
+    name: site
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: site
+    steps:
+      - uses: actions/checkout@v4
+
+      # package_json_file defaults to ./package.json at the repo root; this repo
+      # has no root package.json (the Next.js app lives under site/), so the
+      # action can't find the pinned pnpm version without being pointed at it.
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: site/package.json
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+          cache-dependency-path: site/pnpm-lock.yaml
+
+      - run: pnpm install --frozen-lockfile
+
+      # tsconfig.json includes .next/types/**/*.ts (PageProps/LayoutProps and
+      # friends), which only exists after Next.js generates it - normally a
+      # side effect of `next dev`/`next build`. Typecheck runs before Build
+      # here, so it needs its own generation step first.
+      - name: Generate Next.js types
+        run: pnpm exec next typegen
+
+      - name: Typecheck
+        run: pnpm exec tsc --noEmit
+
+      - name: ESLint
+        run: pnpm exec eslint --max-warnings 0
+
+      - name: Build
+        run: pnpm build
+
+  # Dogfooding. If the skill's own site cannot pass the skill's own gate, the
+  # gate is not a gate. Exclusions are listed in site/DESIGN.md with reasons and
+  # nowhere else — an undocumented exclusion is the rule being ignored quietly.
+  gate:
+    name: parti gate on the site
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      # Excluded, per site/DESIGN.md § Anti-rules:
+      #   src/showcases/*                          each showcase is its own brief, own tokens
+      #   src/data/*.ts                             captured tool output + showcase accent restated
+      #   src/components/proof/folder-gallery.tsx  exact chrome of the adapted component
+      #   src/components/proof/theme-hex.ts        JS restatement of this file's own tokens
+      #   src/components/ui/depth-flip-text.tsx    vendored defaults, always overridden at call site
+      - name: Anti-slop and token drift
+        run: |
+          python skills/parti/scripts/lint.py site \
+            --tokens site/tokens.json \
+            --ignore "src/showcases/*" \
+            --ignore "src/data/*.ts" \
+            --ignore "src/components/proof/folder-gallery.tsx" \
+            --ignore "src/components/proof/theme-hex.ts" \
+            --ignore "src/components/ui/depth-flip-text.tsx"
+
+      - name: Motion rules
+        run: python skills/parti/scripts/motion.py site/src

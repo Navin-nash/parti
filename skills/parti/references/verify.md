@@ -82,7 +82,7 @@ Emit this after all three checks pass (or after they fail, so the failure is vis
 
 **States covered:** [empty / loading / partial / ideal / error / overflow / offline / no-permission — mark each present/absent]
 
-**A11y floor:** focus visible [Y/N] · keyboard path complete [Y/N] · 44px targets [Y/N] · reduced-motion honored [Y/N]
+**A11y floor:** focus visible [Y/N] · keyboard path complete [Y/N] · 44px targets [Y/N] · reduced-motion honored [Y/N] · escalation set clear — destructive/truncated/hidden-cue/error-recovery/colour-misuse/motion-only-state [Y/N]
 
 **Register:** brand | product · **Ship-floor:** PASS/FAIL (name any failed box) · **Composition:** squint/grayscale/signature claimed [Y/N]
 

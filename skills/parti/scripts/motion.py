@@ -53,10 +53,24 @@ PRESS_SCALE_MIN, PRESS_SCALE_MAX = 0.95, 1.05
 # Files where a long duration is legitimately allowed (marketing, onboarding,
 # one-per-session choreography). Motion budgets are for UI, not for a hero.
 RE_LONG_OK_PATH = re.compile(
-    r"(marketing|landing|hero|onboard|welcome|splash|story|promo|banner)", re.I)
-# Lines where a long duration is legitimately allowed (continuous motion).
+    r"(marketing|landing|hero|showcase|onboard|welcome|splash|story|promo|banner)", re.I)
+# Lines where a long duration is legitimately allowed: continuous motion, and
+# a stroke being DRAWN. A path drawn via stroke-dashoffset is not a UI
+# transition - it is a mark being made, and the budget that keeps a dropdown
+# feeling instant makes a drawn line read as a glitch. The signal is the
+# dash property itself, so this cannot be claimed by an ordinary fade.
 RE_LONG_OK_LINE = re.compile(
-    r"infinite|repeat\s*:|marquee|spin|pulse|skeleton|shimmer|progress|scrub", re.I)
+    r"infinite|repeat\s*:|marquee|spin|pulse|skeleton|shimmer|progress|scrub"
+    r"|stroke-dashoffset|strokeDashoffset|pathLength", re.I)
+# A scroll-triggered, fires-once entrance (Motion's whileInView + viewport
+# once:true) is the same "not a UI transition" case as a drawn stroke - it is
+# content arriving, not a control responding, so the 300ms snappiness budget
+# doesn't apply. Its props usually span a few adjacent lines rather than one,
+# so this is checked against a small window around the duration line instead
+# of the line itself.
+RE_ONCE_ENTRANCE = re.compile(
+    r"whileInView|viewport\s*=\s*\{\{[^}]*\bonce\s*:\s*true", re.I)
+ONCE_ENTRANCE_WINDOW = 4
 
 RE_TRIGGER_ANCHORED = re.compile(
     r"(popover|dropdown|menu|tooltip|select|combobox|popper|listbox)", re.I)
@@ -218,14 +232,16 @@ def scan(root):
             for m in re.finditer(r"\b(ease|ease-out|ease-in-out|linear)\b", line):
                 easings[m.group(1)] += 1
 
-            long_ok = RE_LONG_OK_PATH.search(rel) or RE_LONG_OK_LINE.search(line)
+            window = lines[max(0, n - 1 - ONCE_ENTRANCE_WINDOW):n + ONCE_ENTRANCE_WINDOW]
+            long_ok = (RE_LONG_OK_PATH.search(rel) or RE_LONG_OK_LINE.search(line)
+                       or RE_ONCE_ENTRANCE.search("\n".join(window)))
             budget = (SHEET_BUDGET_MS if (RE_SHEET.search(rel) or RE_SHEET.search(line)
                                           or RE_SHEET.search(selector)) else UI_BUDGET_MS)
             for m in RE_DUR.finditer(line):
                 ms = to_ms(m.group(1), m.group(2))
                 durations[int(ms)] += 1
                 if ms > budget and not long_ok:
-                    add({"rule": "timing-over-300ms", "severity": "P0", "scope": "line", "scope": "line", "file": rel, "line": n,
+                    add({"rule": "timing-over-300ms", "severity": "P0", "scope": "line", "file": rel, "line": n,
                          "message": f"{int(ms)}ms; budget for this surface is under {budget}ms "
                                     f"(see motion-rules.md §12 for the per-element table)",
                          "code": line.strip()[:120]})
@@ -234,7 +250,7 @@ def scan(root):
                 ms = float(m.group(1)) * 1000.0
                 durations[int(ms)] += 1
                 if ms > budget and not long_ok:
-                    add({"rule": "timing-over-300ms", "severity": "P0", "scope": "line", "scope": "line", "file": rel, "line": n,
+                    add({"rule": "timing-over-300ms", "severity": "P0", "scope": "line", "file": rel, "line": n,
                          "message": f"{int(ms)}ms; budget for this surface is under {budget}ms",
                          "code": line.strip()[:120]})
 
@@ -243,7 +259,7 @@ def scan(root):
                 ms = int(m.group(1))
                 durations[ms] += 1
                 if ms > budget and not long_ok:
-                    add({"rule": "timing-over-300ms", "severity": "P0", "scope": "line", "scope": "line", "file": rel, "line": n,
+                    add({"rule": "timing-over-300ms", "severity": "P0", "scope": "line", "file": rel, "line": n,
                          "message": f"duration-{ms}; budget for this surface is under {budget}ms",
                          "code": line.strip()[:120]})
 
@@ -368,16 +384,16 @@ def summarize(r, census_only=False):
     a = L.append
     c = r["census"]
 
-    if census_only or True:
-        a(f"Scanned {r['files_scanned']} files under {r['root']}")
-        a("")
-        a("CENSUS")
-        a(f"  distinct durations : {c['distinct_durations']}  "
-          f"{sorted(c['durations_ms'])[:12]}{' ...' if c['distinct_durations'] > 12 else ''}")
-        a(f"  distinct curves    : {c['distinct_curves']}")
-        a(f"  reduced-motion     : {c['reduced_motion_sites']} site(s)")
-        a(f"  hover gated        : {'yes' if c['hover_gated'] else 'NO'}")
-        a("")
+    a(f"Scanned {r['files_scanned']} files under {r['root']}")
+    a("")
+    a("CENSUS")
+    a(f"  distinct durations : {c['distinct_durations']}  "
+      f"{sorted(c['durations_ms'])[:12]}{' ...' if c['distinct_durations'] > 12 else ''}")
+    a(f"  distinct curves    : {c['distinct_curves']}")
+    a(f"  reduced-motion     : {c['reduced_motion_sites']} site(s)")
+    a(f"  hover gated        : {'yes' if c['hover_gated'] else 'NO'}")
+    a("")
+    # The census always prints; --census means print ONLY the census.
     if census_only:
         return "\n".join(L)
 

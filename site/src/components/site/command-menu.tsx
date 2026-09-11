@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/command";
 import { NAV, GITHUB_URL } from "@/lib/nav";
 import { COMMANDS } from "@/data/commands";
-import { EXAMPLES } from "@/data/examples";
+import { SHOWCASES } from "@/data/showcases";
 import { Copy, FileText, Search, Terminal } from "@/lib/icons";
 
 /**
@@ -152,16 +152,16 @@ export function CommandMenu() {
 
         <CommandSeparator />
 
-        <CommandGroup heading="Examples">
-          {EXAMPLES.map((e) => (
+        <CommandGroup heading="Gallery">
+          {SHOWCASES.map((s) => (
             <CommandItem
-              key={e.slug}
-              value={`${e.title} ${e.slug} example`}
-              onSelect={() => run(() => router.push(`/examples/${e.slug}`))}
+              key={s.slug}
+              value={`${s.title} ${s.slug} gallery`}
+              onSelect={() => run(() => router.push(`/gallery/${s.slug}`))}
             >
               <FileText className="size-4" aria-hidden />
-              {e.title}
-              <CommandShortcut>{e.provenance}</CommandShortcut>
+              {s.title}
+              <CommandShortcut>{s.category}</CommandShortcut>
             </CommandItem>
           ))}
         </CommandGroup>

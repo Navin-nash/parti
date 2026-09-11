@@ -236,7 +236,7 @@ Invent the one element the design is remembered by. It must come from the subjec
 
 ### copy
 
-Microcopy pass. Names come from what the user controls, not how the system is built. Active voice; a control says what happens when used ("Save changes", not "Submit"); an action keeps its name through the whole flow. Errors state what happened, why, and the next step, in the interface's voice, never apologizing and never vague. Empty screens are invitations to act. Generic copy makes a design feel templated as fast as generic layout.
+Microcopy pass. Full protocol, tone-by-stakes table, and worked examples: `references/copy.md`. Names come from what the user controls, not how the system is built. Active voice; a control says what happens when used ("Save changes", not "Submit"); an action keeps its name through the whole flow. Errors state what happened, why, and the next step, next to the field, in the interface's voice, never apologizing and never vague — an error with no recovery path is `NG-ERROR-RECOVERY`, not a wording note. Empty screens are invitations to act. Generic copy makes a design feel templated as fast as generic layout.
 
 ### tokens
 
@@ -278,11 +278,11 @@ Run `scripts/lint.py` against any built path, with `--tokens` if a spec exists. 
 
 ### responsive
 
-Verify and fix breakpoint behavior from 320px up: what reflows, what collapses to a drawer or a stack, what stays hidden until a wider viewport, and where a fixed pixel value was used where a fluid one belonged. State the breakpoints checked explicitly.
+Verify and fix breakpoint behavior from 320px up: what reflows, what collapses to a drawer or a stack, what stays hidden until a wider viewport, and where a fixed pixel value was used where a fluid one belonged. Break where content stops fitting, not at device presets; check the RTL mirror where the product ships one. Floor and checklist: `references/foundations.md` §5. State the breakpoints checked explicitly.
 
 ### a11y
 
-Keyboard-only pass (tab order matches visual order, every interactive element reachable and operable), screen-reader labels on icon-only controls, contrast re-verified, `prefers-reduced-motion` honored, touch targets ≥44px. Report as pass/fail per item, not a paragraph of impressions.
+Keyboard-only pass (tab order matches visual order, every interactive element reachable and operable via native elements or correct ARIA, roving tabindex on composite widgets), screen-reader labels and live-region behavior on dynamic content, contrast re-verified, `prefers-reduced-motion` honored, touch targets ≥44px, 200% zoom / 320px reflow. Full floor: `references/ux-methods.md` §8. Report as pass/fail per item, not a paragraph of impressions — the unconditional no-gos in `references/go-no-go.md` are the subset that blocks shipping.
 
 ### perf
 

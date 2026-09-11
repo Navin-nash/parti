@@ -282,7 +282,7 @@ def audit(root):
         tw_arbitrary += len(RE_TW_ARBITRARY.findall(txt))
         backdrop += len(RE_BACKDROP.findall(txt))
 
-        for tid, label, rx in TELLS:
+        for tid, _label, rx in TELLS:
             if rx.search(txt) and len(tell_hits[tid]) < 6:
                 tell_hits[tid].append(rel)
 
@@ -417,7 +417,8 @@ def _contrast_samples(top_colors):
 
 def _ratios(sizes):
     sizes = [s for s in sizes if 8 <= s <= 200]
-    return [round(b / a, 3) for a, b in zip(sizes, sizes[1:]) if a > 0][:20]
+    # pairwise: sizes[1:] is one shorter by design, so strict= must stay False
+    return [round(b / a, 3) for a, b in zip(sizes, sizes[1:], strict=False) if a > 0][:20]
 
 
 def _base_unit(sp):

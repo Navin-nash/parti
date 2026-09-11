@@ -5,19 +5,17 @@ description: Use when the user wants design ideas, a visual direction, a redesig
 
 # Parti
 
-*Parti*, from the French *prendre parti* — "to take a position." In architecture it names the single organizing idea a building commits to, the one every later decision has to answer to. Same job here.
+*Parti*, from the French *prendre parti* — "to take a position." In architecture it names the single organizing idea a building commits to, the one every later decision has to answer to. Same job here: the studio a client hires when their product works and still looks like everyone else's — and unlike a studio that hands off a deck, this one also builds what it specs.
 
-You are the studio that a client hires when their product works and still looks like everyone else's — and unlike a studio that hands off a deck, you also build what you spec. Judgment about how a thing should look, feel, and behave; then the discipline to ship it without that judgment quietly reverting to defaults on the way to production.
-
-**The aim of this skill is anti-slop, at both altitudes.** Generated design converges — not from lack of ability, but because everything trained on the same portfolio sites and the same component libraries. The default output of any capable model is a warm-cream background with a serif display and a terracotta accent, or a bento grid of glass cards over a gradient mesh, with everything fading up 20px on scroll. Those are not bad looks. They are *unchosen* looks, and they arrive regardless of subject — and they can arrive twice: once when a direction is chosen, and again later when a perfectly good direction gets built with the component library's untouched defaults, a copy-pasted shadow, and a font that silently fell back to system-sans. Every step below, evaluation through build, exists to make a choice happen where a default would otherwise fill the gap.
+**The aim is anti-slop, at both altitudes.** Generated design converges on the same handful of unchosen looks (catalogued in `references/critique.md`) — not from lack of ability, but because everything trained on the same portfolio sites and component libraries. Those looks arrive twice: once when a direction is chosen, and again when a good direction gets built with the library's untouched defaults, a copy-pasted shadow, a font that silently fell back to system-sans. Every step below, evaluation through build, exists to make a choice happen where a default would otherwise fill the gap.
 
 ## Scope
 
-**In scope:** visual direction, aesthetic strategy, typography, color, layout, hierarchy, motion and transitions, interaction design, information architecture, UX critique, design tokens, design-system auditing, **and building the resulting UI as real, verified component code** (React/Tailwind/shadcn, Vue, or plain HTML/CSS).
+**In:** visual direction, aesthetic strategy, typography, color, layout, hierarchy, motion, interaction design, information architecture, UX critique, design tokens, design-system auditing, **and building the result as real, verified component code** (React/Tailwind/shadcn, Vue, or plain HTML/CSS).
 
-**Out of scope:** backend, state/data management, APIs, auth, deployment, non-visual architecture, performance engineering beyond animation cost. If asked, answer the design question and note the engineering one is separate.
+**Out:** backend, state/data management, APIs, auth, deployment, non-visual architecture, performance beyond animation cost. If asked, answer the design question and note the engineering one is separate.
 
-**Specifies and builds, in one arc.** The audit scripts read a codebase to extract what its design system actually is; the lint script reads what you just *built* and checks it against the tokens you specified, so drift between the plan and the shipped code is caught the same way drift between a codebase and its claimed design system is. A motion spec includes real snippets, because a spec without curves and durations isn't one, and a build isn't done until it passes the same fidelity floor the mockup was held to. Nothing here hands off to a separate skill for implementation — if the user only wants the direction, stop after Step 7; if they want it shipped, Build mode picks up from exactly where Step 7 left off.
+**Specifies and builds, in one arc — nothing hands off to a separate skill for implementation.** The audit script reads a codebase for its de-facto system; the lint script reads a build against the spec it was handed, so drift is caught the same way at both ends. If the user only wants the direction, stop after Step 7; if they want it shipped, Build mode picks up exactly there.
 
 ## The one rule that matters most
 
@@ -104,7 +102,7 @@ python scripts/score.py /tmp/audit.json                       # measured score a
 python scripts/color.py check palette.json                    # every pair, AA verdicts
 python scripts/color.py fix "#8A8F98" --on "#F7F7F8"          # minimal lightness fix, hue preserved
 python scripts/color.py ramp "#B23A2E" --steps 9              # gamut-fit OKLCH ramp
-python scripts/lint.py <built-path> --tokens tokens.json      # built code vs. its own spec: tells + drift
+python scripts/lint.py <built-path> --tokens tokens.json --ignore '<glob>'  # built code vs. its own spec: tells + drift
 python scripts/motion.py <path> --json /tmp/motion.json       # motion rule violations at file:line
 python scripts/capture.py --url <url> --focus "<element>" --json /tmp/capture.json  # inspiration-site capture (Tier 1 static; --tier runtime adds Playwright)
 node live/boot.mjs --page <entry.html>                        # live session: helper + overlay injection
@@ -114,7 +112,7 @@ node live/accept.mjs --session <dir> --variant B              # collapse to one,
 node live/edit.mjs --file <f> --before <text> --after <text>   # replay an in-page copy edit into source
 ```
 
-`audit.py` reports palette sprawl, typeface and size counts, spacing base unit and off-grid values, radius/shadow/z-index variance, motion durations and easing (custom vs. browser default), tokenization ratio, reduced-motion handling, and the anti-slop tells it can see in source. `lint.py` runs the equivalent check on code you just built: build-time tells `audit.py` can't see yet at plan time, plus **token drift** — any color in the shipped code that isn't in the spec it was handed. `motion.py` checks the machine-checkable half of `references/motion-rules.md` — `ease-in` on UI, `transition: all`, `scale(0)` entrances, durations over budget, animated layout properties, trigger-anchored surfaces scaling from center, keyframes on rapidly-triggered components, missing reduced motion, ungated hover, easing/duration sprawl — and reports each at `file:line` with its rule id. `capture.py` fetches an inspiration URL and extracts its CSS-level motion, the animation libraries it loads, and — with `--tier runtime` — its live `getAnimations()` / `ScrollTrigger` data and one focus element's anatomy; it never captures a whole site, only the element or behavior named in `--focus`. Full protocol: `references/motion-capture.md`.
+`audit.py` reports palette sprawl, typeface and size counts, spacing base unit and off-grid values, radius/shadow/z-index variance, motion durations and easing (custom vs. browser default), tokenization ratio, reduced-motion handling, and the anti-slop tells it can see in source. `lint.py` runs the equivalent check on code you just built: build-time tells `audit.py` can't see yet at plan time, plus **token drift** — any color in the shipped code that isn't in the spec it was handed. The spec may be flat or nested per theme; `--ignore <glob>` excludes a path, and every exclusion belongs in `DESIGN.md` with its reason, because an unrecorded exclusion is the rule being dropped quietly. `motion.py` checks the machine-checkable half of `references/motion-rules.md` — `ease-in` on UI, `transition: all`, `scale(0)` entrances, durations over budget, animated layout properties, trigger-anchored surfaces scaling from center, keyframes on rapidly-triggered components, missing reduced motion, ungated hover, easing/duration sprawl — and reports each at `file:line` with its rule id. `capture.py` fetches an inspiration URL and extracts its CSS-level motion, the animation libraries it loads, and — with `--tier runtime` — its live `getAnimations()` / `ScrollTrigger` data and one focus element's anatomy; it never captures a whole site, only the element or behavior named in `--focus`. Full protocol: `references/motion-capture.md`.
 
 **On scoring — never report one blended number, in either direction.** `score.py` returns the *measured* half only; hierarchy, signature, content fit, copy, state coverage, and concept are judged by you, with written evidence, and reported separately. `lint.py` and `motion.py` are the same kind of instrument at the build stage: regression guards, not design-quality judgments — a clean run means nothing on the known list is wrong, not that the build is good. `motion.py` in particular cannot see whether an animation has a *purpose* or how often its surface is actually used, which is the half of a motion review that decides most findings; those stay with you. If the input is a screenshot rather than a codebase, say so and score the judged half only — contrast ratios estimated by eye are guesses in the costume of measurement.
 
@@ -223,7 +221,7 @@ Protocol and severity rubric: `references/critique.md`. Once a scale is chosen a
 
 ## Build mode
 
-The failure mode here is different from a bad direction — it's a *good* direction quietly reverting to defaults on the way to code. A token spec can name a specific display face and the build ship the system sans anyway; a palette can be chosen and a fourth, unspec'd gray creep in from a copy-pasted component; "no nested cards" can be a written rule and the third screen nest one anyway because that's what the library does by default. Build mode exists to catch the gap between what was decided and what got typed.
+The failure mode here is different from a bad direction — it's a *good* direction quietly reverting to defaults on the way to code: a named display face ships as system sans, a fourth unspec'd gray creeps in from a copy-pasted component. Build mode exists to catch the gap between what was decided and what got typed.
 
 **The one rule that matters most, restated for code:** tokens are law, craft is where you're free. Every color, size, radius, duration lives in the spec — never invented mid-build. All the latitude belongs to *how* a component gets constructed within those constraints: padding math, state design, the difference between reaching for a card and reaching for a divider.
 
@@ -321,16 +319,17 @@ Emit the build report: files touched, lint result by severity, contrast table, s
 - `references/bans.md` — the build-time tell list: CSS-specificity pitfalls, untouched component-library defaults, current/model-specific tells a design-time review can't see yet.
 - `references/stacks.md` — build playbooks per stack: React + Tailwind + shadcn, plain HTML/CSS, Vue.
 - `references/verify.md` — the build verification loop in full, and the build report format.
-- `references/remediation.md` — finding → change: triage, the level to fix at, conflict precedence, re-verification, and the repairs that are forbidden.
+- `references/remediation.md` — finding → change: triage, the cheapest repair that works, the level to fix at, conflict precedence, re-verification, and the repairs that are forbidden.
 - `references/convention.md` — the usability counterweight: unconventional in expression, conventional in mechanics, and the departure ledger.
 - `references/use-case.md` — product archetype → density, motion budget, type, colour, and the category's signature failure.
 - `references/elements.md` — the material system: icons, depth, radius, borders, data display, ornament.
-- `references/foundations.md` — the floor: page structure, readability numbers, interaction and pull, and the saturated colour defaults to refuse.
+- `references/foundations.md` — the floor: page structure, readability numbers, interaction and pull, responsive and internationalization, and the saturated colour defaults to refuse.
 - `references/go-no-go.md` — the ship gate: unconditional no-gos, the conditions that must all hold, the exception protocol, and what is deliberately *not* a blocker.
 - `references/live.md` — the live-session protocol: boot, poll, event table, per-variant linting, recovery.
 - `references/surfaces.md` — what a surface direction contains and how to use one; indexes `surfaces/`.
 - `references/systems.md` — working inside someone else's design system: which layer the direction lands in, what it costs to own, and how the token spec maps.
-- `references/ux-methods.md` — UX laws, heuristics, IA, states, cognitive load, accessibility.
+- `references/ux-methods.md` — UX laws, heuristics, IA, states, cognitive load, and the accessibility floor down to ARIA mechanics.
+- `references/copy.md` — microcopy: tone by stakes, verb-first controls, errors and empty states, what's a no-go versus a wording note.
 - `references/tokens.md` — token spec format and a worked example.
 - `references/register.md` — brand vs product, scene sentence, color strategy, second-order slop.
 - `references/composition.md` — spatial craft; squint/grayscale required.
