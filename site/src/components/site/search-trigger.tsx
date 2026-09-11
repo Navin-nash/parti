@@ -36,7 +36,7 @@ export function SearchTrigger() {
       onClick={open}
       aria-label="Search sections, capabilities and examples"
       aria-keyshortcuts="Meta+K Control+K"
-      className="hidden items-center gap-2 rounded-full border border-rule bg-plate py-2 pl-3.5 pr-2 text-[0.8125rem] text-ink-muted transition-colors duration-(--d-fast) ease-(--ease-specimen) hover:border-rule-strong hover:text-ink sm:inline-flex"
+      className="hidden items-center gap-2 border border-rule bg-plate py-2 pl-3.5 pr-2 text-[0.8125rem] text-ink-muted transition-colors duration-(--d-fast) ease-(--ease-specimen) hover:border-rule-strong hover:text-ink sm:inline-flex"
     >
       <Search className="size-3.5" aria-hidden />
       <span>Search</span>

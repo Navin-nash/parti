@@ -1,499 +1,271 @@
 @import "tailwindcss";
-
 @import "shadcn/tailwind.css";
 
-
-
 /* ==========================================================================
+   Proof - the token layer (open-sky revision).
 
-   Specimen - the token layer.
-
-
-
-   Authored in OKLCH by design/palette.py, which round-trips through
-
-   ../scripts/color.py and refuses to write a value whose contrast pair fails
-
-   its floor. The hex below is that script's output. Do not hand-edit:
-
-   change palette.py, re-run it, re-run `pnpm tokens`.
-
-
-
-   shadcn's variable names are kept so its primitives keep working. Their
-
-   *values* are all replaced - the default grayscale ramp and 0.625rem radius
-
-   ship on every shadcn site and would make this build an example of the
-
-   thing it exists to argue against.
-
+   Near-pure paper / near-pure ink, one persimmon spot ink, one atmospheric
+   sky. Authored in DESIGN.md; to be round-tripped through design/palette.py
+   and scripts/color.py. shadcn's variable names are kept so its primitives
+   keep working; their values are all replaced.
    ========================================================================== */
 
-
-
 :root {
+  /* --- ground and ink ---------------------------------------------------- */
+  --paper: #FCFCFD;
+  --plate: #FFFFFF;
+  --plate-2: #F4F4F6;
+  --rule: #E4E4E7;
+  --rule-strong: #8A8A8F;
+  --ink: #121316;
+  --ink-muted: #54565A;
+  --ink-dim: #63656A;
 
-  /* --- ground and ink ------------------------------------------------- */
+  /* --- the accent: sky-blue, one system with the Cloudscape hero --------- */
+  --mark: #87CEEB;      /* fills, chips, bars - a light tint in BOTH themes */
+  --mark-text: #277796; /* links / small text / numerals on white */
+  --mark-tint: #E8F4FA; /* accent ground, chips, ambient bands */
+  --on-mark: #0A1518;   /* text on a solid --mark fill (near-black, both themes) */
 
-  --paper: #F1F2F4;
+  /* --- sky* aliases kept so existing call sites resolve ------------------- */
+  --sky: var(--mark);
+  --sky-text: var(--mark-text);
+  --sky-tint: var(--mark-tint);
+  --on-sky: var(--on-mark);
 
-  --plate: #FCFDFD;
-
-  --plate-2: #E8EAEC;
-
-  --rule: #D7D9DC;
-
-  --rule-strong: #878A8E;
-
-  --ink: #111315;
-
-  --ink-muted: #565A5E;
-
-  --ink-dim: #65696D;
-
-  --mark: #B82F2B;
-
-  --mark-tint: #FAEAE8;
-
-  --on-mark: #FCFCFC;
-
-
-
-  /* --- shape ---------------------------------------------------------- */
-
-  --radius: 14px;
-
-
+  /* --- shape: hard corners everywhere on content ------------------------- */
+  --radius: 0px;
 
   /* --- space: 4px base, 13 steps -------------------------------------- */
-
   --s-1: 4px;   --s-2: 8px;   --s-3: 12px;  --s-4: 16px;  --s-5: 20px;
-
   --s-6: 24px;  --s-7: 32px;  --s-8: 40px;  --s-9: 48px;  --s-10: 64px;
-
   --s-11: 80px; --s-12: 96px; --s-13: 128px;
 
-
-
-  /* --- type ----------------------------------------------------------- */
-
+  /* --- type: ratio 1.2, nine steps ------------------------------------ */
   --t-mono-xs: 0.6875rem; --t-xs: 0.75rem;    --t-sm: 0.8125rem;
-
   --t-base: 0.9375rem;    --t-md: 1.0625rem;  --t-lg: 1.3125rem;
+  --t-xl: 1.75rem;        --t-2xl: 2.375rem;  --t-3xl: 3rem;
 
-  --t-xl: 1.75rem;        --t-2xl: 2.375rem;  --t-3xl: 3.25rem;
-
-
-
-  /* --- motion: responsive-only ---------------------------------------- */
-
-  --d-fast: 120ms; --d-base: 180ms; --d-slow: 260ms;
-
+  /* --- motion ------------------------------------------------------------ */
+  --d-fast: 120ms; --d-base: 180ms; --d-slow: 260ms; --d-reveal: 480ms;
   --ease: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 
+  /* Tailwind's default for a bare `transition-colors` (no explicit duration
+     or ease modifier) - overriding it here means every plain transition
+     utility across the codebase inherits the spec'd curve instead of
+     Tailwind's cubic-bezier(0.4, 0, 0.2, 1), with no per-callsite edit. */
+  --default-transition-duration: var(--d-fast);
+  --default-transition-timing-function: var(--ease);
 
-
-  /* --- the measurement gutter (the signature) -------------------------- */
-
+  /* --- the margin rail (structural signature) -------------------------- */
+  --margin: 5rem;
   --gutter: 4.5rem;
 
-
-
   /* --- shadcn compatibility surface ------------------------------------ */
-
   --background: var(--paper);
-
   --foreground: var(--ink);
-
   --card: var(--plate);
-
   --card-foreground: var(--ink);
-
   --popover: var(--plate);
-
   --popover-foreground: var(--ink);
-
   --primary: var(--ink);
-
   --primary-foreground: var(--plate);
-
   --secondary: var(--plate-2);
-
   --secondary-foreground: var(--ink);
-
   --muted: var(--plate-2);
-
   --muted-foreground: var(--ink-muted);
-
   --accent: var(--plate-2);
-
   --accent-foreground: var(--ink);
-
   --destructive: var(--mark);
-
   --border: var(--rule);
-
   --input: var(--rule-strong);
-
   --ring: var(--mark);
-
   --chart-1: var(--mark);
-
-  --chart-2: var(--ink-muted);
-
-  --chart-3: var(--rule-strong);
-
-  --chart-4: var(--ink-dim);
-
-  --chart-5: var(--rule);
-
+  --chart-2: var(--sky-text);
+  --chart-3: var(--ink-muted);
+  --chart-4: var(--rule-strong);
+  --chart-5: var(--ink-dim);
   --sidebar: var(--plate-2);
-
   --sidebar-foreground: var(--ink);
-
   --sidebar-primary: var(--ink);
-
   --sidebar-primary-foreground: var(--plate);
-
   --sidebar-accent: var(--plate);
-
   --sidebar-accent-foreground: var(--ink);
-
   --sidebar-border: var(--rule);
-
   --sidebar-ring: var(--mark);
-
 }
-
-
 
 .dark {
+  --paper: #050506;
+  --plate: #0E0E10;
+  --plate-2: #020203;
+  --rule: #232427;
+  --rule-strong: #5F6065;
+  --ink: #EBECEE;
+  --ink-muted: #A0A2A6;
+  --ink-dim: #7D7F84;
 
-  --paper: #0B0D0F;
-
-  --plate: #131518;
-
-  --plate-2: #070809;
-
-  --rule: #272A2E;
-
-  --rule-strong: #606469;
-
-  --ink: #EBEDEF;
-
-  --ink-muted: #A1A5A9;
-
-  --ink-dim: #7E8287;
-
-  --mark: #F17262;
-
-  --mark-tint: #361C18;
-
-  --on-mark: #100C0C;
-
+  --mark: #87CEEB;
+  --mark-text: #87CEEB;
+  --mark-tint: #0E2A33;
+  --on-mark: #0A1518;
 }
-
-
 
 @theme inline {
-
   --color-paper: var(--paper);
-
   --color-plate: var(--plate);
-
   --color-plate-2: var(--plate-2);
-
   --color-rule: var(--rule);
-
   --color-rule-strong: var(--rule-strong);
-
   --color-ink: var(--ink);
-
   --color-ink-muted: var(--ink-muted);
-
   --color-ink-dim: var(--ink-dim);
-
   --color-mark: var(--mark);
-
+  --color-mark-text: var(--mark-text);
   --color-mark-tint: var(--mark-tint);
-
   --color-on-mark: var(--on-mark);
-
-
+  --color-sky: var(--sky);
+  --color-sky-text: var(--sky-text);
+  --color-sky-tint: var(--sky-tint);
+  --color-on-sky: var(--on-sky);
 
   --color-background: var(--background);
-
   --color-foreground: var(--foreground);
-
   --color-card: var(--card);
-
   --color-card-foreground: var(--card-foreground);
-
   --color-popover: var(--popover);
-
   --color-popover-foreground: var(--popover-foreground);
-
   --color-primary: var(--primary);
-
   --color-primary-foreground: var(--primary-foreground);
-
   --color-secondary: var(--secondary);
-
   --color-secondary-foreground: var(--secondary-foreground);
-
   --color-muted: var(--muted);
-
   --color-muted-foreground: var(--muted-foreground);
-
   --color-accent: var(--accent);
-
   --color-accent-foreground: var(--accent-foreground);
-
   --color-destructive: var(--destructive);
-
   --color-border: var(--border);
-
   --color-input: var(--input);
-
   --color-ring: var(--ring);
-
   --color-chart-1: var(--chart-1);
-
   --color-chart-2: var(--chart-2);
-
   --color-chart-3: var(--chart-3);
-
   --color-chart-4: var(--chart-4);
-
   --color-chart-5: var(--chart-5);
-
   --color-sidebar: var(--sidebar);
-
   --color-sidebar-foreground: var(--sidebar-foreground);
-
   --color-sidebar-primary: var(--sidebar-primary);
-
   --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-
   --color-sidebar-accent: var(--sidebar-accent);
-
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-
   --color-sidebar-border: var(--sidebar-border);
-
   --color-sidebar-ring: var(--sidebar-ring);
 
-
-
   --font-sans: var(--font-geist-sans);
-
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-geist-sans);
+  --font-heading: var(--font-geist-sans);
 
-  --font-display: var(--font-display-face);
-
-  --font-heading: var(--font-display-face);
-
-
-
-  --radius-sm: calc(var(--radius) * 0.4);
-
-  --radius-md: calc(var(--radius) * 0.6);
-
-  --radius-lg: var(--radius);
-
-  --radius-xl: calc(var(--radius) * 1.3);
-
-  --radius-2xl: calc(var(--radius) * 1.7);
-
-  --radius-3xl: calc(var(--radius) * 2.2);
-
-  --radius-4xl: calc(var(--radius) * 2.8);
-
-
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+  --radius-2xl: 0px;
+  --radius-3xl: 0px;
+  --radius-4xl: 0px;
 
   --text-mono-xs: var(--t-mono-xs);
-
   --text-2xs: var(--t-xs);
-
   --spacing-gutter: var(--gutter);
-
-
+  --spacing-margin: var(--margin);
 
   --ease-specimen: var(--ease);
-
+  --ease-reveal: var(--ease-out);
 }
-
-
 
 @custom-variant dark (&:is(.dark *));
 
-
-
 @layer base {
-
   * {
-
     border-color: var(--rule);
-
   }
-
-
 
   html {
-
     font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-
-    /* No smooth-scroll: it fights a comparison slider and a keyboard user. */
-
   }
-
-
 
   body {
-
     background: var(--paper);
-
     color: var(--ink);
-
     font-size: var(--t-base);
-
-    line-height: 1.55;
-
+    line-height: 1.7;
     -webkit-font-smoothing: antialiased;
-
     text-rendering: optimizeLegibility;
-
   }
 
-
-
-  /* One focus treatment, everywhere, and it is the mark colour - the same
-
-     colour annotation uses, because focus is the reader annotating the page. */
-
+  /* One focus treatment, everywhere, in the spot ink. Square, like the rest. */
   :focus-visible {
-
     outline: 2px solid var(--mark);
-
     outline-offset: 2px;
-
-    border-radius: 1px;
-
+    border-radius: 0;
   }
-
-
 
   ::selection {
-
     background: var(--mark);
-
     color: var(--on-mark);
-
   }
-
-
-
-  /* Figures align in columns or they are not evidence. */
 
   .tabular, table, code, kbd, pre {
-
     font-variant-numeric: tabular-nums;
-
   }
-
 }
-
-
 
 @layer components {
-
-  /* The plate label: uppercase mono, tracked, dim. Every comparable surface
-
-     on this site carries one. It is the signature, and it is cheap. */
-
+  /* Mono, uppercase, tracked, dim. The margin-rail label and every plate label. */
   .plate-label {
-
     font-family: var(--font-geist-mono), ui-monospace, monospace;
-
     font-size: var(--t-mono-xs);
-
     letter-spacing: 0.14em;
-
     text-transform: uppercase;
-
     color: var(--ink-dim);
-
     font-weight: 500;
-
   }
 
-
-
+  /* Display is Geist at weight 500. There is no separate display face. */
   .display {
-
-    font-family: var(--font-display-face), var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-
-    font-weight: 560;
-
+    font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+    font-weight: 500;
     letter-spacing: -0.02em;
-
     line-height: 1.08;
-
+    text-wrap: balance;
   }
 
-
-
-  /* Elevation is a lightness step and a hairline. There is no shadow token
-
-     in this system; see tokens.json _elevation for why. */
-
+  /* Depth is a hairline plus one lightness step. No shadow token exists. */
   .plate {
-
     background: var(--plate);
-
     border: 1px solid var(--rule);
-
+    border-radius: 0;
   }
-
-
 
   .well {
-
     background: var(--plate-2);
-
     border: 1px solid var(--rule);
-
+    border-radius: 0;
   }
-
 }
 
-
-
-/* Motion is responsive-only, so this removes interaction feedback rather than
-
-   an ambient show. Transitions collapse to instant; nothing is lost. */
-
+/* Backstop for anything that slips past a component's own reduced-motion guard. */
 @media (prefers-reduced-motion: reduce) {
-
   *,
-
   *::before,
-
   *::after {
-
     animation-duration: 0.01ms !important;
-
     animation-iteration-count: 1 !important;
-
     transition-duration: 0.01ms !important;
-
     scroll-behavior: auto !important;
-
   }
-
 }
-
 
 /* --------------------------------------------------------------------------
    Shiki. Both themes are emitted into the markup as custom properties; this
@@ -526,8 +298,6 @@
   color: var(--sh-dark);
 }
 
-/* Line numbers are a counter, not markup, so they are never selected when the
-   reader copies the block. */
 .shiki-numbered .shiki-host code {
   counter-reset: sh-line;
 }
@@ -551,8 +321,7 @@
 }
 
 /* --------------------------------------------------------------------------
-   Prose. Narrow measure, because 45-75ch is a legibility floor and a full
-   1600px container is roughly 200ch.
+   Prose. Narrow measure: 45-75ch is the legibility band.
    -------------------------------------------------------------------------- */
 .prose-specimen {
   max-width: 68ch;

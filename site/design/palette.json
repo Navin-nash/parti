@@ -1,28 +1,30 @@
 {
   "light": {
-    "paper": "#F1F2F4",
-    "plate": "#FCFDFD",
-    "plate-2": "#E8EAEC",
-    "rule": "#D7D9DC",
-    "rule-strong": "#878A8E",
-    "ink": "#111315",
-    "ink-muted": "#565A5E",
-    "ink-dim": "#65696D",
-    "mark": "#B82F2B",
-    "mark-tint": "#FAEAE8",
-    "on-mark": "#FCFCFC"
+    "paper": "#FCFCFD",
+    "plate": "#FFFFFF",
+    "plate-2": "#F4F4F6",
+    "rule": "#E4E4E7",
+    "rule-strong": "#8A8A8F",
+    "ink": "#121316",
+    "ink-muted": "#54565A",
+    "ink-dim": "#63656A",
+    "mark": "#87CEEB",
+    "mark-text": "#277796",
+    "mark-tint": "#E8F4FA",
+    "on-mark": "#0A1518"
   },
   "dark": {
-    "paper": "#0B0D0F",
-    "plate": "#131518",
-    "plate-2": "#070809",
-    "rule": "#272A2E",
-    "rule-strong": "#606469",
-    "ink": "#EBEDEF",
-    "ink-muted": "#A1A5A9",
-    "ink-dim": "#7E8287",
-    "mark": "#F17262",
-    "mark-tint": "#361C18",
-    "on-mark": "#100C0C"
+    "paper": "#050506",
+    "plate": "#0E0E10",
+    "plate-2": "#020203",
+    "rule": "#232427",
+    "rule-strong": "#5F6065",
+    "ink": "#EBECEE",
+    "ink-muted": "#A0A2A6",
+    "ink-dim": "#7D7F84",
+    "mark": "#87CEEB",
+    "mark-text": "#87CEEB",
+    "mark-tint": "#0E2A33",
+    "on-mark": "#0A1518"
   }
 }
