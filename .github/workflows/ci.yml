@@ -64,6 +64,13 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      # tsconfig.json includes .next/types/**/*.ts (PageProps/LayoutProps and
+      # friends), which only exists after Next.js generates it - normally a
+      # side effect of `next dev`/`next build`. Typecheck runs before Build
+      # here, so it needs its own generation step first.
+      - name: Generate Next.js types
+        run: pnpm exec next typegen
+
       - name: Typecheck
         run: pnpm exec tsc --noEmit
 
