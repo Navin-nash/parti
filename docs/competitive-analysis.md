@@ -32,11 +32,14 @@ impeccable and parti are in the second cluster with real scripts. That is the fi
 
 Keep these, and lead with them — they are the moat, and none are currently marketed.
 
-1. **A real evaluation story.** `evals/` has 56 labeled trigger cases, 102 deterministic
-   script checks, an 18-item binary process rubric with 5 hard gates, and — the part
-   that matters — a written argument for *why design quality is not benchmarkable* and
-   why optimizing against the slop detector is Goodhart bait. No competitor has any
-   eval. Not one. This is the most defensible thing in the repo.
+1. **A written argument against benchmarking design quality**, and why optimizing against
+   the slop detector is Goodhart bait — still true, still in [`docs/scripts.md`](./scripts.md#do-not-gate-on-the-score)
+   and repeated in every doc that cites a score. *This used to be backed by a standalone
+   eval suite* — 56 labeled trigger cases, 102 deterministic script checks, an 18-item
+   binary process rubric with 5 hard gates — that no competitor had an equivalent of. It
+   was removed on 2026-09-12 as overhead the repo wasn't using; see
+   [`docs/suite-roadmap.md`](./suite-roadmap.md). The doctrine survived the harness that
+   used to enforce it; the enforcement did not.
 2. **Measured vs. judged, never blended.** `score.py` returns only the measurable half;
    hierarchy/signature/concept stay with the model, reported separately. Every other
    skill either hand-waves scoring or emits one fake number.
@@ -98,9 +101,10 @@ visible while building:
 - **A greenfield path.** Building from nothing is the *strongest* case for the skill, not
   a degraded one: with nothing anchoring the work the default fills the gap. The process
   substitutes subject interrogation for the audit and puts structure before surface.
-- **Checks on the skill's own material.** `check_surfaces.py` verifies the directions
-  ship no implementations, carry every required part, and cite motion rule ids that
-  actually resolve — it caught five invented ids on its first run.
+- **Checks on the skill's own material.** `check_surfaces.py` verified the directions
+  shipped no implementations, carried every required part, and cited motion rule ids that
+  actually resolved — it caught five invented ids on its first run. Removed with the eval
+  suite on 2026-09-12; the rule it enforced still holds, checked by reading now instead.
 
 ## What nobody has — the moves that make parti "far better"
 
@@ -118,8 +122,8 @@ differentiated thing available. `scripts/squint.py`.
 **B. Design review in CI.**
 `parti review` over a diff, emitting rule-id findings at `file:line` — already the output
 format — wired as a GitHub Action that comments on PRs. Teams adopt infrastructure, and
-adoption by a team beats a star from an individual. The anti-circularity doctrine in
-`evals/README.md` already licenses exactly this use: regression guard, not quality metric.
+adoption by a team beats a star from an individual. The anti-circularity doctrine already
+licenses exactly this use: regression guard, not quality metric.
 
 **C. Design-system entropy over time.**
 `audit.py` already computes palette sprawl, off-grid spacing, radius variance, tokenization
@@ -127,10 +131,11 @@ ratio. Run it across commit history and you have a design-debt trend line. Nobod
 longitudinal view of a design system.
 
 **D. Published blind A/B results.**
-Layer 4 of the eval plan is described and never run. Build the harness, generate paired
-artifacts against impeccable / frontend-design / a bare model, collect blind preferences,
-publish the win rate. No design skill in this field has published a single number. Going
-first — including where parti loses — is the strongest credibility asset available.
+The harness was built once and removed with the rest of the eval suite before the rater
+panel ever ran. Rebuild it, generate paired artifacts against impeccable / frontend-design
+/ a bare model, collect blind preferences, publish the win rate. No design skill in this
+field has published a single number. Going first — including where parti loses — is the
+strongest credibility asset available.
 
 **E. A dated, versioned tell registry.**
 Tells rot: the purple gradient was 2024, cream-and-serif is 2026. `bans.md` is 59 lines and
@@ -146,7 +151,9 @@ already harness-neutral; only the invocation and script paths are not.
 ## What is left
 
 Done since the original pass: the live session in full, surface directions, design-system
-interop, the ship gate, and the checks on the skill's own material.
+interop, and the ship gate. The scripted checks on the skill's own material shipped too,
+then were removed on 2026-09-12 along with the rest of the eval suite (see
+[`docs/suite-roadmap.md`](./suite-roadmap.md)).
 
 **Next, in order**
 
@@ -161,9 +168,11 @@ interop, the ship gate, and the checks on the skill's own material.
    adopt infrastructure; adoption by a team beats a star from an individual.
 4. **Reach.** Asset production, screenshot and Figma frames as brief input, cross-harness
    packaging, discovery keywords.
-5. **Publish the blind A/B.** Paired artifacts against impeccable and a bare model, blind
-   votes, the win rate published including the losses. No design skill in this field has
-   published a single number.
+5. **Publish the blind A/B.** The harness for this was built once and scrapped with the
+   rest of the eval suite before it produced a number — rebuilding it is step one, not an
+   afterthought. Paired artifacts against impeccable and a bare model, blind votes, the
+   win rate published including the losses. No design skill in this field has published
+   a single number.
 
 **Dropped:** the Node port of the analysis scripts. The browser and dev-server code is Node
 already, which is where the zero-install argument actually bit; porting 2.6k lines of tested

@@ -11,7 +11,11 @@ anticipate — a ship gate, a foundations floor, use-case archetypes, a material
 the convention rule that keeps unique from costing usable. Stage 3 shipped in a form this
 plan got wrong: it specified a block library of reference implementations, and that turned
 out to be the failure the skill exists to prevent, one level deeper. Stages 1b, 2 and 5
-are untouched. Stage 4 is half done: the A/B harness exists and the rater panel does not.
+are untouched. Stage 4 regressed rather than advanced: the standalone eval suite —
+the script-correctness harness, the trigger-accuracy cases, the process rubric, and the
+A/B harness with its generated pairs — was removed on 2026-09-12 (see
+[Testing](../README.md#testing) in the README for what replaced it), so the rater panel
+now has no harness to run against, not just a missing panel.
 
 ## Design constraints for the whole suite
 
@@ -20,8 +24,8 @@ are untouched. Stage 4 is half done: the A/B harness exists and the rater panel 
    a process. Gitignored by default; `DESIGN.md` stays the only tracked artifact.
 2. **Two runtimes, one boundary.** Node for anything touching a browser or a dev server
    (zero install in a frontend repo). Python stays for the analysis scripts — they are
-   agent-invoked, already tested by 99 eval checks, and porting them buys nothing today.
-   The boundary is: *browser and server → Node; static analysis → Python.* Do not blur it.
+   agent-invoked and stdlib-only, and porting them buys nothing today. The boundary is:
+   *browser and server → Node; static analysis → Python.* Do not blur it.
 3. **The helper serves the user's own browser.** Not a headless agent browser. That is what
    makes element picking and manual edits possible at all, and it works on every harness
    including ones with no browser tool. Harness browser tools (Claude Browser pane, Chrome
@@ -127,18 +131,26 @@ The largest remaining *quality* gap.
   token spec must carry, every state, responsive rule, motion by rule id, failure modes.
   **No markup.** A reference implementation is a default with better manners, and pasting
   one substitutes the template author's decisions for the direction's — the same failure
-  this skill exists to prevent, one level deeper. Enforced by `check_surfaces.py`.
+  this skill exists to prevent, one level deeper. Was mechanically enforced by
+  `check_surfaces.py`; that checker was removed with the eval suite, so the no-markup rule
+  is now a review discipline rather than a script gate.
 - `systems.md`: how to derive parti tokens *into* Material 3, Fluent, Carbon, Polaris,
   Primer, GOV.UK, Radix — mapping, not replacing. Opens the enterprise audience that parti
   currently cannot serve at all.
 
 ## Stage 4 — Eval expansion
 
-- Automate the 18-item process rubric as a transcript grader.
+The standalone eval suite this stage was meant to extend — the process-rubric grader's
+starting point, the trigger-accuracy cases, the A/B harness and its generated pairs — was
+removed on 2026-09-12 as unnecessary overhead for what the repo actually needs day to day.
+Rebuilding here means rebuilding the harness first, not just running it more:
+
+- A trigger-accuracy and process-rubric harness, if one gets rebuilt.
 - Blind A/B harness: paired artifacts vs impeccable / frontend-design / bare model, blind
   votes, published win rate including losses. First published numbers in this field.
 - `parti review` as a GitHub Action on changed files, posting rule-id findings. Regression
-  guard only — the anti-circularity doctrine in `evals/README.md` governs.
+  guard only, never a quality verdict — the same circularity trap documented in
+  [`docs/scripts.md`](./scripts.md#do-not-gate-on-the-score) applies to any such check.
 
 ## Stage 5 — Reach
 
@@ -155,8 +167,8 @@ shortcut generation; keyword-rich discovery.
 | 1 Live | round-trip works on static + framework source, survives restart, no residue | **done** — plus insert mode, knobs, steer/abort, annotations, source guard |
 | 1b Squint | catches a seeded hierarchy inversion the source-level lint misses | open |
 | 2 Memory | no-arg recommendation cites a real signal, never auto-runs | open |
-| 3 Surfaces | every direction ships no markup, all parts present, rule ids resolve | **done** — 3 surfaces, enforced by `check_surfaces.py` |
-| 4 Eval | rubric grader agrees with a hand-graded transcript; A/B numbers published | **half** — harness and pairs built, panel not run |
+| 3 Surfaces | every direction ships no markup, all parts present, rule ids resolve | **done**, enforcement now manual — 3 surfaces; `check_surfaces.py` was removed with the eval suite |
+| 4 Eval | rubric grader agrees with a hand-graded transcript; A/B numbers published | **regressed** — harness and pairs existed, both removed 2026-09-12; panel never run |
 | 5 Reach | skill runs unmodified in one non-Claude harness | open |
 
 Unplanned and shipped: `go-no-go.md` (the ship gate), `foundations.md` (structure,

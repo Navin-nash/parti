@@ -9,10 +9,10 @@
 ```bash
 git clone https://github.com/Navin-nash/parti.git
 cd parti
-python evals/run_script_evals.py
+python skills/parti/scripts/audit.py --help
 ```
 
-If that prints `TOTAL 50/50 passed`, you have a working environment. That is the whole setup.
+If that prints usage rather than an error, you have a working Python. That is the whole setup.
 
 **Prerequisites:** Python 3.8+ and git. Nothing else — no `pip install`, no virtualenv, no lockfile. This is deliberate: a skill that needs a dependency tree is a skill people won't install.
 
@@ -27,13 +27,10 @@ mklink /J "%USERPROFILE%\.claude\skills\parti" "C:\path\to\parti"        # Windo
 
 ## Commands
 
-<!-- AUTO-GENERATED: from argparse in skills/parti/scripts/*.py and evals/*.py, plus the Node checks under skills/parti/live/. Regenerate rather than hand-edit. -->
+<!-- AUTO-GENERATED: from argparse in skills/parti/scripts/*.py, plus the Node checks under skills/parti/live/. Regenerate rather than hand-edit. -->
 
 | Command | Purpose |
 |---|---|
-| `python evals/run_script_evals.py [-h] [--verbose] [--keep]` | Run the 102-assertion script suite. Exits `1` on any failure. |
-| `python evals/check_surfaces.py` | Surface directions: no markup, all parts present, rule ids resolve. Exits `1` on any violation. |
-| `python evals/ab/run_ab.py [-h] [--seed SEED]` | Assemble the blind A/B and run the measured half. |
 | `node skills/parti/live/selftest.mjs` | Live protocol: events, annotations, abort semantics. |
 | `node skills/parti/live/wraptest.mjs` | Source surgery: nesting, CRLF, JSX, insert, undo. |
 | `python skills/parti/scripts/audit.py [-h] [--json OUT] [--quiet] path` | Extract the de-facto design system from a codebase. |
@@ -55,65 +52,34 @@ Full flag semantics, real output, and JSON schemas: [`scripts.md`](scripts.md).
 
 ## Testing
 
-The skill decomposes into layers with genuinely different epistemic status. They are tested separately and **never averaged** — see [`../evals/README.md`](../evals/README.md) for why that matters more here than it sounds.
+**There is no standalone eval suite in this repo.** One existed — 56 labeled trigger cases, 102 deterministic script assertions, an 18-item process rubric, a blind-A/B harness — and was removed on 2026-09-12 as overhead nobody was running day to day. `docs/suite-roadmap.md` has the history if you're deciding whether to rebuild any of it.
 
-These test **the skill**. They are not the checks the agent runs against a user's interface during a session; that distinction, and where each output goes, is set out at the top of `evals/README.md`.
+What's left is what CI actually checks (`.github/workflows/ci.yml`): `ruff` over the scripts, and the site's own typecheck/lint/build. Beyond that, testing a change here means running it and reading the output — there is no automated pass/fail beyond what's below.
 
-| Layer | How to run it | Gate |
-|---|---|---|
-| 1. Trigger accuracy | `run_eval.py` from skill-creator, against `evals/trigger_cases.json` | recall ≥ 0.90, precision ≥ 0.95 |
-| 2. Script correctness | `python evals/run_script_evals.py` | 102/102 |
-| 2b. Skill material | `python evals/check_surfaces.py` | no markup, all parts, rule ids resolve |
-| 2c. Live runtime | `node skills/parti/live/selftest.mjs` and `wraptest.mjs` | both pass |
-| 3. Process compliance | read a transcript against `evals/rubric.md` | ≥ 16/18 **with all 5 gates** |
-| 4. Design quality | blind A/B, `python evals/ab/run_ab.py` | no threshold — preference only, 5+ human raters |
+| What changed | How to check it |
+|---|---|
+| A script (`audit.py`, `lint.py`, `motion.py`, `color.py`, `score.py`, `capture.py`) | Run it against a fixture that should trip the new behavior, and one that shouldn't. Read both reports — a detector you haven't seen stay quiet on a clean case is a detector you haven't tested. |
+| The live runtime (`skills/parti/live/`) | `node skills/parti/live/selftest.mjs` and `node skills/parti/live/wraptest.mjs` — both still exist and both must pass. |
+| `SKILL.md`'s `description` | Behavioral, not documentation — it decides when the skill loads at all. Try it in a real Claude Code session against a few queries that should trigger and a few that shouldn't; there is no automated recall/precision check to run instead. |
+| `SKILL.md`'s process guidance | Read a real transcript against the process the guidance describes. There is no automated rubric grader. |
 
 ### Changing a script
 
-Layer 2 is the gate. Every detector needs **two** tests, not one:
-
-1. A **detection** test on a fixture seeded with a known count of the thing.
-2. A **false-positive guard** on the clean fixture.
-
-The second is not optional. A linter that cries wolf gets muted, and a muted linter catches nothing — which is why the suite asserts `findings == []` on `clean/` for every detector, not just an overall pass.
-
-```bash
-python evals/run_script_evals.py --keep    # leaves fixtures on disk; the path is printed
-```
-
-Inspect the kept fixtures to see what your rule fires on before you trust it.
+Verify a new or changed detector by hand against two cases: one that should fire, one that shouldn't. The second matters more than the first — a linter that cries wolf gets muted, and a muted linter catches nothing.
 
 ### Changing the SKILL.md description
 
-**This is a behavioral change, not a documentation change.** The `description` field decides when the skill loads at all, so editing it can make the skill fire on unrelated work or go silent on work it should handle. Re-run Layer 1 against all 52 cases at `--runs-per-query 3` before pushing — trigger behavior is stochastic, and a single run tells you almost nothing.
-
-Two constraints from the [skill specification](https://agentskills.io/specification):
+**This is a behavioral change, not a documentation change.** Editing it can make the skill fire on unrelated work or go silent on work it should handle. Two constraints from the [skill specification](https://agentskills.io/specification):
 
 - Frontmatter is capped at **1024 characters total**.
 - The description should carry **triggering conditions only**. A description that summarizes the workflow creates a shortcut Claude takes *instead of* reading the skill body.
-
-### Adding a trigger case
-
-Append to `evals/trigger_cases.json`:
-
-```json
-{ "query": "the spacing on this feels random", "should_trigger": true }
-```
-
-Negatives matter more than positives. Four existing negatives use the word "design" for non-visual work — `design a database schema`, `design an API`, `design a rate limiter`, `design a retry strategy` — and all four must stay quiet. That's a hard gate: failing any one means the scope line in the description isn't holding.
-
-If a case flips across runs, it's genuinely ambiguous. Either sharpen the description or move it to the excluded list in `evals/README.md` — don't score it and pretend the result is a fact.
-
-### Changing process guidance in SKILL.md
-
-Layer 3, the rubric, is the instrument. Editing prose without running a transcript against `evals/rubric.md` is how a skill accumulates rules nobody follows. The five **[G]** gates are the ones that mean the skill didn't run at all, as opposed to ran imperfectly.
 
 ---
 
 ## Code style
 
 - **Stdlib only.** A new import that isn't in the standard library needs a strong argument; it costs every user an install step.
-- **Scripts stay independently runnable.** No shared package, no `__init__.py`, no cross-imports between scripts. `evals/run_script_evals.py` invokes them as subprocesses precisely so their real CLI surface is what gets tested.
+- **Scripts stay independently runnable.** No shared package, no `__init__.py`, no cross-imports between scripts — each one's real CLI surface is what a user actually invokes.
 - **Windows console encoding.** Every script that prints typography opens with the `sys.stdout.reconfigure(encoding="utf-8")` guard. Keep it — a Windows console defaults to cp1252 and will crash on the output otherwise.
 - **Exit codes are contract.** `lint.py` and `motion.py` exit `1` on any P0; `audit.py`, `score.py`, and `color.py` always exit `0`. Changing an exit code changes CI behavior for every consumer.
 
@@ -121,14 +87,14 @@ Layer 3, the rubric, is the instrument. Editing prose without running a transcri
 
 - `README.md` is the front door: what, why, install, command index. It **links to** `skills/parti/SKILL.md` and `skills/parti/references/` rather than restating them — two copies of the same process is how docs drift from behavior.
 - Sections wrapped in `<!-- AUTO-GENERATED -->` are derived from source. Change the source, regenerate the section; don't hand-edit inside the markers.
-- Sample output in [`scripts.md`](scripts.md) is **real captured output** from the `evals/` fixtures. If you change a script's output format, re-capture it rather than editing the sample by hand.
+- Sample output in [`scripts.md`](scripts.md) is **real captured output** from an actual run, not illustrative. If you change a script's output format, re-capture it rather than editing the sample by hand.
 
 ## Pull request checklist
 
-- [ ] `python evals/run_script_evals.py` → 50/50
-- [ ] New detector has both a detection test **and** a false-positive guard
-- [ ] Touched `description`? Layer 1 re-run, and frontmatter still under 1024 chars
-- [ ] Touched process guidance? A transcript scored against `evals/rubric.md`
+- [ ] `ruff check` passes
+- [ ] New or changed detector verified by hand against a firing case and a clean one
+- [ ] Touched the live runtime? `selftest.mjs` and `wraptest.mjs` both pass
+- [ ] Touched `description`? Tried against real queries in a session; frontmatter still under 1024 chars
 - [ ] Touched script output? Samples in `docs/scripts.md` re-captured, not hand-edited
 - [ ] Relative links resolve
 - [ ] No new dependencies

@@ -106,9 +106,9 @@ are the ones least able to absorb a surprise.
 
 None of these skills, parti included, has evidence that its output is preferred by
 anybody. Every mechanism above is an argument about how to avoid a known failure, not a
-measurement of whether the result is good. parti has the harness built and the pairs
-generated for a blind preference test ([`evals/ab-results.md`](../evals/ab-results.md)),
-and the rater panel is still the missing input.
+measurement of whether the result is good. parti had a harness built and pairs generated
+for a blind preference test; both were removed along with the rest of the standalone eval
+suite (see [`docs/suite-roadmap.md`](./suite-roadmap.md)), and the rater panel was never run.
 
 Until that exists, the honest ranking is on mechanism quality and enforcement, not on
 outcomes.

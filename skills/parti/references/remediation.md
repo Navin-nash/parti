@@ -30,7 +30,7 @@ a misdiagnosed finding.
 | **Code defect** | The build disagrees with the spec, and the spec is right. | Fix the code. Most findings. |
 | **Spec defect** | The build is right and the spec is wrong or silent. The value was needed and nothing legitimate covered it. | **Amend the spec first**, then re-run so the finding clears against the new spec. Never edit the code to fit a spec you already believe is wrong. |
 | **Context exception** | The rule is right in general and wrong here, for a stated reason. | Write the exception down per `go-no-go.md` — dated, rule id, reason, in `DESIGN.md`. Then leave the code. An undocumented exception is the rule being ignored. |
-| **Instrument defect** | The finding is wrong. The detector misread the code. | Do not change the design. Record it, and if it will recur, fix the detector and add a false-positive fixture (`evals/README.md` Layer 2). |
+| **Instrument defect** | The finding is wrong. The detector misread the code. | Do not change the design. Record it, and if it will recur, fix the detector — verify the fix against a clean fixture so it doesn't start misfiring the other way. |
 
 **The tie-break:** if you cannot tell a spec defect from a context exception, it is a spec
 defect. Amending the spec is visible and reviewable; an exception is a note that one

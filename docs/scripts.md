@@ -2,9 +2,9 @@
 
 Six stdlib-only Python scripts for analysis, and a zero-dependency Node runtime for the live browser session. They exist because measured findings survive disagreement and impressions don't — "the spacing feels inconsistent" loses an argument that `1 off-grid values: [17.0]` wins.
 
-**Two runtimes, one boundary.** Python for static analysis, Node for anything touching a browser or a dev server. The split is deliberate: the analysis scripts are agent-invoked and already covered by 102 assertions, while a frontend repo always has Node and rarely wants a Python setup step in the middle of a design session.
+**Two runtimes, one boundary.** Python for static analysis, Node for anything touching a browser or a dev server. The split is deliberate: the analysis scripts are agent-invoked and stdlib-only, while a frontend repo always has Node and rarely wants a Python setup step in the middle of a design session.
 
-All output shown below is **real output** from the fixtures in `evals/`, not illustrative.
+All output shown below is **real output** from actual runs against the fixtures shown, not illustrative.
 
 | Script | Reads | Emits | Exit code |
 |---|---|---|---|
@@ -287,8 +287,8 @@ saturation and lightness**, not a hex allowlist, so shifting a value by a few po
 not evade it. Violet-tinted near-blacks and pale tints stay quiet; the tell is violet used
 as the accent. Declaring the colour in `DESIGN.md` with a reason clears the finding.
 
-Covered by three eval assertions: it fires on the default, stays quiet on a real blue
-accent and a violet-tinted surface, and honours the exemption.
+It fires on the default, stays quiet on a real blue accent and a violet-tinted surface,
+and honours the exemption.
 
 ### Real output shape
 
@@ -313,7 +313,7 @@ $ echo $?
 }
 ```
 
-On the clean fixture: `rc=0`, `findings: []`. The false-positive guard in the eval suite exists specifically to keep it that way — a linter that cries wolf gets muted, and a muted linter catches nothing.
+On a clean fixture: `rc=0`, `findings: []`. A linter that cries wolf gets muted, and a muted linter catches nothing — verify a new detector against a clean fixture before trusting it.
 
 Full catalog of what it looks for: [`references/bans.md`](../skills/parti/references/bans.md).
 
@@ -421,14 +421,14 @@ Run the other three for reporting, not gating:
 
 Goodhart's law applies here with unusual force because the metric is so cheap to satisfy. Track the score across commits if you like. Never let it block one, and never report a rise in it as evidence the design improved.
 
-See [`evals/README.md`](../evals/README.md) for the full argument and the four-layer testing model.
-
 ### Checking the skill's own material
 
 ```bash
-python evals/check_surfaces.py      # surface directions: no markup, all parts, real rule ids
 node skills/parti/live/selftest.mjs # live protocol, annotations, abort semantics
 node skills/parti/live/wraptest.mjs # source surgery: nesting, CRLF, JSX, insert, undo
 ```
 
-The first one exists because `surfaces/` deliberately ships **no implementations**, and that rule needs enforcing mechanically rather than by good intentions — "just show them the code" is exactly the reflex being resisted.
+`surfaces/` deliberately ships **no implementations** — "just show them the code" is
+exactly the reflex being resisted — but that rule is checked by reading, not by a script;
+the checker that enforced it mechanically was part of the standalone eval suite removed
+from this repo (see [`docs/suite-roadmap.md`](./suite-roadmap.md)).

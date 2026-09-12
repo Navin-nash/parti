@@ -68,8 +68,6 @@ written method.
 | `skills/parti/scripts/lint.py` | `lint`, `deslop` (scripted half), `review` | build-time tells + token drift, by severity |
 | `skills/parti/scripts/capture.py` | `reference`, `capture` | 3-tier motion capture from a live URL |
 
-Script eval suite at time of writing: **86/86 green** (`python evals/run_script_evals.py`).
-
 ---
 
 ## 2. Direction commands
@@ -109,12 +107,10 @@ NOT MEASURED — judge these yourself, with evidence, and report separately:
 ```
 
 **Read:** measured total ≈ **74/100 · "Sound underneath"**. The script stops there
-on purpose — the last six lines are the agent's job. A worked example of that
-judged half, run against a real portfolio, lives at
-[`evals/portfolio-evaluation.md`](../evals/portfolio-evaluation.md): it corrects a
-misleading 69.6 up to ~78 by naming two dimensions the scripts penalised for
-things the project does *right*, and one they credited on checks that were wrong.
-That correction is the point of keeping the halves separate.
+on purpose — the last six lines are the agent's job. Run against a real portfolio,
+that judged half corrected a misleading 69.6 up to ~78 by naming two dimensions the
+scripts penalised for things the project does *right*, and one they credited on a
+check that was wrong. That correction is the point of keeping the halves separate.
 
 ---
 
@@ -135,10 +131,9 @@ The three largest gaps this surfaces on its own codebase: `2504` arbitrary
 Tailwind values against `150` defined tokens (the system is being escaped),
 `0` shadow variants (either intentional or a hole), and the two tells. `audit` is
 `evaluate` minus the score, and the right first command on any unfamiliar repo.
-Real-world behaviour across six outside codebases — including how it silently
-mis-reads a Tailwind repo's spacing as "arbitrary", and scores an unreadable
-React Native stack *higher* — is documented in
-[`evals/real-world-report.md`](../evals/real-world-report.md).
+Run across six outside codebases, it silently mis-read a Tailwind repo's spacing
+as "arbitrary" and scored an unreadable React Native stack *higher* — real
+failure modes worth knowing before trusting the score on sight.
 
 ---
 
@@ -185,10 +180,10 @@ scales so the user chooses the cost:
 ## Keep list             what does NOT move, and why — muscle memory is real
 ```
 
-`evals/portfolio-evaluation.md` ends on exactly this shape: it recommends
-**surgical — 5 fixes, most of the perceived gain, ~1 day** over a rebuild, and
-lists what to keep (the written 271-line design system, the type system, the
-OKLCH authoring).
+Run against a real portfolio, this shape held: the recommendation was
+**surgical — 5 fixes, most of the perceived gain, ~1 day** over a rebuild, with
+a keep list (the written 271-line design system, the type system, the OKLCH
+authoring).
 
 ---
 
@@ -615,9 +610,6 @@ for u in hyperswitch.io vercel.com gsap.com linear.app stripe.com; do
   python skills/parti/scripts/capture.py --url "https://$u" --focus "the hero and the scroll reveals" \
     --tier runtime --json "/tmp/$u.json" --md "captures/$u-$(date +%F).md"
 done
-
-# the eval suite behind the "86/86 green" claim
-python evals/run_script_evals.py
 ```
 
 The `▷ output shape` blocks are not reproducible by script — they are produced by

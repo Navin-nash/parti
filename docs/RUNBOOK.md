@@ -11,7 +11,7 @@ After installing (see [README](../README.md#install)), confirm all three layers:
 | Check | Command | Expected |
 |---|---|---|
 | Files in place | `ls ~/.claude/skills/parti/SKILL.md` | the file exists |
-| Scripts run | `python evals/run_script_evals.py` | `TOTAL 86/86 passed` |
+| Scripts run | `python skills/parti/scripts/audit.py --help` | usage output, not an error |
 | Skill loaded | ask Claude Code to list its skills | `parti` appears with its description |
 
 The third is the one that matters — the first two can pass while Claude Code never loads the skill.
@@ -34,21 +34,13 @@ Ask Claude Code to list available skills. If `parti` is absent, it's an installa
 
 If it appears in the list but doesn't engage on a design request, the `description` is the cause — it alone decides when the skill loads.
 
-Reproduce it against the eval set before changing anything:
+There is no automated trigger-accuracy check in this repo (the harness that provided one — labeled cases, recall/precision thresholds — was removed with the rest of the eval suite; see `docs/suite-roadmap.md`). Reproduce it by hand instead: ask a real Claude Code session several representative phrasings of the request that should have triggered it, and try a few adjacent-but-different requests too. Trigger behavior is stochastic, so a single try tells you almost nothing — repeat a query that doesn't fire before concluding it's the description's fault.
 
-```bash
-# from a project with .claude/ and the Claude Code CLI available
-python -m scripts.run_eval --skill-path ./parti/skills/parti \
-  --eval-set ./parti/evals/trigger_cases.json --runs-per-query 3 --verbose
-```
-
-Targets: recall ≥ 0.90, precision ≥ 0.95. **Run at least 3 times per query** — trigger behavior is stochastic and a single run tells you almost nothing.
-
-If your query genuinely should trigger and doesn't, add it to `trigger_cases.json` as a positive before touching the description, so the fix has a test.
+If your query genuinely should trigger and doesn't, that's a candidate for a wording change to the description — verify the fix the same way, by hand, in a real session.
 
 ### 3. Is it firing on the wrong things?
 
-The opposite failure, and the more expensive one — an over-broad description burns context on every unrelated request. The four `design a <system>` negatives in the eval set exist to catch exactly this. If any of them now trigger, the scope line in the description has stopped holding.
+The opposite failure, and the more expensive one — an over-broad description burns context on every unrelated request. Watch in particular for the description firing on non-visual uses of the word "design" ("design a database schema", "design an API", "design a rate limiter", "design a retry strategy"). If any of those now trigger, the scope line in the description has stopped holding.
 
 ---
 
@@ -67,7 +59,7 @@ The opposite failure, and the more expensive one — an over-broad description b
 ## Releasing a change
 
 ```bash
-python evals/run_script_evals.py          # must be 86/86
+ruff check                                # the check CI runs
 git add -A
 git commit -m "type: description"
 git push origin main
@@ -77,9 +69,9 @@ git push origin main
 
 | Changed | Also required |
 |---|---|
-| A script | Layer 2 (86/86) + a false-positive guard for any new detector |
-| `SKILL.md` description | Layer 1 re-run, all 56 cases, `--runs-per-query 3`; frontmatter ≤ 1024 chars |
-| `SKILL.md` process guidance | a transcript scored against `evals/rubric.md` — ≥ 16/18 with all 5 gates |
+| A script | Run it against a firing case and a clean one by hand — no automated suite exists to do this for you |
+| `SKILL.md` description | Tried against real queries in a session (see "Is it loaded but staying quiet?" above); frontmatter ≤ 1024 chars |
+| `SKILL.md` process guidance | Read a real transcript against the guidance; no automated rubric grader exists |
 | Script output format | re-capture the samples in `docs/scripts.md`; don't hand-edit them |
 
 There is no release artifact, no version tag, and no publish step. Consumers track `main` — a push is the release, which means an untested push is a broken install for anyone who clones next.
