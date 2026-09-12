@@ -45,18 +45,18 @@ export function Hero() {
                 fixedWidth
                 startOnView={false}
                 holdDuration={1.4}
-                text={["Take a position.", "Hold an opinion.", "Commit to a shape.", "Mean something."]}
+                text={["take a position.", "hold an opinion.", "commit to a shape.", "mean something."]}
                 colors={[hex.mark, hex.skyBottom]}
                 textColor={hex.mark}
               />
             </span>
           </h1>
 
-          <p className="mt-6 max-w-[52ch] text-[1.0625rem] leading-[1.6] text-ink-muted">
-            Generated design converges, not from a lack of ability, but because
-            everything trained on the same portfolio sites and component
-            libraries. Parti is the skill that forces a decision where a default
-            would otherwise fill the gap.
+          <p className="mt-6 max-w-[52ch] text-pretty text-[1.0625rem] leading-[1.6] text-ink-muted">
+            Generated interfaces converge &mdash; not for lack of ability, but
+            because every model read the same portfolio sites and the same
+            component libraries. Parti forces a decision at each point where a
+            default would otherwise fill the gap.
           </p>
 
           <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -64,13 +64,13 @@ export function Hero() {
               See the gallery
             </Button>
             <Button href="/method" variant="outline">
-              How it works
+              Read the method
             </Button>
           </div>
 
           <InstallCommand
             className="mt-6"
-            hint="Claude Code, Codex, Copilot, Antigravity, or anything else that reads SKILL.md or AGENTS.md."
+            hint="Works in Claude Code, Codex, Copilot, Antigravity, or anything else that reads SKILL.md or AGENTS.md."
           />
         </div>
       </div>

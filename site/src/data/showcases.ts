@@ -23,14 +23,14 @@ export const SHOWCASES: Showcase[] = [
   {
     slug: "kiln",
     title: "Kiln",
-    tagline: "Small-batch stoneware, sold like a gallery catalogue, not a storefront.",
+    tagline: "Small-batch stoneware, sold like a gallery catalogue rather than a storefront.",
     category: "E-commerce",
     accent: "#B5502E",
   },
   {
     slug: "torque",
     title: "Torque",
-    tagline: "An electric bike built like a instrument panel: every spec stated, nothing softened.",
+    tagline: "An electric bike sold like an instrument panel — every spec stated, nothing softened.",
     category: "Hardware",
     accent: "#FF7A1A",
   },
@@ -44,7 +44,7 @@ export const SHOWCASES: Showcase[] = [
   {
     slug: "datum",
     title: "Datum",
-    tagline: "A spatial-design studio that talks about buildings the way it draws them.",
+    tagline: "A spatial-design studio that writes about buildings the way it draws them.",
     category: "Studio",
     accent: "#E8B923",
   },

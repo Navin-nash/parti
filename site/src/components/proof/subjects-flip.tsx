@@ -16,19 +16,19 @@ export function SubjectsFlip() {
     <div className="border-b border-rule bg-paper">
       <div className="mx-auto max-w-[1400px] px-4 pt-20 sm:px-6 lg:px-8">
         <h2 className="display max-w-[24ch] text-[clamp(1.75rem,3.5vw,2.5rem)] text-ink">
-          Parti does not add a style menu. It adds a sequence that makes design{" "}
+          Parti is not a style menu. It is a sequence that makes a design{" "}
           <DiaTextReveal
             repeat
             fixedWidth
-            text={["Deliberate.", "Checkable.", "Yours."]}
+            text={["deliberate.", "checkable.", "yours."]}
             colors={[hex.mark, hex.skyBottom]}
             textColor={hex.mark}
           />
         </h2>
-        <p className="mt-4 max-w-[62ch] text-[1.0625rem] leading-[1.6] text-ink-muted">
+        <p className="mt-4 max-w-[62ch] text-pretty text-[1.0625rem] leading-[1.6] text-ink-muted">
           Every step below runs before a single line of CSS. Skip the third and
-          the output still looks designed, it just stops being about the
-          subject.
+          the output still looks designed &mdash; it just stops being about
+          this particular subject.
         </p>
       </div>
 

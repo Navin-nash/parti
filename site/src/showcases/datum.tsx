@@ -174,7 +174,7 @@ export default function DatumShowcase() {
           outline-offset: 3px;
         }
         /* The one interaction motif: a block sits offset from its own hard
-           shadow, and presses flat into it - the shadow doesn't move, the
+           shadow, and presses flat into it - the shadow doesn’t move, the
            block does. Raw and mechanical, not a soft scale-down. */
         [data-showcase="datum"] .datum-block {
           box-shadow: var(--shadow);

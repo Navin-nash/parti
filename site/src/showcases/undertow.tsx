@@ -311,7 +311,7 @@ export default function UndertowShowcase() {
                 {
                   step: "01",
                   title: "A short reading",
-                  body: "Two or three minutes on slack water, a lighthouse keeper's log, or how ice forms on a still lake.",
+                  body: "Two or three minutes on slack water, a lighthouse keeper’s log, or how ice forms on a still lake.",
                 },
                 {
                   step: "02",

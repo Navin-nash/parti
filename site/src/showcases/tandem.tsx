@@ -25,13 +25,13 @@ interface Step {
 const STEPS: Step[] = [
   {
     n: "01",
-    title: "Say what you're learning, and how far along you are",
-    body: "Not a placement test — just your own honest guess. Beginner, can-order-food, or can-argue-about-films. It's how we find someone at a workable level, not a perfect one.",
+    title: "Say what you’re learning, and how far along you are",
+    body: "Not a placement test — just your own honest guess. Beginner, can-order-food, or can-argue-about-films. It’s how we find someone at a workable level, not a perfect one.",
   },
   {
     n: "02",
     title: "We match you with someone learning your language back",
-    body: "They're learning what you speak natively, and you're learning what they speak natively. You each get to be the expert for half the conversation.",
+    body: "They’re learning what you speak natively, and you’re learning what they speak natively. You each get to be the expert for half the conversation.",
   },
   {
     n: "03",
@@ -40,8 +40,8 @@ const STEPS: Step[] = [
   },
   {
     n: "04",
-    title: "Rate the session in ten seconds, then you're done",
-    body: "One tap: easy, about right, or tough. That's the only thing we use to match you closer to your level next time.",
+    title: "Rate the session in ten seconds, then you’re done",
+    body: "One tap: easy, about right, or tough. That’s the only thing we use to match you closer to your level next time.",
   },
 ];
 
@@ -51,8 +51,8 @@ interface Moment {
 }
 
 const MOMENTS: Moment[] = [
-  { speaker: "you", text: "How do you say ‘I'm starving’ — like actually starving, not just polite-hungry?" },
-  { speaker: "partner", text: "Ha — we'd say ‘me muero de hambre.’ I'm dying of hunger. Dramatic, but that's how everyone says it." },
+  { speaker: "you", text: "How do you say ‘I’m starving’ — like actually starving, not just polite-hungry?" },
+  { speaker: "partner", text: "Ha — we’d say ‘me muero de hambre.’ I’m dying of hunger. Dramatic, but that’s how everyone says it." },
   { speaker: "partner", text: "You can switch to English for a second if you need to. Happens almost every session." },
   { speaker: "you", text: "Okay wait, say that last sentence again but slower" },
 ];

@@ -8,7 +8,7 @@ import { SHOWCASES } from "@/data/showcases";
 export const metadata: Metadata = {
   title: "Gallery",
   description:
-    "Five landing pages, five derived directions. Open one to see it live - real scroll, real motion, nothing standing in for it.",
+    "Five landing pages, five derived directions. Open one and it runs live in the browser — real scroll, real motion, no screenshot standing in for it.",
 };
 
 export default function GalleryPage() {
@@ -18,9 +18,10 @@ export default function GalleryPage() {
         <h1 className="display text-[clamp(2.25rem,5.5vw,3.75rem)] text-ink">
           Five briefs. Five directions.
         </h1>
-        <p className="mt-4 max-w-[62ch] text-[1.0625rem] leading-[1.6] text-ink-muted">
-          Every entry is a real landing page, live in the frame below - not a
-          screenshot standing in for one. Open one to scroll it yourself.
+        <p className="mt-4 max-w-[62ch] text-pretty text-[1.0625rem] leading-[1.6] text-ink-muted">
+          Each card below is the live page, not a picture of one. Every
+          direction was derived from its own brief, which is why none of them
+          would suit any of the others.
         </p>
       </Reveal>
 
@@ -40,7 +41,7 @@ export default function GalleryPage() {
                   <h2 className="text-[1.0625rem] text-ink transition-colors duration-(--d-fast) group-hover:text-mark-text">
                     {s.title}
                   </h2>
-                  <p className="mt-1 line-clamp-2 max-w-[40ch] text-[0.8125rem] leading-relaxed text-ink-muted">
+                  <p className="mt-1 line-clamp-2 max-w-[40ch] text-pretty text-[0.8125rem] leading-relaxed text-ink-muted">
                     {s.tagline}
                   </p>
                 </div>
