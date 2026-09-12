@@ -363,7 +363,7 @@ export default function TorqueShowcase() {
 
       {/* COMPARISON TABLE — car vs torque */}
       <section className="mx-auto max-w-[1180px] px-5 pb-16 sm:px-8 sm:pb-24">
-        <SectionLabel index="03" name="Versus the car you're not selling yet" />
+        <SectionLabel index="03" name="Versus the car you’re not selling yet" />
         <motion.div
           initial={reduce ? undefined : { opacity: 0, scaleX: 0.98 }}
           whileInView={reduce ? undefined : { opacity: 1, scaleX: 1 }}

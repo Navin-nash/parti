@@ -1,38 +1,40 @@
+import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 /**
- * The wordmark is a registration mark: two arms bracketed by a rule, which is
- * the whole argument of the site compressed into 18 pixels. It is drawn, not
- * set in a logo font, so it inherits the mark colour in both themes.
+ * The brand lockup: the chevron symbol plus the word. Two files rather than
+ * one recoloured mark - the symbol carries a blue gradient that must not be
+ * filtered, so the dark ground gets its own artwork with only the neutral
+ * pixels inverted (public/logo-dark.svg).
  */
 export function Wordmark({ className }: { className?: string }) {
   return (
     <Link
       href="/"
       className={cn(
-        "group inline-flex items-baseline gap-2 rounded-sm outline-none",
+        "group inline-flex items-center rounded-sm outline-none",
         "focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:ring-offset-2 focus-visible:ring-offset-paper",
         className,
       )}
       aria-label="Parti - home"
     >
-      <svg
-        viewBox="0 0 20 20"
-        width="18"
-        height="18"
-        aria-hidden="true"
-        className="translate-y-[2px] shrink-0"
-      >
-        {/* two arms */}
-        <rect x="1" y="4" width="7" height="12" className="fill-ink-dim" />
-        <rect x="12" y="4" width="7" height="12" className="fill-mark" />
-        {/* the registration rule that divides them */}
-        <rect x="9.5" y="0" width="1" height="20" className="fill-rule-strong" />
-      </svg>
-      <span className="font-display text-[1.15rem] leading-none tracking-tight">
-        Parti
-      </span>
+      <Image
+        src="/logo.svg"
+        alt=""
+        width={440}
+        height={190}
+        priority
+        className="h-7 w-auto dark:hidden"
+      />
+      <Image
+        src="/logo-dark.svg"
+        alt=""
+        width={440}
+        height={177}
+        priority
+        className="hidden h-7 w-auto dark:block"
+      />
     </Link>
   );
 }

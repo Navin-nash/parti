@@ -21,10 +21,10 @@ export const PROCESS: ProcessStage[] = [
   {
     index: "01",
     title: "Establish the brief",
-    short: "Five things, asked once - not an interrogation.",
+    short: "Five things, asked once — not an interrogation.",
     fields: ["Subject", "Audience", "Job", "Content", "Constraints"],
     detail:
-      "Subject: what it is, concretely. Audience: who uses it and what they already use daily, because that is their baseline for normal. Job: the one thing a person must be able to do. Content: what actually goes on screen, in what volume. Constraints: DESIGN.md, existing brand, platform, accessibility floor, taste vetoes. If the brief stays thin, pin it yourself and say so - an assumption stated beats a direction hedged to fit everyone. Then force a priority ranking, because modern, intuitive, interactive and intentional genuinely conflict.",
+      "Subject: what it is, concretely. Audience: who uses it and what they already use daily, because that is their baseline for normal. Job: the one thing a person must be able to do. Content: what actually goes on screen, in what volume. Constraints: DESIGN.md, existing brand, platform, accessibility floor, taste vetoes. If the brief stays thin, pin it yourself and say so — an assumption stated beats a direction hedged to fit everyone. Then force a priority ranking, because modern, intuitive, interactive and intentional genuinely conflict.",
     skipped:
       "The design gets made for a category rather than a product, and every review comment becomes a matter of taste because there is nothing to check a decision against.",
   },
@@ -34,7 +34,7 @@ export const PROCESS: ProcessStage[] = [
     short: "The step that decides whether anything downstream is earned.",
     fields: ["Density", "Register", "Attention", "Frequency", "Material"],
     detail:
-      "What information density does the content actually demand? What emotional register does the job call for? Where does attention need to land, in order, in the first three seconds? What is the frequency of use - daily tools earn density and shortcuts, occasional tools earn hand-holding? And what is the subject's native material: its instruments, artifacts, vernacular, textures? That last question is where distinctive choices come from, and it is the well you draw from every time you replace a tell.",
+      "What information density does the content actually demand? What emotional register does the job call for? Where does attention need to land, in order, in the first three seconds? What is the frequency of use — daily tools earn density and shortcuts, occasional tools earn hand-holding? And what is the subject’s native material: its instruments, artifacts, vernacular, textures? That last question is where distinctive choices come from, and it is the well you draw from every time you replace a tell.",
     skipped:
       "Style gets selected instead of derived, and the rationale gets written afterwards to fit.",
   },
@@ -44,7 +44,7 @@ export const PROCESS: ProcessStage[] = [
     short: "Each pair must differ on at least two of six axes.",
     fields: ["Density", "Structure", "Type voice", "Chroma", "Motion", "Depth"],
     detail:
-      "Three directions differing only in palette are one direction. The gate before drafting further: if swapping only the palette between two of them would leave everything else unchanged, that is one direction, not two. Each must land differently even in grayscale. For each, state a thesis about what it believes about the user, its nearest movement and where it departs, palette with roles, type with reasons, structure, motion posture, signature, and cost - because every direction gives something up, and being unable to name what it gives up means a compromise was made rather than a choice.",
+      "Three directions differing only in palette are one direction. The gate before drafting further: if swapping only the palette between two of them would leave everything else unchanged, that is one direction, not two. Each must land differently even in grayscale. For each, state a thesis about what it believes about the user, its nearest movement and where it departs, palette with roles, type with reasons, structure, motion posture, signature, and cost — because every direction gives something up, and being unable to name what it gives up means a compromise was made rather than a choice.",
     skipped:
       "One direction gets presented as three, the client picks the middle one, and everyone believes an exploration happened.",
     pivotal: true,
@@ -55,7 +55,7 @@ export const PROCESS: ProcessStage[] = [
     short: "Show, do not describe. Real content, one viewport.",
     fields: ["Real content", "One screen", "Faithful", "Comparable", "Motion"],
     detail:
-      "Text descriptions let both of you imagine different things and agree anyway. Render each as a visual with real content - lorem and Feature One hide every hierarchy problem. One screen, the key one, where the job gets done. Faithful rather than polished: type scale, spacing rhythm and colour relationships must be right; edge states need not be. Same content, same viewport, same screen across all three. And include the motion, at least the signature moment - a still image of a choreographed direction is a misrepresentation.",
+      "Text descriptions let both of you imagine different things and agree anyway. Render each as a visual with real content — lorem and Feature One hide every hierarchy problem. One screen, the key one, where the job gets done. Faithful rather than polished: type scale, spacing rhythm and colour relationships must be right; edge states need not be. Same content, same viewport, same screen across all three. And include the motion, at least the signature moment — a still image of a choreographed direction is a misrepresentation.",
     skipped:
       "A spec-perfect direction still ships generic, because construction is where concept-level work either survives or gets erased.",
   },
@@ -65,7 +65,7 @@ export const PROCESS: ProcessStage[] = [
     short: "Three tests, run against your own work before showing it.",
     fields: ["Generic-prompt", "Remove one", "Spend boldness once"],
     detail:
-      "The generic-prompt test: would you have produced roughly this for a different subject in the same category? If yes, nothing here came from this brief. Chanel's mirror: remove one accessory from each and name what you removed. Spend boldness once: one signature element is memorable, two are noise. Say what you changed and why - a direction that survives this unchanged was probably too safe.",
+      "The generic-prompt test: would you have produced roughly this for a different subject in the same category? If yes, nothing here came from this brief. Chanel’s mirror: remove one accessory from each and name what you removed. Spend boldness once: one signature element is memorable, two are noise. Say what you changed and why — a direction that survives this unchanged was probably too safe.",
     skipped:
       "The first plausible direction ships, and its weakest element is the one the client notices first.",
   },

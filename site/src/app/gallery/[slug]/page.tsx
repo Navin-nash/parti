@@ -50,7 +50,7 @@ export default async function GalleryEntryPage({ params }: PageProps<"/gallery/[
           <h1 className="display max-w-[24ch] text-[clamp(2rem,4.5vw,3.25rem)] text-ink">
             {showcase.title}
           </h1>
-          <p className="mt-3 max-w-[62ch] text-[1.0625rem] leading-[1.6] text-ink-muted">
+          <p className="mt-3 max-w-[62ch] text-pretty text-[1.0625rem] leading-[1.6] text-ink-muted">
             {showcase.tagline}
           </p>
         </Reveal>

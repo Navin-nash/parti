@@ -50,7 +50,7 @@ const PIECES: Piece[] = [
   },
 ];
 
-/** Concentric throwing-rings mark — the page's one recurring motif. */
+/** Concentric throwing-rings mark — the page’s one recurring motif. */
 function ThrowingRings({ className }: { className?: string }) {
   return (
     <svg
@@ -233,7 +233,7 @@ export default function KilnShowcase() {
           >
             <div
               role="img"
-              aria-label="Photograph of a potter's hands centering clay on a wheel, mid-throw"
+              aria-label="Photograph of a potter’s hands centering clay on a wheel, mid-throw"
               className="aspect-[5/6] w-full rounded-sm"
               style={{ background: "linear-gradient(200deg, #B5502E 0%, #6B4A3A 60%, #2A2320 100%)" }}
             />

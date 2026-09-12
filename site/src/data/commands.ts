@@ -43,14 +43,14 @@ export const COMMAND_GROUPS: { id: CommandGroup; blurb: string }[] = [
   {
     id: "Direction",
     blurb:
-      "Deciding what the thing should be. These produce specs, findings and directions - not code.",
+      "Deciding what the thing should be. These produce specs, findings and directions — never code.",
   },
   {
     id: "Build",
     blurb:
-      "Turning a decided direction into code that still matches it. The failure mode here is not a bad direction, it is a good direction quietly reverting to defaults on the way to production.",
+      "Turning a decided direction into code that still matches it. The failure here is rarely a bad direction; it is a good one quietly reverting to defaults on the way to production.",
   },
-  { id: "Shared", blurb: "Useful at either altitude." },
+  { id: "Shared", blurb: "Useful at either altitude — while deciding, and while building." },
   {
     id: "Handoff",
     blurb:
@@ -114,7 +114,7 @@ TELLS    2 detected
     input: "a brief",
     output: "3 directions, rendered, with a recommendation",
     detail:
-      "The core loop, and the one command that produces something new rather than correcting something existing. Brief, constraints, three directions that differ on at least two of the six axes, rendered with real content at one viewport, critiqued against the skill's own anti-slop pass, then converged with a stated recommendation.",
+      "The core loop, and the one command that produces something new rather than correcting something existing. Brief, constraints, three directions that differ on at least two of the six axes, rendered with real content at one viewport, critiqued against the skill’s own anti-slop pass, then converged with a stated recommendation.",
     example: "explore - a research workspace for independent investors",
     relatedExamples: ["finance-research-platform", "agent-platform-landing", "product-page"],
     run: {
@@ -139,7 +139,7 @@ TELLS    2 detected
     input: "an existing design",
     output: "a plan at one of two scales, plus a keep list",
     detail:
-      "Audits before proposing, then always offers both scales: surgical (5-8 highest-leverage fixes inside the existing system, days) and directional (the full explore process, weeks). Ends with an explicit keep list, because users have muscle memory and relocating everything taxes the people who liked it most.",
+      "Audits before proposing, then always offers both scales: surgical (5–8 highest-leverage fixes inside the existing system, days) and directional (the full explore process, weeks). Ends with an explicit keep list, because users have muscle memory and relocating everything taxes the people who liked it most.",
     example: "redesign the pricing page, surgical",
     run: {
       kind: "artifact",
@@ -159,7 +159,7 @@ TELLS    2 detected
     input: "codebase or design",
     output: "tell list with a specific replacement for each",
     detail:
-      "The narrowest, highest-value command. For each tell it reports where it is, why it reads as generated, and what to put there instead - drawn from the subject's own world. Replace, never merely delete: a tell removed leaves a hole, and ranked by how visible the tell is to a first-time viewer rather than by how easy it is to fix.",
+      "The narrowest, highest-value command. For each tell it reports where it is, why it reads as generated, and what to put there instead — drawn from the subject’s own world. Replace, never merely delete: a tell removed leaves a hole, and ranked by how visible the tell is to a first-time viewer rather than by how easy it is to fix.",
     example: "deslop src/components",
     relatedComponents: ["hero", "feature-grid", "testimonial"],
     run: {
@@ -182,7 +182,7 @@ P2  Default shadow utility reused 11x, no override  arms/components/marketing/ba
     input: "anything visual",
     output: "findings sorted by kind",
     detail:
-      "Review without touching anything. Sorts findings into usability failure, system failure, dated convention, and taste - and labels which is which, because collapsing taste into usability is the fastest way to lose the reader's trust.",
+      "Review without touching anything. Sorts findings into usability failure, system failure, dated convention, and taste — and labels which is which, because collapsing taste into usability is the fastest way to lose the reader’s trust.",
     example: "critique this dashboard",
     run: {
       kind: "artifact",
@@ -201,7 +201,7 @@ P2  Default shadow utility reused 11x, no override  arms/components/marketing/ba
     input: "an existing type system",
     output: "scale, ratio, roles, measure, tracking, numerals",
     detail:
-      "Picks a ratio from what the content is (1.2 dense UI, 1.25-1.333 general, 1.414-1.618 editorial), rebuilds the scale on it, and assigns families to display, body and utility roles. Names the specific faces and their source - a pairing recommendation without named faces is not actionable.",
+      "Picks a ratio from what the content is (1.2 dense UI, 1.25–1.333 general, 1.414–1.618 editorial), rebuilds the scale on it, and assigns families to display, body and utility roles. Names the specific faces and their source — a pairing recommendation without named faces is not actionable.",
     example: "typeset - the docs site",
     relatedComponents: ["article-header", "code-block"],
     relatedExamples: ["infrastructure-docs"],
@@ -224,7 +224,7 @@ P2  Default shadow utility reused 11x, no override  arms/components/marketing/ba
     input: "existing colors, or a brief",
     output: "OKLCH palette with every pair's ratio stated inline",
     detail:
-      "Delivered in OKLCH with hex alongside, every text pair's contrast printed in the spec, and a stated rule for how the accent may be used. Verified with color.py rather than asserted - a builder who cannot see the number will assume it passes.",
+      "Delivered in OKLCH with hex alongside, every text pair’s contrast printed in the spec, and a stated rule for how the accent may be used. Verified with color.py rather than asserted — a builder who cannot see the number will assume it passes.",
     example: "palette - derive from the subject, verify at AA",
     relatedExamples: ["finance-research-platform"],
     run: {
@@ -250,7 +250,7 @@ ramp "#B23A2E" --steps 9
     input: "existing motion, or a brief",
     output: "posture, the one moment, durations, easings, reduced-motion",
     detail:
-      "Decides first whether each thing should animate at all, then specifies posture, the single choreographed moment, what animates with duration and easing, what never animates, and the library decision - including the option of none. If the audit shows two general-purpose animation libraries, that is itself a finding.",
+      "Decides first whether each thing should animate at all, then specifies posture, the single choreographed moment, what animates with duration and easing, what never animates, and the library decision — including the option of none. If the audit shows two general-purpose animation libraries, that is itself a finding.",
     example: "motion - the comparison viewer",
     run: {
       kind: "executed",
@@ -296,7 +296,7 @@ ramp "#B23A2E" --steps 9
     input: "a component and a request for motion",
     output: "the animation, or a reasoned refusal",
     detail:
-      "Two of the seven steps are gates, and they exist to produce zero lines of code sometimes: an action performed 100+ times a day, or initiated by keyboard, does not animate - say so plainly and offer the non-motion alternative. Reduced motion and pointer gating ship in the same edit, never as a follow-up.",
+      "Two of the seven steps are gates, and they exist to produce zero lines of code sometimes: an action performed 100+ times a day, or initiated by keyboard, does not animate — say so plainly and offer the non-motion alternative. Reduced motion and pointer gating ship in the same edit, never as a follow-up.",
     example: "animate the disclosure panel",
     run: {
       kind: "artifact",
@@ -317,7 +317,7 @@ ramp "#B23A2E" --steps 9
     input: "one or more URLs, plus a focus",
     output: "per-element capture with faithful and adapted columns, in captures/",
     detail:
-      "A user shares a reference site; the skill runs a three-tier pipeline - static CSS read, then a headless-Chromium pass that scrolls the page and re-reads getAnimations() so scroll-triggered reveals surface, then an agent-driven snippet path - and returns the mechanism, the from/to keyframe values, the duration and easing, and when each thing fires. Captured per element, never a whole-site clone: a focus is required, and a request for the whole look is refused. The report always states which tier ran and what it could not see, and never invents a value.",
+      "A user shares a reference site; the skill runs a three-tier pipeline — static CSS read, then a headless-Chromium pass that scrolls the page and re-reads getAnimations() so scroll-triggered reveals surface, then an agent-driven snippet path — and returns the mechanism, the from/to keyframe values, the duration and easing, and when each thing fires. Captured per element, never a whole-site clone: a focus is required, and a request for the whole look is refused. The report always states which tier ran and what it could not see, and never invents a value.",
     example: "reference https://siteX.com/pricing - the plan toggle and the scroll reveals",
     relatedExamples: ["agent-platform-landing", "product-page"],
     run: {
@@ -353,7 +353,7 @@ one real finding (hyperswitch JSON):
     input: "a screen",
     output: "base unit, scale, section rhythm, row height, measure",
     detail:
-      "Density is the most under-decided axis in generated design - everything defaults to a comfortable medium. Establishes what the content actually demands (sparse, measured, dense), then corrects the base unit, spacing scale, line height, row height and container width. A daily-use tool and a marketing page cannot share a rhythm.",
+      "Density is the most under-decided axis in generated design — everything defaults to a comfortable medium. Establishes what the content actually demands (sparse, measured, dense), then corrects the base unit, spacing scale, line height, row height and container width. A daily-use tool and a marketing page cannot share a rhythm.",
     example: "density - this is a daily tool, not a brochure",
     relatedComponents: ["data-table", "stat-cards"],
     relatedExamples: ["campaign-analytics"],
@@ -397,7 +397,7 @@ one real finding (hyperswitch JSON):
     input: "a direction or product",
     output: "the element, where it appears, how it degrades",
     detail:
-      "Must come from the subject's own world - its instruments, artifacts, vernacular or data - not from a catalog of effects. Delivered with how it degrades on mobile and under reduced motion, and what goes quiet around it. Boldness is spent once: if two things are shouting, one is noise.",
+      "Must come from the subject’s own world — its instruments, artifacts, vernacular or data — not from a catalog of effects. Delivered with how it degrades on mobile and under reduced motion, and what goes quiet around it. Boldness is spent once: if two things are shouting, one is noise.",
     example: "signature - what is this remembered by?",
     relatedExamples: ["product-page"],
     run: {
@@ -415,7 +415,7 @@ one real finding (hyperswitch JSON):
     input: "interface text",
     output: "rewritten controls, errors, empty states",
     detail:
-      "Names come from what the user controls, not how the system is built. A control says what happens when it is used. Errors state what happened, why, and the next step, in the interface's voice - never apologising, never vague. Generic copy templates a design as fast as generic layout.",
+      "Names come from what the user controls, not how the system is built. A control says what happens when it is used. Errors state what happened, why, and the next step, in the interface’s voice — never apologising, never vague. Generic copy templates a design as fast as generic layout.",
     example: "copy - the whole checkout flow",
     run: {
       kind: "artifact",
@@ -431,7 +431,7 @@ one real finding (hyperswitch JSON):
     input: "a chosen direction",
     output: "the full spec, in a fixed consumable format",
     detail:
-      "Format is fixed so it can be consumed directly by build or by an engineer. If a design system already exists, the direction is expressed as a diff against it - changed, added, deprecated - rather than a fresh spec someone has to reconcile.",
+      "Format is fixed so it can be consumed directly by build or by an engineer. If a design system already exists, the direction is expressed as a diff against it — changed, added, deprecated — rather than a fresh spec someone has to reconcile.",
     example: "tokens",
     relatedExamples: ["finance-research-platform"],
     run: {
@@ -454,7 +454,7 @@ motion   — durations, easings, what never animates
     input: "a spec or brief",
     output: "working code, every named state, verified",
     detail:
-      "Detects the existing stack before asking, builds the screen the spec's job names first, designs every state in the same pass, then verifies three ways: scripted lint, contrast measurement, and a fidelity re-check against the same floor the mockup was held to. Tokens are law; craft is where the freedom is.",
+      "Detects the existing stack before asking, builds the screen the spec’s job names first, designs every state in the same pass, then verifies three ways: scripted lint, contrast measurement, and a fidelity re-check against the same floor the mockup was held to. Tokens are law; craft is where the freedom is.",
     example: "build the watchlist screen",
     relatedExamples: ["finance-research-platform", "agent-platform-landing", "infrastructure-docs"],
     run: {
@@ -524,7 +524,7 @@ motion   — durations, easings, what never animates
     input: "any built code",
     output: "tells and token drift, by severity",
     detail:
-      "The one that catches a good direction reverting to defaults. Reports build-time tells an audit at plan time could not see, plus token drift - any colour in the shipped code that is not in the spec it was handed. A clean run means nothing on the known list is wrong, not that the build is good.",
+      "The one that catches a good direction reverting to defaults. Reports build-time tells an audit at plan time could not see, plus token drift — any colour in the shipped code that is not in the spec it was handed. A clean run means nothing on the known list is wrong, not that the build is good.",
     example: "lint src --tokens tokens.json",
     run: {
       kind: "executed",
@@ -585,7 +585,7 @@ keyboard             full operability
     input: "any code",
     output: "what costs what, and what to cut",
     detail:
-      "Scoped to animation and bundle cost. Broader performance engineering is explicitly outside the skill's scope, and it says so rather than pretending otherwise.",
+      "Scoped to animation and bundle cost. Broader performance engineering is explicitly outside the skill’s scope, and it says so rather than pretending otherwise.",
     example: "perf - the landing page",
     run: {
       kind: "artifact",

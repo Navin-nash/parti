@@ -21,6 +21,7 @@ export const metadata: Metadata = {
     default: "Parti - design direction for AI-generated interfaces",
     template: "%s - Parti",
   },
+  icons: { icon: "/favicon.svg", apple: "/favicon.svg" },
   description:
     "A design skill, for any coding agent, that derives a design direction from the subject instead of picking one off a style menu. A gallery of what it produced, the seven-stage method, and the full command set.",
   openGraph: {
