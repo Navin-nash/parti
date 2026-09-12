@@ -148,13 +148,6 @@ as a checkbox, and a square switch thumb reads as nothing at all. This is the on
 `rounded-full` in the build (icon buttons, search triggers, segmented-control pills, sample bars)
 is drift and gets squared off — audited 2026-09-11, see Changelog.
 
-**A fourth exception, and the only one that isn't derived — it's requested:** the home page's
-`FolderGallery` (`components/proof/folder-gallery.tsx`) is the exact chrome of the component it
-was adapted from — dark gradient folder body, `12px`/`16px` rounded cards and folder, real drop
-shadows — not this site's radius-`0`/no-shadow material. Scoped to that one file; every other
-surface still answers to the rules above. (Its rounded corners are literal pixel values, not the
-theme's `--radius-*` scale, on purpose — see Changelog.)
-
 **The signature motif:** four short `mark` crop marks at the corners of each specimen plate — 1px,
 ~10px long, ~6px outside the plate edge. On a plate's scroll reveal the marks draw in from the
 corner (see Motion). It is the only ornament in the system and it is literally a printing artifact.
@@ -248,9 +241,6 @@ themes. Never animated.
   own brief with its own derived palette, scoped via a local `[data-showcase]` CSS-variable block
   — deliberately outside this file's Proof tokens (see Changelog, gallery rebuild). Checking them
   against this site's own token spec would flag every one of them by design.
-- **`src/components/proof/folder-gallery.tsx` is excluded from the token-drift check**, for the
-  same reason it's excluded from radius `0` above: its colors are the exact chrome of the
-  component it was adapted from, not this site's palette.
 - **`src/components/proof/theme-hex.ts` is excluded from the token-drift check.** It's a literal
   JS restatement of this file's own Color tokens, resolved per theme, for the three vendored
   `src/components/ui/*` components that take hex strings instead of CSS custom properties — the

@@ -358,19 +358,17 @@ skills/parti/
   surfaces/            per-surface build direction — decisions, not markup
   scripts/             audit.py  capture.py  color.py  lint.py  motion.py  score.py  — stdlib only
   live/                the live browser session — Node, no dependencies
-evals/                 run_script_evals.py  check_surfaces.py  rubric.md  trigger_cases.json
 docs/                  scripts.md  CONTRIBUTING.md  RUNBOOK.md
 ```
 
 | Doc | Contents |
 |---|---|
 | [`docs/scripts.md`](docs/scripts.md) | every flag, real captured output, JSON schemas, exit codes, CI wiring |
-| [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) | setup, the four testing layers, what each kind of change requires, PR checklist |
+| [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) | setup, what each kind of change requires, PR checklist |
 | [`docs/RUNBOOK.md`](docs/RUNBOOK.md) | install verification, diagnosing a skill that won't fire, script failures, release and rollback |
 | [`docs/anti-slop-comparison.md`](docs/anti-slop-comparison.md) | how every design skill implements anti-slop, by mechanism type, and where each one fails |
 | [`docs/competitive-analysis.md`](docs/competitive-analysis.md) | capability comparison against the other design skills, with what closed and what is still open |
 | [`docs/suite-roadmap.md`](docs/suite-roadmap.md) | the staged plan for the suite, and the constraints that govern it |
-| [`evals/ab-results.md`](evals/ab-results.md) | the blind A/B: measured results, and why the preference number is not yet collected |
 
 References are split out because SKILL.md loads on every match while a reference loads only when the run actually needs it.
 
@@ -406,34 +404,20 @@ References are split out because SKILL.md loads on every match while a reference
 ## Testing
 
 ```bash
-python evals/run_script_evals.py            # 99 script assertions, exits 1 on any failure
-python evals/check_surfaces.py              # surface directions: no markup, all parts, real rule ids
 node skills/parti/live/selftest.mjs         # live protocol, annotations, abort semantics
 node skills/parti/live/wraptest.mjs         # source surgery: nesting, CRLF, JSX, insert, undo
-python evals/run_script_evals.py --verbose  # per-assertion output
-python evals/run_script_evals.py --keep     # leave fixtures on disk to inspect
 ```
 
-86 deterministic checks: WCAG contrast arithmetic against published reference values, and fixtures seeded with a known number of known tells so detection recall and false-positive rate are both countable. Stdlib only, so it drops into CI unmodified.
-
-Every detector has a matching **false-positive guard** on a clean fixture. A linter that cries wolf gets muted, and a muted linter catches nothing.
-
-**This covers one layer of four.** The layers have genuinely different epistemic status and must never be averaged together — averaging is how a measured 4.54:1 contrast ratio and a subjective 7/10 for "hierarchy" become one meaningless 8.2.
-
-| Layer | Ground truth | Instrument | Objective? |
-|---|---|---|---|
-| 1. Trigger accuracy | 56 labeled prompts | `evals/trigger_cases.json` | yes, binary |
-| 2. Script correctness | WCAG arithmetic + seeded fixtures | `evals/run_script_evals.py` | yes, deterministic |
-| 3. Process compliance | 18 binary items, 5 of them gates | `evals/rubric.md` | yes, per-item binary |
-| 4. **Design quality** | **none** | blind A/B against a baseline | **no** — preference only |
+CI otherwise runs `ruff` over the scripts and the site's own typecheck/lint/build, held to the
+skill's own anti-slop and motion rules (`.github/workflows/ci.yml`). The standalone regression
+suite for `audit.py`/`lint.py`/`motion.py`/`color.py` and the paired with-skill/without-skill
+comparison that used to live in `evals/` and `examples/` have been removed from this repo.
 
 ### The circularity trap
 
 **Don't grade the skill's output with `score.py`.** The detector and the generator share a tell list. Optimizing against it produces designs that *evade the detector*, not designs that are good — swap the purple-to-blue gradient for purple-to-teal and distinctiveness goes to 15/15 while the page stays exactly as generic. Goodhart's law applies with unusual force because the metric is so cheap to satisfy.
 
-Slop index is a valid **regression guard** and an invalid **quality metric**. Put it in CI. Never use it to choose between two directions, and never report an improvement in it as evidence the design got better.
-
-Read [`evals/README.md`](evals/README.md) before adding any metric.
+Slop index is a valid **regression guard** and an invalid **quality metric**. Never use it to choose between two directions, and never report an improvement in it as evidence the design got better.
 
 ---
 
