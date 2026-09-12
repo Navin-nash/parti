@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Menu, X, ArrowUpRight } from "@/lib/icons";
+import { Menu, X, Star } from "@/lib/icons";
 import { NAV, GITHUB_URL } from "@/lib/nav";
 import { SearchTrigger } from "@/components/site/search-trigger";
 import { Wordmark } from "./wordmark";
@@ -57,14 +57,17 @@ export function SiteHeader() {
         <div className="ml-auto flex items-center gap-2 sm:gap-3">
           <SearchTrigger />
           <ThemeToggle />
+          {/* GitHub has no URL that stars a repo outright, so this is still a
+              link to the repo - the label just says what to do when you land.
+              The star count goes after the label when there is one to show. */}
           <a
             href={GITHUB_URL}
             target="_blank"
             rel="noreferrer noopener"
             className="hidden items-center gap-1.5 border border-rule bg-plate px-3 py-2 text-[0.8125rem] text-ink-muted transition-colors duration-(--d-fast) hover:border-rule-strong hover:text-ink sm:inline-flex"
           >
-            GitHub
-            <ArrowUpRight className="size-3.5" aria-hidden />
+            <Star className="size-3.5" aria-hidden />
+            Star on GitHub
           </a>
           <button
             type="button"
@@ -111,8 +114,8 @@ export function SiteHeader() {
                 rel="noreferrer noopener"
                 className="inline-flex items-center gap-1.5 text-[0.875rem] text-ink-muted"
               >
-                GitHub
-                <ArrowUpRight className="size-3.5" aria-hidden />
+                <Star className="size-3.5" aria-hidden />
+                Star on GitHub
               </a>
             </li>
           </ul>
