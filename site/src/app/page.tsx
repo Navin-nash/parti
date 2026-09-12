@@ -69,7 +69,7 @@ export default function Home() {
         </Reveal>
 
         <Reveal delay={0.06} className="mt-8">
-          <PullQuote source="Stage 03 — the gate">
+          <PullQuote source="">
             Three directions that differ only in palette are one direction
             wearing three names.
           </PullQuote>
